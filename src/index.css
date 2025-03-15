@@ -1,0 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  font-family: 'Inter', sans-serif;
+  box-sizing: border-box;
+  @apply bg-white dark:bg-[#1b1a19];
+}
+
+.container {
+  @apply min-w-full lg:px-20 px-5 py-5 relative;
+}
