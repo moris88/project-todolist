@@ -75,7 +75,7 @@ function TodoInput() {
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-y-4">
+    <div className="flex w-full flex-col items-center gap-y-4" id="todo-input">
       <Switch
         checked={showInput}
         className="flex items-center lg:hidden"

@@ -77,5 +77,5 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.GIT_ORG_TOKEN  }}
       - name: Install Dependencies
         run: npm install
-      - name: Tesing
+      - name: Testing
         run: CI=false npm run test
