@@ -26,7 +26,12 @@ import {
 import { todoListAtom } from '@/atoms/atoms'
 import { ConfirmModal } from '@/components'
 import { Priority, Todo } from '@/types'
-import { dict, priorityItems } from '@/utils'
+import {
+  dict,
+  priorityItems,
+  removeTodoStorage,
+  updateTodoStorage,
+} from '@/utils'
 
 interface TodoItemProps {
   todo: Todo
@@ -58,10 +63,12 @@ function TodoItem({ todo }: TodoItemProps) {
   }, [editDueDate])
 
   const toggleTodo = (
-    e: React.MouseEvent<HTMLParagraphElement, MouseEvent>
+    e?: React.MouseEvent<HTMLParagraphElement, MouseEvent>
   ) => {
-    e.preventDefault()
-    e.stopPropagation()
+    if (e) {
+      e.preventDefault()
+      e.stopPropagation()
+    }
     const updatedTodos = todos.map((t) => {
       if (t.id === todo.id) {
         return {
@@ -73,8 +80,7 @@ function TodoItem({ todo }: TodoItemProps) {
       }
       return t
     })
-    localStorage.setItem('todos', JSON.stringify(updatedTodos))
-    setTodos(updatedTodos)
+    setTodos(updateTodoStorage(updatedTodos))
   }
 
   const removeTodo = () => {
@@ -82,9 +88,7 @@ function TodoItem({ todo }: TodoItemProps) {
   }
 
   const confirmRemoveTodo = () => {
-    const updatedTodos = todos.filter((t) => t.id !== todo.id)
-    localStorage.setItem('todos', JSON.stringify(updatedTodos))
-    setTodos(updatedTodos)
+    setTodos(removeTodoStorage(todos, todo.id))
     setShowDeleteModal(false)
   }
 
@@ -106,8 +110,7 @@ function TodoItem({ todo }: TodoItemProps) {
       }
       return t
     })
-    setTodos(updatedTodos)
-    localStorage.setItem('todos', JSON.stringify(updatedTodos))
+    setTodos(updateTodoStorage(updatedTodos))
     setIsEditing(false)
     setShowEditModal(false)
   }
@@ -204,7 +207,10 @@ function TodoItem({ todo }: TodoItemProps) {
               className={`line-clamp-1 flex w-full cursor-pointer items-center gap-2 font-bold ${todo.completed ? 'line-through' : ''}`}
               onClick={toggleTodo}
             >
-              <Checkbox isSelected={todo.completed} />
+              <Checkbox
+                isSelected={todo.completed}
+                onChange={() => toggleTodo()}
+              />
               {flagIcon[todo.priority]}{' '}
               <span
                 className={

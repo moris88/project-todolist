@@ -3,7 +3,12 @@ import React from 'react'
 
 import { ConfirmModal } from '@/components'
 import { Todo } from '@/types'
-import { dict, isTaskOverdue } from '@/utils'
+import {
+  clearTodosCompleted,
+  clearTodosExpired,
+  dict,
+  removeAllTodos,
+} from '@/utils'
 
 interface DangerZoneProps {
   todos: Todo[]
@@ -21,23 +26,6 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
     expired: false,
     all: false,
   })
-
-  const clearCompleted = () => {
-    const newTodos = todos.filter((todo) => !todo.completed)
-    setTodos(newTodos)
-    localStorage.setItem('todos', JSON.stringify(newTodos))
-  }
-
-  const clearExpired = () => {
-    const newTodos = todos.filter((todo) => !isTaskOverdue(todo.dueDate))
-    setTodos(newTodos)
-    localStorage.setItem('todos', JSON.stringify(newTodos))
-  }
-
-  const clearAll = () => {
-    setTodos([])
-    localStorage.removeItem('todos')
-  }
 
   const handleDelete = (key: keyof typeof showDeleteModal) => {
     setShowDeleteModal({ ...showDeleteModal, [key]: true })
@@ -135,13 +123,13 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
           onConfirm={() => {
             switch (key) {
               case 'completed':
-                clearCompleted()
+                setTodos(clearTodosCompleted(todos))
                 break
               case 'expired':
-                clearExpired()
+                setTodos(clearTodosExpired(todos))
                 break
               case 'all':
-                clearAll()
+                setTodos(removeAllTodos())
                 break
             }
             setShowDeleteModal({ ...showDeleteModal, [key]: false })

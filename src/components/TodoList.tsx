@@ -5,7 +5,7 @@ import React from 'react'
 
 import { todoListAtom } from '@/atoms'
 import { useNotificationRequest } from '@/hooks'
-import { dict, isTaskOverdue } from '@/utils'
+import { dict, getTodosStorage, isTaskOverdue } from '@/utils'
 
 import DangerZone from './DangerZone'
 import TodoItem from './TodoItem'
@@ -51,10 +51,7 @@ function TodoList() {
 
   // Recupero dei task da localStorage quando la pagina si carica
   React.useEffect(() => {
-    const savedTodos = localStorage.getItem('todos')
-    if (savedTodos) {
-      setTodos(JSON.parse(savedTodos))
-    }
+    setTodos(getTodosStorage())
   }, [setTodos])
 
   return (
@@ -85,6 +82,19 @@ function TodoList() {
           </Select>
         </div>
       )}
+      {filter === '1' && (
+        <section className="grid grid-cols-3 justify-center gap-4">
+          <div className="max-h-[calc(100vh-300px)] min-h-[calc(100vh-300px)] overflow-y-auto rounded-xl bg-gray-400 hover:shadow-slate-500 dark:bg-slate-400">
+            COL1
+          </div>
+          <div className="max-h-[calc(100vh-300px)] min-h-[calc(100vh-300px)] overflow-y-auto rounded-xl bg-gray-400 hover:shadow-slate-500 dark:bg-slate-400">
+            COL1
+          </div>
+          <div className="max-h-[calc(100vh-300px)] min-h-[calc(100vh-300px)] overflow-y-auto rounded-xl bg-gray-400 hover:shadow-slate-500 dark:bg-slate-400">
+            COL1
+          </div>
+        </section>
+      )}
       {todos.length === 0 ? (
         <p className="select-none text-center">
           {dict.todolist.listitem.no_task}
@@ -92,23 +102,20 @@ function TodoList() {
       ) : (
         todos
           .filter((todo) => {
-            // Filtro per task completati
-            if (filter === '2') {
-              return todo.completed
+            switch (filter) {
+              case '1':
+                return false
+              case '2':
+                return todo.completed
+              case '3':
+                return !todo.completed
+              case '4':
+                return isTaskOverdue(todo.dueDate)
+              case '5':
+                return !isTaskOverdue(todo.dueDate)
+              default:
+                return false
             }
-            // Filtro per task da completare
-            if (filter === '3') {
-              return !todo.completed
-            }
-            // Filtro per task scaduti
-            if (filter === '4') {
-              return isTaskOverdue(todo.dueDate)
-            }
-            // Filtro per task non scaduti
-            if (filter === '5') {
-              return !isTaskOverdue(todo.dueDate)
-            }
-            return true
           })
           .sort((a, b) => {
             if (a.completed && !b.completed) return 1

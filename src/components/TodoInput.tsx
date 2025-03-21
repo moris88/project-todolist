@@ -15,7 +15,7 @@ import { HiFlag, HiMiniPlus, HiOutlineFlag } from 'react-icons/hi2'
 import { todoListAtom } from '@/atoms'
 import { ConfirmModal } from '@/components'
 import { Priority, Todo } from '@/types'
-import { dict, generateUniqueId, priorityItems } from '@/utils'
+import { addTodoStorage, dict, generateUniqueId, priorityItems } from '@/utils'
 
 function TodoInput() {
   const [title, setTitle] = React.useState<string>('')
@@ -44,8 +44,7 @@ function TodoInput() {
       notify: false,
       priority,
     }
-    setTodos([...todos, newTodo])
-    localStorage.setItem('todos', JSON.stringify([...todos, newTodo]))
+    setTodos(addTodoStorage(newTodo, todos))
     setTitle('')
     setDueDate(null)
     setRequired(false)
