@@ -82,7 +82,7 @@ function TodoList() {
           </Select>
         </div>
       )}
-      {filter === '1' && (
+      {/* {filter === '1' && (
         <section className="grid grid-cols-3 justify-center gap-4">
           <div className="max-h-[calc(100vh-300px)] min-h-[calc(100vh-300px)] overflow-y-auto rounded-xl bg-gray-400 hover:shadow-slate-500 dark:bg-slate-400">
             COL1
@@ -94,7 +94,7 @@ function TodoList() {
             COL1
           </div>
         </section>
-      )}
+      )} */}
       {todos.length === 0 ? (
         <p className="select-none text-center">
           {dict.todolist.listitem.no_task}
@@ -104,7 +104,7 @@ function TodoList() {
           .filter((todo) => {
             switch (filter) {
               case '1':
-                return false
+                return true
               case '2':
                 return todo.completed
               case '3':
