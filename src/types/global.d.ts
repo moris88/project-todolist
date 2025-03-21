@@ -9,6 +9,8 @@ export interface Todo {
   dueDate: string | null
   notify: boolean
   priority: Priority
+  category: Category
 }
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
+export type Category = 'todo' | 'inProgress' | 'done'

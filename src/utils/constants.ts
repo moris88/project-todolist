@@ -20,8 +20,17 @@ export const dict = {
           low: 'Bassa',
         },
       },
+      category: {
+        label: 'Seleziona una categoria',
+        items: {
+          todo: 'Da fare',
+          inProgress: 'In corso',
+          done: 'Completato',
+        },
+      },
       filter: {
         label: 'Filtra per',
+        all_kanban: 'Tutti (Kanban)',
         all: 'Tutti',
         completed: 'Completati',
         uncompleted: 'Non completati',
@@ -58,7 +67,8 @@ export const dict = {
       due_date: 'Data di scadenza',
     },
     editTask: {
-      title: 'Modifica compito',
+      info: 'Modifica le informazioni del compito',
+      title: 'Modifica Titolo',
       description: 'Vuoi modificare il compito selezionato?',
       submit: 'Modifica',
       cancel: 'Annulla',

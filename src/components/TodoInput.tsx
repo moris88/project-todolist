@@ -43,6 +43,7 @@ function TodoInput() {
       dueDate: dueDate ? dueDate.toDate().toISOString() : null,
       notify: false,
       priority,
+      category: 'todo',
     }
     setTodos(addTodoStorage(newTodo, todos))
     setTitle('')

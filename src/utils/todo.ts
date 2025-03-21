@@ -4,7 +4,7 @@ import { Todo } from '@/types'
 
 export const priorityItems = ['urgent', 'high', 'medium', 'low']
 
-export function isTaskOverdue(dueDate: string | null) {
+export function isTaskOverdue(dueDate: string | null): boolean {
   if (!dueDate) return false
   return moment().isAfter(dueDate)
 }
