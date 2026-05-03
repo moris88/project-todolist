@@ -3,20 +3,16 @@ import '@testing-library/jest-dom'
 
 import { render } from '@testing-library/react'
 import { StrictMode } from 'react'
-import React from 'react'
-import { BrowserRouter } from 'react-router-dom'
 
 import { TodoInput, TodoList, Wrapper } from '../src/components'
 
 test('renders the main app with TodoInput and TodoList', () => {
   render(
     <StrictMode>
-      <BrowserRouter>
-        <Wrapper>
-          <TodoInput />
-          <TodoList />
-        </Wrapper>
-      </BrowserRouter>
+      <Wrapper>
+        <TodoInput />
+        <TodoList />
+      </Wrapper>
     </StrictMode>
   )
 

@@ -51,19 +51,26 @@ function DraggableItem({ todo }: { todo: Todo }) {
   if (onClicked) {
     return (
       <div
-        className={`relative cursor-grab rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
+        ref={setNodeRef}
+        className={`relative rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
       >
-        <Button
-          className="absolute right-2 top-2"
-          size="sm"
-          variant="light"
-          onPress={() => setOnClicked(false)}
+        <div
+          className="absolute right-2 top-2 z-10"
+          onPointerDown={(e) => e.stopPropagation()}
         >
-          <AiOutlineFullscreenExit className="h-6 w-6" />
-        </Button>
+          <Button
+            size="sm"
+            variant="light"
+            onPress={() => setOnClicked(false)}
+          >
+            <AiOutlineFullscreenExit className="h-6 w-6" />
+          </Button>
+        </div>
         <div className="flex flex-col">
-          <TodoItem kanban todo={todo} />
-          <div className="flex flex-col items-start">
+          <div {...attributes} {...listeners} className="cursor-grab">
+            <TodoItem kanban todo={todo} />
+          </div>
+          <div className="flex flex-col items-start px-2 pb-2">
             {todo.createdAt && (
               <span>
                 {dict.todolist.listitem.createdAt}:{' '}
@@ -102,18 +109,22 @@ function DraggableItem({ todo }: { todo: Todo }) {
   return (
     <div
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      className={`flex cursor-grab items-center justify-between rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
+      className={`flex items-center justify-between rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
     >
-      <span className="flex max-w-[80%] items-center gap-2 overflow-hidden text-ellipsis">
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex flex-1 cursor-grab items-center gap-2 overflow-hidden text-ellipsis"
+      >
         {overdue[isTaskOverdue(todo.dueDate) ? 'true' : 'false']}
         {flagIcon[todo.priority]}
         {todo.title}
-      </span>
-      <Button size="sm" variant="light" onPress={() => setOnClicked(true)}>
-        <AiOutlineFullscreen className="h-6 w-6" />
-      </Button>
+      </div>
+      <div onPointerDown={(e) => e.stopPropagation()}>
+        <Button size="sm" variant="light" onPress={() => setOnClicked(true)}>
+          <AiOutlineFullscreen className="h-6 w-6" />
+        </Button>
+      </div>
     </div>
   )
 }
