@@ -18,7 +18,7 @@ function SelectItem({
   return (
     <button
       className={`flex w-full items-center gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-gray-100 ${
-        isSelected ? 'bg-blue-50 text-blue-600 font-medium' : 'text-gray-700'
+        isSelected ? 'bg-blue-50 font-medium text-blue-600' : 'text-gray-700'
       }`}
       type="button"
       onClick={() => onClick?.(value, String(children))}

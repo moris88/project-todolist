@@ -18,28 +18,27 @@ function Select({
   className = '',
 }: SelectProps) {
   const [isOpen, setIsOpen] = React.useState(false)
-  const [selectedValue, setSelectedValue] = React.useState(
+  const [internalValue, setInternalValue] = React.useState(
     defaultSelectedKeys || ''
   )
-  const [selectedLabel, setSelectedLabel] = React.useState('')
   const containerRef = React.useRef<HTMLDivElement>(null)
 
-  // Sync with defaultSelectedKeys
-  React.useEffect(() => {
-    if (defaultSelectedKeys !== undefined) {
-      setSelectedValue(defaultSelectedKeys)
-      let foundLabel = ''
-      React.Children.forEach(children, (child) => {
-        if (
-          React.isValidElement(child) &&
-          (child.props as any).value === defaultSelectedKeys
-        ) {
-          foundLabel = (child.props as any).children
-        }
-      })
-      setSelectedLabel(foundLabel)
-    }
-  }, [children, defaultSelectedKeys])
+  // Use prop if provided, otherwise internal state
+  const currentValue = defaultSelectedKeys ?? internalValue
+
+  // Derive label from current value
+  const selectedLabel = React.useMemo(() => {
+    let foundLabel = ''
+    React.Children.forEach(children, (child) => {
+      if (
+        React.isValidElement(child) &&
+        (child.props as any).value === currentValue
+      ) {
+        foundLabel = (child.props as any).children
+      }
+    })
+    return foundLabel
+  }, [children, currentValue])
 
   // Click outside handler
   React.useEffect(() => {
@@ -55,9 +54,8 @@ function Select({
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
 
-  const handleSelect = (value: string, label: string) => {
-    setSelectedValue(value)
-    setSelectedLabel(label)
+  const handleSelect = (value: string) => {
+    setInternalValue(value)
     setIsOpen(false)
 
     // Simulate ChangeEvent for compatibility
@@ -72,7 +70,7 @@ function Select({
     if (React.isValidElement(child)) {
       return React.cloneElement(child as React.ReactElement<any>, {
         onClick: handleSelect,
-        isSelected: (child.props as any).value === selectedValue,
+        isSelected: (child.props as any).value === currentValue,
       })
     }
     return child
