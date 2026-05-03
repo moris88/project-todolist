@@ -380,7 +380,7 @@ function TodoList() {
             </div>
           ))
       )}
-      {todos.length > 0 && <DangerZone setTodos={setTodos} todos={todos} />}
+      <DangerZone setTodos={setTodos} todos={todos} />
     </div>
   )
 }
