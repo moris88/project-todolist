@@ -1,7 +1,7 @@
-import { Button, ButtonGroup, Switch } from '@heroui/react'
 import React from 'react'
 
 import { ConfirmModal } from '@/components'
+import { Button, ButtonGroup, Switch } from '@/components/UI'
 import { Todo } from '@/types'
 import {
   clearTodosCompleted,
@@ -105,7 +105,6 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
           </>
         )}
       </div>
-      {/* Modale per confermare l'eliminazione */}
       {Object.keys(showDeleteModal).map((key) => (
         <ConfirmModal
           key={key}

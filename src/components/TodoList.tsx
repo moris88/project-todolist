@@ -1,6 +1,5 @@
 import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { Button, Chip, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
 import moment from 'moment'
 import React from 'react'
@@ -10,6 +9,7 @@ import { GoAlertFill } from 'react-icons/go'
 import { HiFlag } from 'react-icons/hi2'
 
 import { todoListAtom } from '@/atoms'
+import { Button, Chip, Select, SelectItem } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import { Todo } from '@/types'
 import {
@@ -133,7 +133,7 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`max-h-[calc(100vh-250px)] min-h-[calc(100vh-250px)] w-full overflow-y-auto rounded bg-gray-200 p-4 md:w-1/3 ${isOver ? 'bg-blue-300' : 'bg-gray-200'}`}
+      className={`max-h-[calc(100vh-250px)] min-h-[calc(100vh-250px)] w-full overflow-y-auto rounded p-4 md:w-1/3 ${isOver ? 'bg-blue-300' : 'bg-gray-200'}`}
     >
       <h2 className="mb-2 text-lg font-bold">{title}</h2>
       {todos
@@ -166,21 +166,18 @@ function TodoList() {
   const [filter, setFilter] = React.useState('1')
   const { notifyUser } = useNotificationRequest()
 
-  // Notifica all'utente quando un task è scaduto
   React.useEffect(() => {
     const newTodos = todos.map((todo) => {
-      if (!todo.dueDate) {
-        return todo // Se non c'è una data di scadenza, non modificare l'oggetto
-      }
+      if (!todo.dueDate) return todo
 
       const dueDate = new Date(todo.dueDate)
 
       if (!todo.completed && dueDate < new Date() && !todo.notify) {
         notifyUser('Task Scaduto', `Il task "${todo.title}" è scaduto.`)
-        return { ...todo, notify: true } // Solo in questo caso modifichiamo il todo
+        return { ...todo, notify: true }
       }
 
-      return todo // Se non è necessario modificare, restituiamo il todo così com'è
+      return todo
     })
     const isDifferent = JSON.stringify(newTodos) !== JSON.stringify(todos)
 
@@ -215,10 +212,18 @@ function TodoList() {
     setOverColumn(null)
   }
 
-  // Recupero dei task da localStorage quando la pagina si carica
   React.useEffect(() => {
     setTodos(getTodosStorage())
   }, [setTodos])
+
+  const filterItems = [
+    { label: dict.todolist.listitem.filter.all_kanban, key: '0' },
+    { label: dict.todolist.listitem.filter.all, key: '1' },
+    { label: dict.todolist.listitem.filter.completed, key: '2' },
+    { label: dict.todolist.listitem.filter.uncompleted, key: '3' },
+    { label: dict.todolist.listitem.filter.overdue, key: '4' },
+    { label: dict.todolist.listitem.filter.not_overdue, key: '5' },
+  ]
 
   return (
     <div className="mt-4 space-y-4" id="todo-list">
@@ -232,20 +237,14 @@ function TodoList() {
         <div className="flex w-full flex-col items-center justify-center gap-4 gap-y-2 lg:flex-row">
           <Select
             defaultSelectedKeys={filter}
-            items={[
-              { label: dict.todolist.listitem.filter.all_kanban, key: '0' },
-              { label: dict.todolist.listitem.filter.all, key: '1' },
-              { label: dict.todolist.listitem.filter.completed, key: '2' },
-              { label: dict.todolist.listitem.filter.uncompleted, key: '3' },
-              { label: dict.todolist.listitem.filter.overdue, key: '4' },
-              { label: dict.todolist.listitem.filter.not_overdue, key: '5' },
-            ]}
             label={dict.todolist.listitem.filter.label}
-            onChange={(value) => setFilter(value.target.value)}
+            onChange={(e) => setFilter(e.target.value)}
           >
-            {(filter) => (
-              <SelectItem key={filter.key}>{filter.label}</SelectItem>
-            )}
+            {filterItems.map((item) => (
+              <SelectItem key={item.key} value={item.key}>
+                {item.label}
+              </SelectItem>
+            ))}
           </Select>
         </div>
       )}

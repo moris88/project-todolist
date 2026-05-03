@@ -29,7 +29,15 @@ export default [
       'no-console': 'warn',
       'prettier/prettier': 'error',
       'react/react-in-jsx-scope': 'off',
-      'no-unused-vars': 'warn',
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': [
+        'warn',
+        {
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
+        },
+      ],
       'no-debugger': 'off',
       'simple-import-sort/imports': 'error',
       'simple-import-sort/exports': 'error',

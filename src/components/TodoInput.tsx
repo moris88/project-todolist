@@ -1,3 +1,9 @@
+import { useAtom } from 'jotai'
+import React from 'react'
+import { HiMiniPlus } from 'react-icons/hi2'
+
+import { todoListAtom } from '@/atoms'
+import { ConfirmModal } from '@/components'
 import {
   Button,
   DatePicker,
@@ -6,14 +12,7 @@ import {
   SelectItem,
   Switch,
   Textarea,
-} from '@heroui/react'
-import { getLocalTimeZone, today, ZonedDateTime } from '@internationalized/date'
-import { useAtom } from 'jotai'
-import React from 'react'
-import { HiFlag, HiMiniPlus, HiOutlineFlag } from 'react-icons/hi2'
-
-import { todoListAtom } from '@/atoms'
-import { ConfirmModal } from '@/components'
+} from '@/components/UI'
 import { Priority, Todo } from '@/types'
 import { addTodoStorage, dict, generateUniqueId, priorityItems } from '@/utils'
 
@@ -22,14 +21,14 @@ function TodoInput() {
   const [description, setDescription] = React.useState<string>('')
   const [priority, setPriority] = React.useState<Priority>('medium')
   const [todos, setTodos] = useAtom(todoListAtom)
-  const [dueDate, setDueDate] = React.useState<ZonedDateTime | null>(null)
+  const [dueDate, setDueDate] = React.useState<string | null>(null)
   const [showInput, setShowInput] = React.useState(true)
   const [showAdd, setShowAdd] = React.useState(false)
   const [showError, setShowError] = React.useState(false)
   const [showDescription, setShowDescription] = React.useState(false)
   const [required, setRequired] = React.useState(false)
 
-  const minValue = today(getLocalTimeZone()) as any
+  const minValue = new Date().toISOString().slice(0, 16)
 
   const addTodo = () => {
     const newTodo: Todo = {
@@ -40,7 +39,7 @@ function TodoInput() {
       createdAt: new Date().toISOString(),
       updatedAt: null,
       completedAt: null,
-      dueDate: dueDate ? dueDate.toDate().toISOString() : null,
+      dueDate: dueDate,
       notify: false,
       priority,
       category: 'todo',
@@ -58,10 +57,6 @@ function TodoInput() {
       return
     }
     setShowAdd(true)
-  }
-
-  const handleSetDueDate = (date: any) => {
-    setDueDate(date)
   }
 
   const handlePriorityChange = (value: string) => {
@@ -104,31 +99,23 @@ function TodoInput() {
               granularity="minute"
               label={dict.todolist.addTask.due_date}
               minValue={minValue}
-              value={dueDate as any}
-              onChange={handleSetDueDate}
+              value={dueDate}
+              onChange={(iso) => setDueDate(iso)}
             />
             <Select
               defaultSelectedKeys={priorityItems.indexOf(priority).toString()}
               label={dict.todolist.listitem.priority.label}
               onChange={(e) => handlePriorityChange(e.target.value)}
             >
-              {priorityItems.map((item, index) => {
-                const flagIcon: Record<number, React.ReactNode> = {
-                  3: <HiFlag className="h-3 w-3 text-green-600" />,
-                  2: <HiOutlineFlag className="h-3 w-3" />,
-                  1: <HiFlag className="h-3 w-3 text-yellow-600" />,
-                  0: <HiFlag className="h-3 w-3 text-red-600" />,
-                }
-                return (
-                  <SelectItem key={index} startContent={flagIcon[index]}>
-                    {
-                      dict.todolist.listitem.priority.items[
-                        item as keyof typeof dict.todolist.listitem.priority.items
-                      ]
-                    }
-                  </SelectItem>
-                )
-              })}
+              {priorityItems.map((item, index) => (
+                <SelectItem key={index} value={String(index)}>
+                  {
+                    dict.todolist.listitem.priority.items[
+                      item as keyof typeof dict.todolist.listitem.priority.items
+                    ]
+                  }
+                </SelectItem>
+              ))}
             </Select>
             <Switch
               size="sm"

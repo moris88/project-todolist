@@ -1,5 +1,3 @@
-'use client'
-
 import {
   Button,
   Modal,
@@ -7,7 +5,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-} from '@heroui/react'
+} from '@/components/UI'
 
 interface ConfirmModalProps {
   isOpen: boolean

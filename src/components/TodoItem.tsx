@@ -1,3 +1,11 @@
+import { useAtom } from 'jotai'
+import React from 'react'
+import { BiSolidDetail } from 'react-icons/bi'
+import { GoAlertFill } from 'react-icons/go'
+import { HiFlag, HiMiniTrash, HiOutlinePencilSquare } from 'react-icons/hi2'
+
+import { todoListAtom } from '@/atoms/atoms'
+import { ConfirmModal } from '@/components'
 import {
   Button,
   ButtonGroup,
@@ -12,25 +20,7 @@ import {
   Select,
   SelectItem,
   Textarea,
-} from '@heroui/react'
-import {
-  getLocalTimeZone,
-  parseAbsoluteToLocal,
-  today,
-} from '@internationalized/date'
-import { useAtom } from 'jotai'
-import React from 'react'
-import { BiSolidDetail } from 'react-icons/bi'
-import { GoAlertFill } from 'react-icons/go'
-import {
-  HiFlag,
-  HiMiniTrash,
-  HiOutlineFlag,
-  HiOutlinePencilSquare,
-} from 'react-icons/hi2'
-
-import { todoListAtom } from '@/atoms/atoms'
-import { ConfirmModal } from '@/components'
+} from '@/components/UI'
 import { Category, Priority, Todo } from '@/types'
 import {
   dict,
@@ -56,19 +46,11 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
   const [showEditModal, setShowEditModal] = React.useState(false)
   const [showDetailModal, setShowDetailModal] = React.useState(false)
-
-  const minValue = today(getLocalTimeZone()) as any
   const [editDueDate, setEditDueDate] = React.useState<string | null>(
     todo.dueDate ?? null
   )
 
-  const valueDueDate = React.useMemo(() => {
-    if (editDueDate) {
-      const parseDate = parseAbsoluteToLocal(editDueDate)
-      return parseDate
-    }
-    return undefined
-  }, [editDueDate])
+  const minValue = new Date().toISOString().slice(0, 16)
 
   const toggleTodo = (
     e?: React.MouseEvent<HTMLParagraphElement, MouseEvent>
@@ -110,7 +92,7 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
       if (t.id === todo.id) {
         return {
           ...t,
-          dueDate: editDueDate ? editDueDate.toString() : null,
+          dueDate: editDueDate ?? null,
           title: editTitle,
           description: editDescription,
           priority: editPriority,
@@ -124,8 +106,14 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
     setShowEditModal(false)
   }
 
-  const handleSetDueDate = (value: any) => {
-    setEditDueDate(value.toDate().toISOString())
+  const handlePriorityChange = (value: string) => {
+    const mappaPriority: Record<string, string> = {
+      '0': 'urgent',
+      '1': 'high',
+      '2': 'medium',
+      '3': 'low',
+    }
+    setEditPriority(mappaPriority[value] as Priority)
   }
 
   const flagIcon: Record<string, React.ReactNode> = {
@@ -138,16 +126,6 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
   const overdue: Record<string, React.ReactNode> = {
     true: <GoAlertFill className="h-4 w-4 text-red-600" />,
     false: <></>,
-  }
-
-  const handlePriorityChange = (value: string) => {
-    const mappaPriority: Record<string, string> = {
-      '0': 'urgent',
-      '1': 'high',
-      '2': 'medium',
-      '3': 'low',
-    }
-    setEditPriority(mappaPriority[value] as Priority)
   }
 
   return (
@@ -176,8 +154,8 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
                   granularity="minute"
                   label={dict.todolist.addTask.due_date}
                   minValue={minValue}
-                  value={valueDueDate as any}
-                  onChange={handleSetDueDate}
+                  value={editDueDate}
+                  onChange={(iso) => setEditDueDate(iso)}
                 />
                 <Select
                   defaultSelectedKeys={priorityItems
@@ -186,27 +164,19 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
                   label={dict.todolist.listitem.priority.label}
                   onChange={(e) => handlePriorityChange(e.target.value)}
                 >
-                  {priorityItems.map((item, index) => {
-                    const flagIcon: Record<number, React.ReactNode> = {
-                      3: <HiFlag className="h-3 w-3 text-green-600" />,
-                      2: <HiOutlineFlag className="h-3 w-3" />,
-                      1: <HiFlag className="h-3 w-3 text-yellow-600" />,
-                      0: <HiFlag className="h-3 w-3 text-red-600" />,
-                    }
-                    return (
-                      <SelectItem key={index} startContent={flagIcon[index]}>
-                        {
-                          dict.todolist.listitem.priority.items[
-                            item as keyof typeof dict.todolist.listitem.priority.items
-                          ]
-                        }
-                      </SelectItem>
-                    )
-                  })}
+                  {priorityItems.map((item, index) => (
+                    <SelectItem key={index} value={String(index)}>
+                      {
+                        dict.todolist.listitem.priority.items[
+                          item as keyof typeof dict.todolist.listitem.priority.items
+                        ]
+                      }
+                    </SelectItem>
+                  ))}
                 </Select>
                 <Select
                   className="w-full"
-                  defaultSelectedKeys={[todo.category]}
+                  defaultSelectedKeys={todo.category}
                   label={dict.todolist.listitem.category.label}
                   onChange={(e) => {
                     const updatedTodos = todos.map((t) => {
@@ -226,13 +196,13 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
                     setTodos(updateTodoStorage(updatedTodos))
                   }}
                 >
-                  <SelectItem key="todo">
+                  <SelectItem value="todo">
                     {dict.todolist.listitem.category.items.todo}
                   </SelectItem>
-                  <SelectItem key="inProgress">
+                  <SelectItem value="inProgress">
                     {dict.todolist.listitem.category.items.inProgress}
                   </SelectItem>
-                  <SelectItem key="done">
+                  <SelectItem value="done">
                     {dict.todolist.listitem.category.items.done}
                   </SelectItem>
                 </Select>
@@ -314,7 +284,6 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
         </div>
       </div>
 
-      {/* Modale per confermare l'eliminazione */}
       <ConfirmModal
         description={todo.description}
         isOpen={showDetailModal}
@@ -322,7 +291,6 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
         onCancel={() => setShowDetailModal(false)}
       />
 
-      {/* Modale per confermare l'eliminazione */}
       <ConfirmModal
         buttonCancel={dict.todolist.deleteTask.cancel}
         buttonConfirm={dict.todolist.deleteTask.delete}
@@ -334,7 +302,6 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
         onConfirm={confirmRemoveTodo}
       />
 
-      {/* Modale per confermare la modifica */}
       <ConfirmModal
         buttonCancel={dict.todolist.editTask.cancel}
         buttonConfirm={dict.todolist.editTask.submit}
