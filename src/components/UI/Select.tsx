@@ -25,7 +25,7 @@ function Select({
   className = '',
 }: SelectProps) {
   return (
-    <div className={`flex flex-col gap-1 ${className}`}>
+    <div className={`flex w-full flex-col gap-1 ${className}`}>
       {label && (
         <label className="text-sm font-medium text-gray-700">{label}</label>
       )}
