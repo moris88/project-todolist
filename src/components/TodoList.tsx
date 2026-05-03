@@ -58,11 +58,7 @@ function DraggableItem({ todo }: { todo: Todo }) {
           className="absolute right-2 top-2 z-10"
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <Button
-            size="sm"
-            variant="light"
-            onPress={() => setOnClicked(false)}
-          >
+          <Button size="sm" variant="light" onPress={() => setOnClicked(false)}>
             <AiOutlineFullscreenExit className="h-6 w-6" />
           </Button>
         </div>

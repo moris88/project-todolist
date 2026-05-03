@@ -234,14 +234,16 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
       </Modal>
       <div className="flex w-full flex-col gap-y-4">
         <div className="flex w-full flex-col items-start gap-y-2">
-          <p
+          <div
             className={`line-clamp-1 flex w-full cursor-pointer items-center gap-2 font-bold ${todo.completed ? 'line-through' : ''}`}
             onClick={toggleTodo}
           >
-            <Checkbox
-              isSelected={todo.completed}
-              onChange={() => toggleTodo()}
-            />
+            <div onPointerDown={(e) => e.stopPropagation()}>
+              <Checkbox
+                isSelected={todo.completed}
+                onChange={() => toggleTodo()}
+              />
+            </div>
             {overdue[isTaskOverdue(todo.dueDate) ? 'true' : 'false']}{' '}
             {flagIcon[todo.priority]}{' '}
             <span
@@ -257,9 +259,12 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
             >
               {todo.title}
             </span>
-          </p>
+          </div>
         </div>
-        <div className="flex justify-start">
+        <div
+          className="flex justify-start"
+          onPointerDown={(e) => e.stopPropagation()}
+        >
           <ButtonGroup>
             <Button
               color="primary"
