@@ -13,69 +13,31 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+      packages: read
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@9fd676a19091d4595eefd76e4bd31c97133911f1
+        with:
+          version: 10
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
         with:
           node-version: '22'
           registry-url: 'https://npm.pkg.github.com'
-          # Defaults to the user or organization that owns the workflow file
-          scope: '@crmpartners'
-      - run: git config --global user.name ${{ github.actor }}
-      - run: npm ci
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.GIT_ORG_TOKEN }}
-      - name: Install Dependencies
-        run: npm install
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Lint
-        run: npm run lint
-  build:
-    name: Test Build
-    runs-on: ubuntu-latest
-    needs:
-      - lint
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          registry-url: 'https://npm.pkg.github.com'
-          # Defaults to the user or organization that owns the workflow file
-          scope: '@crmpartners'
-      - run: git config --global user.name ${{ github.actor }}
-      - run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GIT_ORG_TOKEN  }}
-      - name: Install Dependencies
-        run: npm install
+        run: pnpm lint
       - name: Build
-        run: CI=false npm run build
-  test:
-    name: Test Vitest
-    runs-on: ubuntu-latest
-    needs:
-      - lint
-      - build
-    permissions:
-      contents: read
-      packages: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '22'
-          registry-url: 'https://npm.pkg.github.com'
-          # Defaults to the user or organization that owns the workflow file
-          scope: '@crmpartners'
-      - run: git config --global user.name ${{ github.actor }}
-      - run: npm ci
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GIT_ORG_TOKEN  }}
-      - name: Install Dependencies
-        run: npm install
+        run: pnpm build
       - name: Testing
-        run: CI=false npm run test
+        run: pnpm test
+  

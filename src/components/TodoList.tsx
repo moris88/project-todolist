@@ -1,6 +1,5 @@
 import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
-import { Button, Chip, Select, SelectItem } from '@heroui/react'
 import { useAtom } from 'jotai'
 import moment from 'moment'
 import React from 'react'
@@ -10,6 +9,7 @@ import { GoAlertFill } from 'react-icons/go'
 import { HiFlag } from 'react-icons/hi2'
 
 import { todoListAtom } from '@/atoms'
+import { Button, Chip, Select, SelectItem } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import { Todo } from '@/types'
 import {
@@ -51,19 +51,22 @@ function DraggableItem({ todo }: { todo: Todo }) {
   if (onClicked) {
     return (
       <div
-        className={`relative cursor-grab rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
+        ref={setNodeRef}
+        className={`relative rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
       >
-        <Button
-          className="absolute right-2 top-2"
-          size="sm"
-          variant="light"
-          onPress={() => setOnClicked(false)}
+        <div
+          className="absolute right-2 top-2 z-10"
+          onPointerDown={(e) => e.stopPropagation()}
         >
-          <AiOutlineFullscreenExit className="h-6 w-6" />
-        </Button>
+          <Button size="sm" variant="light" onPress={() => setOnClicked(false)}>
+            <AiOutlineFullscreenExit className="h-6 w-6" />
+          </Button>
+        </div>
         <div className="flex flex-col">
-          <TodoItem kanban todo={todo} />
-          <div className="flex flex-col items-start">
+          <div {...attributes} {...listeners} className="cursor-grab">
+            <TodoItem kanban todo={todo} />
+          </div>
+          <div className="flex flex-col items-start px-2 pb-2">
             {todo.createdAt && (
               <span>
                 {dict.todolist.listitem.createdAt}:{' '}
@@ -102,18 +105,22 @@ function DraggableItem({ todo }: { todo: Todo }) {
   return (
     <div
       ref={setNodeRef}
-      {...attributes}
-      {...listeners}
-      className={`flex cursor-grab items-center justify-between rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
+      className={`flex items-center justify-between rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
     >
-      <span className="flex max-w-[80%] items-center gap-2 overflow-hidden text-ellipsis">
+      <div
+        {...attributes}
+        {...listeners}
+        className="flex flex-1 cursor-grab items-center gap-2 overflow-hidden text-ellipsis"
+      >
         {overdue[isTaskOverdue(todo.dueDate) ? 'true' : 'false']}
         {flagIcon[todo.priority]}
         {todo.title}
-      </span>
-      <Button size="sm" variant="light" onPress={() => setOnClicked(true)}>
-        <AiOutlineFullscreen className="h-6 w-6" />
-      </Button>
+      </div>
+      <div onPointerDown={(e) => e.stopPropagation()}>
+        <Button size="sm" variant="light" onPress={() => setOnClicked(true)}>
+          <AiOutlineFullscreen className="h-6 w-6" />
+        </Button>
+      </div>
     </div>
   )
 }
@@ -133,7 +140,7 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`max-h-[calc(100vh-250px)] min-h-[calc(100vh-250px)] w-full overflow-y-auto rounded bg-gray-200 p-4 md:w-1/3 ${isOver ? 'bg-blue-300' : 'bg-gray-200'}`}
+      className={`max-h-[calc(100vh-250px)] min-h-[calc(100vh-250px)] w-full overflow-y-auto rounded p-4 md:w-1/3 ${isOver ? 'bg-blue-300' : 'bg-gray-200'}`}
     >
       <h2 className="mb-2 text-lg font-bold">{title}</h2>
       {todos
@@ -166,21 +173,18 @@ function TodoList() {
   const [filter, setFilter] = React.useState('1')
   const { notifyUser } = useNotificationRequest()
 
-  // Notifica all'utente quando un task è scaduto
   React.useEffect(() => {
     const newTodos = todos.map((todo) => {
-      if (!todo.dueDate) {
-        return todo // Se non c'è una data di scadenza, non modificare l'oggetto
-      }
+      if (!todo.dueDate) return todo
 
       const dueDate = new Date(todo.dueDate)
 
       if (!todo.completed && dueDate < new Date() && !todo.notify) {
         notifyUser('Task Scaduto', `Il task "${todo.title}" è scaduto.`)
-        return { ...todo, notify: true } // Solo in questo caso modifichiamo il todo
+        return { ...todo, notify: true }
       }
 
-      return todo // Se non è necessario modificare, restituiamo il todo così com'è
+      return todo
     })
     const isDifferent = JSON.stringify(newTodos) !== JSON.stringify(todos)
 
@@ -215,10 +219,18 @@ function TodoList() {
     setOverColumn(null)
   }
 
-  // Recupero dei task da localStorage quando la pagina si carica
   React.useEffect(() => {
     setTodos(getTodosStorage())
   }, [setTodos])
+
+  const filterItems = [
+    { label: dict.todolist.listitem.filter.all_kanban, key: '0' },
+    { label: dict.todolist.listitem.filter.all, key: '1' },
+    { label: dict.todolist.listitem.filter.completed, key: '2' },
+    { label: dict.todolist.listitem.filter.uncompleted, key: '3' },
+    { label: dict.todolist.listitem.filter.overdue, key: '4' },
+    { label: dict.todolist.listitem.filter.not_overdue, key: '5' },
+  ]
 
   return (
     <div className="mt-4 space-y-4" id="todo-list">
@@ -232,20 +244,14 @@ function TodoList() {
         <div className="flex w-full flex-col items-center justify-center gap-4 gap-y-2 lg:flex-row">
           <Select
             defaultSelectedKeys={filter}
-            items={[
-              { label: dict.todolist.listitem.filter.all_kanban, key: '0' },
-              { label: dict.todolist.listitem.filter.all, key: '1' },
-              { label: dict.todolist.listitem.filter.completed, key: '2' },
-              { label: dict.todolist.listitem.filter.uncompleted, key: '3' },
-              { label: dict.todolist.listitem.filter.overdue, key: '4' },
-              { label: dict.todolist.listitem.filter.not_overdue, key: '5' },
-            ]}
             label={dict.todolist.listitem.filter.label}
-            onChange={(value) => setFilter(value.target.value)}
+            onChange={(e) => setFilter(e.target.value)}
           >
-            {(filter) => (
-              <SelectItem key={filter.key}>{filter.label}</SelectItem>
-            )}
+            {filterItems.map((item) => (
+              <SelectItem key={item.key} value={item.key}>
+                {item.label}
+              </SelectItem>
+            ))}
           </Select>
         </div>
       )}
@@ -374,7 +380,7 @@ function TodoList() {
             </div>
           ))
       )}
-      {todos.length > 0 && <DangerZone setTodos={setTodos} todos={todos} />}
+      <DangerZone setTodos={setTodos} todos={todos} />
     </div>
   )
 }

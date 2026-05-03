@@ -1,4 +1,3 @@
-import { HeroUIProvider } from '@heroui/react'
 import React from 'react'
 
 interface WrapperProps {
@@ -6,11 +5,7 @@ interface WrapperProps {
 }
 
 function Wrapper({ children }: WrapperProps) {
-  return (
-    <HeroUIProvider>
-      <div className="container">{children}</div>
-    </HeroUIProvider>
-  )
+  return <div className="container">{children}</div>
 }
 
 export default Wrapper

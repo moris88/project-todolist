@@ -1,5 +1,3 @@
-'use client'
-
 import {
   Button,
   Modal,
@@ -7,7 +5,7 @@ import {
   ModalContent,
   ModalFooter,
   ModalHeader,
-} from '@heroui/react'
+} from '@/components/UI'
 
 interface ConfirmModalProps {
   isOpen: boolean
@@ -33,7 +31,7 @@ function ConfirmModal({
   onCancel,
 }: ConfirmModalProps) {
   return (
-    <Modal isDismissable={false} isOpen={isOpen} onClose={onCancel}>
+    <Modal isDismissable={true} isOpen={isOpen} onClose={onCancel}>
       <ModalContent>
         <ModalHeader>{title}</ModalHeader>
         <ModalBody>

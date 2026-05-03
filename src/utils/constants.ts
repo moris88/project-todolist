@@ -36,6 +36,12 @@ export const dict = {
         uncompleted: 'Non completati',
         overdue: 'Scaduti',
         not_overdue: 'Non scaduti',
+        csv: {
+          export: 'Esporta in CSV',
+          import: 'Importa da CSV',
+          success: 'Importazione completata con successo',
+          error: 'Errore durante l’importazione del file CSV',
+        },
         buttons: {
           message: 'Che operazione vuoi fare?',
           clear_completed: {
