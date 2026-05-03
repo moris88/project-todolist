@@ -238,7 +238,10 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
             className={`line-clamp-1 flex w-full cursor-pointer items-center gap-2 font-bold ${todo.completed ? 'line-through' : ''}`}
             onClick={toggleTodo}
           >
-            <div onPointerDown={(e) => e.stopPropagation()}>
+            <div
+              onClick={(e) => e.stopPropagation()}
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <Checkbox
                 isSelected={todo.completed}
                 onChange={() => toggleTodo()}
