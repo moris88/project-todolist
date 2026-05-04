@@ -1,8 +1,8 @@
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import React from 'react'
 import { HiMiniPlus } from 'react-icons/hi2'
 
-import { todoListAtom } from '@/atoms'
+import { dictAtom, todoListAtom } from '@/atoms'
 import { ConfirmModal } from '@/components'
 import {
   Button,
@@ -14,13 +14,14 @@ import {
   Textarea,
 } from '@/components/UI'
 import { Priority, Todo } from '@/types'
-import { addTodoStorage, dict, generateUniqueId, priorityItems } from '@/utils'
+import { addTodoStorage, generateUniqueId, priorityItems } from '@/utils'
 
 function TodoInput() {
   const [title, setTitle] = React.useState<string>('')
   const [description, setDescription] = React.useState<string>('')
   const [priority, setPriority] = React.useState<Priority>('medium')
   const [todos, setTodos] = useAtom(todoListAtom)
+  const dict = useAtomValue(dictAtom)
   const [dueDate, setDueDate] = React.useState<string | null>(null)
   const [showInput, setShowInput] = React.useState(true)
   const [showAdd, setShowAdd] = React.useState(false)
@@ -125,8 +126,8 @@ function TodoInput() {
             </Switch>
             <Button
               className="flex min-w-12 gap-1 md:min-w-36"
-              color="success"
               size="lg"
+              variant="primary"
               onPress={confirmAddTodo}
             >
               <HiMiniPlus className="h-6 w-6" />
@@ -154,7 +155,6 @@ function TodoInput() {
         <ConfirmModal
           buttonCancel={dict.todolist.addTask.cancel}
           buttonConfirm={dict.todolist.addTask.submit}
-          colorConfirm="primary"
           description={dict.todolist.addTask.confirm}
           isOpen={showAdd}
           title={dict.todolist.addTask.title}

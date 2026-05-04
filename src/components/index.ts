@@ -1,4 +1,6 @@
 export { default as ConfirmModal } from './ConfirmModal'
+export { default as Header } from './Header'
+export { default as MarkdownContent } from './MarkdownContent'
 export { default as TodoInput } from './TodoInput'
 export { default as TodoItem } from './TodoItem'
 export { default as TodoList } from './TodoList'

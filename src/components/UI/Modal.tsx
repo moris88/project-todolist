@@ -34,7 +34,7 @@ function Modal({
 
 function ModalContent({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-4 flex w-full max-w-md flex-col rounded-xl bg-white shadow-xl">
+    <div className="mx-4 flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl dark:bg-gray-800">
       {children}
     </div>
   )
@@ -42,17 +42,21 @@ function ModalContent({ children }: { children: React.ReactNode }) {
 
 function ModalHeader({ children }: { children: React.ReactNode }) {
   return (
-    <div className="border-b px-6 py-4 text-lg font-semibold">{children}</div>
+    <div className="border-b px-6 py-4 text-lg font-semibold dark:border-gray-700 dark:text-white">
+      {children}
+    </div>
   )
 }
 
 function ModalBody({ children }: { children: React.ReactNode }) {
-  return <div className="flex-1 px-6 py-4">{children}</div>
+  return <div className="flex-1 px-6 py-4 dark:text-gray-200">{children}</div>
 }
 
 function ModalFooter({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex justify-end gap-2 border-t px-6 py-4">{children}</div>
+    <div className="flex justify-end gap-2 border-t px-6 py-4 dark:border-gray-700">
+      {children}
+    </div>
   )
 }
 

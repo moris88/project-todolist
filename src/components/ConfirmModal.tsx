@@ -1,32 +1,29 @@
-import {
-  Button,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-} from '@/components/UI'
+import MarkdownContent from '@/components/MarkdownContent'
+import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@/components/UI'
+import type { ButtonVariant } from '@/components/UI/Button'
 
 interface ConfirmModalProps {
   isOpen: boolean
   title: string
   description: string
+  isMarkdown?: boolean
   buttonConfirm?: string
   buttonCancel?: string
   onConfirm?: () => void
   onCancel?: () => void
-  colorConfirm?: 'primary' | 'success' | 'warning' | 'danger' | 'secondary'
-  colorCancel?: 'primary' | 'success' | 'warning' | 'danger' | 'secondary'
+  variantConfirm?: ButtonVariant
+  variantCancel?: ButtonVariant
 }
 
 function ConfirmModal({
   isOpen,
   title,
   description,
+  isMarkdown = false,
   buttonConfirm,
   buttonCancel,
-  colorCancel,
-  colorConfirm,
+  variantConfirm = 'primary',
+  variantCancel = 'ghost',
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
@@ -35,16 +32,20 @@ function ConfirmModal({
       <ModalContent>
         <ModalHeader>{title}</ModalHeader>
         <ModalBody>
-          <p>{description}</p>
+          {isMarkdown ? (
+            <MarkdownContent content={description} />
+          ) : (
+            <p>{description}</p>
+          )}
         </ModalBody>
         <ModalFooter>
           {buttonCancel && onCancel && (
-            <Button color={colorCancel ?? 'default'} onPress={onCancel}>
-              {buttonCancel ?? 'Cancel'}
+            <Button variant={variantCancel} onPress={onCancel}>
+              {buttonCancel}
             </Button>
           )}
           {onConfirm && (
-            <Button color={colorConfirm ?? 'default'} onPress={onConfirm}>
+            <Button variant={variantConfirm} onPress={onConfirm}>
               {buttonConfirm ?? 'Confirm'}
             </Button>
           )}

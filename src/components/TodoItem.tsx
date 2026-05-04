@@ -1,11 +1,11 @@
-import { useAtom } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import React from 'react'
 import { BiSolidDetail } from 'react-icons/bi'
 import { GoAlertFill } from 'react-icons/go'
 import { HiFlag, HiMiniTrash, HiOutlinePencilSquare } from 'react-icons/hi2'
 
-import { todoListAtom } from '@/atoms/atoms'
-import { ConfirmModal } from '@/components'
+import { dictAtom, todoListAtom } from '@/atoms/atoms'
+import { ConfirmModal, MarkdownContent } from '@/components'
 import {
   Button,
   ButtonGroup,
@@ -23,7 +23,6 @@ import {
 } from '@/components/UI'
 import { Category, Priority, Todo } from '@/types'
 import {
-  dict,
   isTaskOverdue,
   priorityItems,
   removeTodoStorage,
@@ -37,6 +36,7 @@ interface TodoItemProps {
 
 function TodoItem({ todo, kanban }: TodoItemProps) {
   const [todos, setTodos] = useAtom(todoListAtom)
+  const dict = useAtomValue(dictAtom)
   const [isEditing, setIsEditing] = React.useState(false)
   const [editTitle, setEditTitle] = React.useState(todo.title)
   const [editDescription, setEditDescription] = React.useState(todo.description)
@@ -49,6 +49,7 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
   const [editDueDate, setEditDueDate] = React.useState<string | null>(
     todo.dueDate ?? null
   )
+  const [markdownPreview, setMarkdownPreview] = React.useState(false)
 
   const minValue = new Date().toISOString().slice(0, 16)
 
@@ -207,26 +208,56 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
                   </SelectItem>
                 </Select>
               </div>
-              <Textarea
-                className="w-full"
-                label={dict.todolist.addTask.label}
-                maxRows={10}
-                minRows={5}
-                size="lg"
-                value={editDescription}
-                onChange={(e) => {
-                  e.stopPropagation()
-                  e.preventDefault()
-                  setEditDescription(e.target.value)
-                }}
-              />
+              <div className="flex w-full flex-col gap-y-2">
+                <div className="flex gap-x-2">
+                  <button
+                    className={`rounded-t px-3 py-1 text-sm font-medium transition-colors ${!markdownPreview ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
+                    type="button"
+                    onClick={() => setMarkdownPreview(false)}
+                  >
+                    Modifica
+                  </button>
+                  <button
+                    className={`rounded-t px-3 py-1 text-sm font-medium transition-colors ${markdownPreview ? 'bg-blue-500 text-white' : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'}`}
+                    type="button"
+                    onClick={() => setMarkdownPreview(true)}
+                  >
+                    Anteprima
+                  </button>
+                </div>
+                {markdownPreview ? (
+                  <div className="min-h-[120px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
+                    {editDescription ? (
+                      <MarkdownContent content={editDescription} />
+                    ) : (
+                      <span className="text-sm italic text-gray-400">
+                        Nessun contenuto da visualizzare
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <Textarea
+                    className="w-full"
+                    label={dict.todolist.addTask.label}
+                    maxRows={10}
+                    minRows={5}
+                    size="lg"
+                    value={editDescription}
+                    onChange={(e) => {
+                      e.stopPropagation()
+                      e.preventDefault()
+                      setEditDescription(e.target.value)
+                    }}
+                  />
+                )}
+              </div>
             </div>
           </ModalBody>
           <ModalFooter>
             <Button size="lg" onPress={() => setIsEditing(false)}>
               {dict.todolist.editTask.cancel}
             </Button>
-            <Button color="warning" size="lg" onPress={updateTodo}>
+            <Button size="lg" variant="primary" onPress={updateTodo}>
               {dict.todolist.editTask.submit}
             </Button>
           </ModalFooter>
@@ -270,22 +301,22 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
         >
           <ButtonGroup>
             <Button
-              color="primary"
               isDisabled={todo.description === '' || todo.description === null}
               size="sm"
+              variant="primary"
               onPress={() => setShowDetailModal(true)}
             >
               <BiSolidDetail className="h-3 w-3" />
             </Button>
             <Button
-              color="warning"
               isDisabled={todo.completed}
               size="sm"
+              variant="primary"
               onPress={() => setIsEditing(true)}
             >
               <HiOutlinePencilSquare className="h-3 w-3" />
             </Button>
-            <Button color="danger" size="sm" onPress={removeTodo}>
+            <Button size="sm" variant="primary" onPress={removeTodo}>
               <HiMiniTrash className="h-3 w-3" />
             </Button>
           </ButtonGroup>
@@ -293,6 +324,7 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
       </div>
 
       <ConfirmModal
+        isMarkdown
         description={todo.description}
         isOpen={showDetailModal}
         title={todo.title}
@@ -302,7 +334,6 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
       <ConfirmModal
         buttonCancel={dict.todolist.deleteTask.cancel}
         buttonConfirm={dict.todolist.deleteTask.delete}
-        colorConfirm="danger"
         description={dict.todolist.deleteTask.description}
         isOpen={showDeleteModal}
         title={dict.todolist.deleteTask.title}
@@ -313,7 +344,6 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
       <ConfirmModal
         buttonCancel={dict.todolist.editTask.cancel}
         buttonConfirm={dict.todolist.editTask.submit}
-        colorConfirm="primary"
         description={dict.todolist.editTask.description}
         isOpen={showEditModal}
         title={dict.todolist.editTask.title}

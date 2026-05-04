@@ -1,4 +1,4 @@
-export const dict = {
+const itDict = {
   todolist: {
     listitem: {
       title: 'Lista dei Compiti',
@@ -40,7 +40,7 @@ export const dict = {
           export: 'Esporta in CSV',
           import: 'Importa da CSV',
           success: 'Importazione completata con successo',
-          error: 'Errore durante l’importazione del file CSV',
+          error: "Errore durante l'importazione del file CSV",
         },
         buttons: {
           message: 'Che operazione vuoi fare?',
@@ -87,3 +87,100 @@ export const dict = {
     },
   },
 }
+
+const enDict = {
+  todolist: {
+    listitem: {
+      title: 'Task List',
+      edit: 'Edit',
+      delete: 'Delete',
+      detail: 'Detail',
+      createdAt: 'Created at',
+      updatedAt: 'Updated at',
+      completedAt: 'Completed at',
+      dueDateAt: 'Due date',
+      expired: 'Overdue',
+      no_task: 'No tasks available',
+      priority: {
+        label: 'Select a priority',
+        items: {
+          urgent: 'Urgent',
+          high: 'High',
+          medium: 'Medium',
+          low: 'Low',
+        },
+      },
+      category: {
+        label: 'Select a category',
+        items: {
+          todo: 'To do',
+          inProgress: 'In progress',
+          done: 'Done',
+        },
+      },
+      filter: {
+        label: 'Filter by',
+        all_kanban: 'All (Kanban)',
+        all: 'All',
+        completed: 'Completed',
+        uncompleted: 'Uncompleted',
+        overdue: 'Overdue',
+        not_overdue: 'Not overdue',
+        csv: {
+          export: 'Export to CSV',
+          import: 'Import from CSV',
+          success: 'Import completed successfully',
+          error: 'Error while importing the CSV file',
+        },
+        buttons: {
+          message: 'What do you want to do?',
+          clear_completed: {
+            label: 'Clear completed',
+            message: 'Are you sure you want to delete completed tasks?',
+          },
+          clear_expired: {
+            label: 'Remove overdue tasks',
+            message: 'Are you sure you want to delete overdue tasks?',
+          },
+          clear_all: {
+            label: 'Remove all tasks',
+            message: 'Are you sure you want to delete all tasks?',
+          },
+        },
+      },
+    },
+    addTask: {
+      hiddenForm: 'Hide form',
+      name: 'Task title',
+      title: 'Add a task',
+      description: 'Enter the description of the task to complete',
+      label: 'Description',
+      confirm: 'Confirm adding the task?',
+      error: 'The task cannot be empty',
+      placeholder: 'e.g. "buy milk"',
+      submit: 'Add',
+      cancel: 'Cancel',
+      due_date: 'Due date',
+    },
+    editTask: {
+      info: 'Edit task information',
+      title: 'Edit Title',
+      description: 'Do you want to edit the selected task?',
+      submit: 'Edit',
+      cancel: 'Cancel',
+    },
+    deleteTask: {
+      title: 'Delete task',
+      description: 'Are you sure you want to delete this task?',
+      delete: 'Delete',
+      cancel: 'Cancel',
+    },
+  },
+}
+
+export type Language = 'it' | 'en'
+export type Dict = typeof itDict
+
+export const dicts: Record<Language, Dict> = { it: itDict, en: enDict }
+
+export const dict = itDict

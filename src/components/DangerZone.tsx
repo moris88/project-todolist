@@ -1,12 +1,13 @@
+import { useAtomValue } from 'jotai'
 import React from 'react'
 
+import { dictAtom } from '@/atoms'
 import { ConfirmModal } from '@/components'
 import { Button, ButtonGroup, Switch } from '@/components/UI'
 import { Todo } from '@/types'
 import {
   clearTodosCompleted,
   clearTodosExpired,
-  dict,
   exportToCSV,
   parseCSV,
   removeAllTodos,
@@ -19,6 +20,7 @@ interface DangerZoneProps {
 }
 
 function DangerZone({ todos, setTodos }: DangerZoneProps) {
+  const dict = useAtomValue(dictAtom)
   const [showDangerZone, setShowDangerZone] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
   const [showDeleteModal, setShowDeleteModal] = React.useState<{
@@ -116,15 +118,15 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
 
           <div className="flex flex-wrap gap-2">
             <Button
-              color="primary"
               size="sm"
+              variant="secondary"
               onPress={() => exportToCSV(todos)}
             >
               {dict.todolist.listitem.filter.csv.export}
             </Button>
             <Button
-              color="secondary"
               size="sm"
+              variant="secondary"
               onPress={() => fileInputRef.current?.click()}
             >
               {dict.todolist.listitem.filter.csv.import}
@@ -148,8 +150,8 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
                 {buttons.map((button) => (
                   <Button
                     key={button.key}
-                    color="danger"
                     size="lg"
+                    variant="primary"
                     onPress={() => handleDelete(button.key)}
                   >
                     {button.text}
@@ -164,8 +166,8 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
               {buttons.map((button) => (
                 <Button
                   key={button.key}
-                  color="danger"
                   size="sm"
+                  variant="primary"
                   onPress={() => handleDelete(button.key)}
                 >
                   {button.text}
@@ -180,7 +182,6 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
           key={key}
           buttonCancel={dict.todolist.deleteTask.cancel}
           buttonConfirm={dict.todolist.deleteTask.delete}
-          colorConfirm="danger"
           description={
             buttons.find((button) => button.key === key)?.message ?? ''
           }
