@@ -11,6 +11,9 @@ const itDict = {
       dueDateAt: 'Scade il',
       expired: 'Scaduto',
       no_task: 'Nessun compito disponibile',
+      show_descriptions: 'Mostra descrizioni',
+      show_more: 'Mostra tutto',
+      show_less: 'Mostra meno',
       priority: {
         label: 'Seleziona una priorità',
         items: {
@@ -63,8 +66,9 @@ const itDict = {
       hiddenForm: 'Nascondi il form',
       name: 'Titolo del compito',
       title: 'Aggiungi un compito',
-      description: 'Inserisci la descrizione del compito da completare',
-      label: 'Descrizione',
+      description:
+        'Inserisci la descrizione del compito da completare. N.B.: puoi inserire Markdown per formattare il testo',
+      label: 'Descrizione (Markdown)',
       confirm: "Confermi l'aggiunta del compito?",
       error: 'Il compito non può essere vuoto',
       placeholder: 'esempio "compra il latte"',
@@ -101,6 +105,9 @@ const enDict = {
       dueDateAt: 'Due date',
       expired: 'Overdue',
       no_task: 'No tasks available',
+      show_descriptions: 'Show descriptions',
+      show_more: 'Show more',
+      show_less: 'Show less',
       priority: {
         label: 'Select a priority',
         items: {
@@ -153,8 +160,9 @@ const enDict = {
       hiddenForm: 'Hide form',
       name: 'Task title',
       title: 'Add a task',
-      description: 'Enter the description of the task to complete',
-      label: 'Description',
+      description:
+        'Enter the description of the task to complete. N.B.: you can use Markdown to format the text',
+      label: 'Description (Markdown)',
       confirm: 'Confirm adding the task?',
       error: 'The task cannot be empty',
       placeholder: 'e.g. "buy milk"',
@@ -165,7 +173,7 @@ const enDict = {
     editTask: {
       info: 'Edit task information',
       title: 'Edit Title',
-      description: 'Do you want to edit the selected task?',
+      description: 'Do you want to edit the selected task? ',
       submit: 'Edit',
       cancel: 'Cancel',
     },

@@ -10,7 +10,7 @@ import { GoAlertFill } from 'react-icons/go'
 import { HiFlag } from 'react-icons/hi2'
 
 import { dictAtom, todoListAtom } from '@/atoms'
-import { Button, Chip, Select, SelectItem } from '@/components/UI'
+import { Button, Chip, Select, SelectItem, Switch } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import { Todo } from '@/types'
 import { getTodosStorage, isTaskOverdue, updateTodoStorage } from '@/utils'
@@ -102,7 +102,7 @@ function DraggableItem({ todo }: { todo: Todo }) {
   return (
     <div
       ref={setNodeRef}
-      className={`flex items-center justify-between rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
+      className={`flex items-center justify-between rounded-xl border ${todo.completed ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-100' : todo.priority === 'urgent' ? 'bg-red-100 dark:bg-red-900/30 dark:text-red-100' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-100'} p-2`}
     >
       <div
         {...attributes}
@@ -169,6 +169,7 @@ function TodoList() {
   const [activeTask, setActiveTask] = React.useState<Todo | null>(null)
   const [overColumn, setOverColumn] = React.useState(null)
   const [filter, setFilter] = React.useState('1')
+  const [showDescriptions, setShowDescriptions] = React.useState(false)
   const { notifyUser } = useNotificationRequest()
 
   React.useEffect(() => {
@@ -251,6 +252,16 @@ function TodoList() {
               </SelectItem>
             ))}
           </Select>
+          {filter !== '0' && (
+            <div className="hidden md:flex md:items-center md:shrink-0">
+              <Switch
+                checked={showDescriptions}
+                onChange={(e) => setShowDescriptions(e.target.checked)}
+              >
+                {dict.todolist.listitem.show_descriptions}
+              </Switch>
+            </div>
+          )}
         </div>
       )}
       {filter === '0' && (
@@ -282,7 +293,7 @@ function TodoList() {
             {createPortal(
               <DragOverlay>
                 {activeTask ? (
-                  <div className="rounded border bg-gray-300 p-2 shadow-lg">
+                  <div className="rounded border bg-gray-300 p-2 shadow-lg dark:bg-gray-600 dark:text-white">
                     {activeTask.title}
                   </div>
                 ) : null}
@@ -336,7 +347,7 @@ function TodoList() {
               key={todo.id}
               className={`rounded-lg ${todo.priority !== 'urgent' ? 'bg-gray-200 hover:shadow-slate-500 dark:bg-slate-600 dark:text-white' : 'bg-red-100 text-black hover:shadow-red-500 dark:bg-red-900/40 dark:text-red-100'} p-2 hover:shadow-lg md:p-5`}
             >
-              <TodoItem todo={todo} />
+              <TodoItem showDescriptions={showDescriptions} todo={todo} />
               <small className="flex flex-col items-start md:flex-row md:items-center">
                 {todo.createdAt && (
                   <span>

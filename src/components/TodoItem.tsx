@@ -32,12 +32,14 @@ import {
 interface TodoItemProps {
   todo: Todo
   kanban?: boolean
+  showDescriptions?: boolean
 }
 
-function TodoItem({ todo, kanban }: TodoItemProps) {
+function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
   const [todos, setTodos] = useAtom(todoListAtom)
   const dict = useAtomValue(dictAtom)
   const [isEditing, setIsEditing] = React.useState(false)
+  const [isExpanded, setIsExpanded] = React.useState(false)
   const [editTitle, setEditTitle] = React.useState(todo.title)
   const [editDescription, setEditDescription] = React.useState(todo.description)
   const [editPriority, setEditPriority] = React.useState<Priority>(
@@ -270,6 +272,7 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
             onClick={toggleTodo}
           >
             <div
+              className="flex items-center"
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
             >
@@ -287,37 +290,60 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
                   : todo.dueDate && new Date(todo.dueDate) < new Date()
                     ? 'text-red-600'
                     : todo.priority === 'urgent'
-                      ? 'text-black'
+                      ? 'text-black dark:text-white'
                       : ''
               } ${kanban ? 'max-w-[70%]' : 'max-w-[80%]'} overflow-hidden text-ellipsis`}
             >
               {todo.title}
             </span>
           </div>
+          {showDescriptions && todo.description && (
+            <div className="w-full px-1" onPointerDown={(e) => e.stopPropagation()}>
+              <div className={isExpanded ? '' : 'line-clamp-3'}>
+                <MarkdownContent content={todo.description} />
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onPress={() => setIsExpanded((prev) => !prev)}
+              >
+                {isExpanded
+                  ? dict.todolist.listitem.show_less
+                  : dict.todolist.listitem.show_more}
+              </Button>
+            </div>
+          )}
         </div>
         <div
-          className="flex justify-start"
+          className="flex justify-start md:justify-end"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <ButtonGroup>
             <Button
               isDisabled={todo.description === '' || todo.description === null}
+              className="md:px-4 md:py-2 md:text-base"
               size="sm"
               variant="primary"
               onPress={() => setShowDetailModal(true)}
             >
-              <BiSolidDetail className="h-3 w-3" />
+              <BiSolidDetail className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
             <Button
               isDisabled={todo.completed}
+              className="md:px-4 md:py-2 md:text-base"
               size="sm"
               variant="primary"
               onPress={() => setIsEditing(true)}
             >
-              <HiOutlinePencilSquare className="h-3 w-3" />
+              <HiOutlinePencilSquare className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
-            <Button size="sm" variant="primary" onPress={removeTodo}>
-              <HiMiniTrash className="h-3 w-3" />
+            <Button
+              className="md:px-4 md:py-2 md:text-base"
+              size="sm"
+              variant="primary"
+              onPress={removeTodo}
+            >
+              <HiMiniTrash className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
           </ButtonGroup>
         </div>
