@@ -1,8 +1,8 @@
-import { Category, Priority, Todo } from '@/types'
+import { Category, Priority, Todo, Comment } from '@/types'
 
 import { generateUniqueId } from './utils'
 
-const CSV_HEADERS = [
+const TODO_HEADERS = [
   'id',
   'title',
   'description',
@@ -16,86 +16,134 @@ const CSV_HEADERS = [
   'category',
 ]
 
+const COMMENT_HEADERS = ['id', 'todoId', 'text', 'createdAt']
+
+// Fields whose content must NOT be trimmed (markdown, free text)
+const PRESERVE_WHITESPACE = new Set(['description', 'text', 'title'])
+
 function escapeCSV(value: any): string {
   if (value === null || value === undefined) return ''
   const str = String(value)
-  if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+  // Quote if contains comma, double-quote, newline or carriage-return
+  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
     return `"${str.replace(/"/g, '""')}"`
   }
   return str
 }
 
-export function exportToCSV(todos: Todo[]) {
-  const csvRows = []
-  csvRows.push(CSV_HEADERS.join(','))
-
-  for (const todo of todos) {
-    const values = CSV_HEADERS.map((header) => {
-      const val = (todo as any)[header]
-      return escapeCSV(val)
-    })
-    csvRows.push(values.join(','))
-  }
-
-  const csvContent = csvRows.join('\n')
-  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+function downloadCSV(content: string, filename: string) {
+  const blob = new Blob([content], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const link = document.createElement('a')
   link.setAttribute('href', url)
-  link.setAttribute('download', `tasks_${new Date().getTime()}.csv`)
+  link.setAttribute('download', filename)
   link.style.visibility = 'hidden'
   document.body.appendChild(link)
   link.click()
   document.body.removeChild(link)
 }
 
-export function parseCSV(csvText: string): Todo[] {
-  const lines = csvText.split(/\r?\n/)
-  if (lines.length < 2) return []
+/**
+ * RFC 4180-compliant CSV parser.
+ * Reads character-by-character so quoted fields containing newlines
+ * are handled correctly and never split into separate rows.
+ */
+function parseCSVRows(csvText: string): string[][] {
+  const rows: string[][] = []
+  let row: string[] = []
+  let current = ''
+  let inQuotes = false
 
-  const headers = lines[0].split(',').map((h) => h.trim())
-  const todos: Todo[] = []
+  for (let i = 0; i < csvText.length; i++) {
+    const char = csvText[i]
+    const next = csvText[i + 1]
 
-  for (let i = 1; i < lines.length; i++) {
-    const line = lines[i].trim()
-    if (!line) continue
-
-    const values: string[] = []
-    let current = ''
-    let inQuotes = false
-    for (let j = 0; j < line.length; j++) {
-      const char = line[j]
+    if (inQuotes) {
+      if (char === '"' && next === '"') {
+        // Escaped double-quote inside a quoted field
+        current += '"'
+        i++
+      } else if (char === '"') {
+        // Closing quote
+        inQuotes = false
+      } else {
+        // Any character (including \n, \r) inside a quoted field is literal content
+        current += char
+      }
+    } else {
       if (char === '"') {
-        if (inQuotes && line[j + 1] === '"') {
-          current += '"'
-          j++
-        } else {
-          inQuotes = !inQuotes
-        }
-      } else if (char === ',' && !inQuotes) {
-        values.push(current)
+        inQuotes = true
+      } else if (char === ',') {
+        row.push(current)
         current = ''
+      } else if (char === '\r' && next === '\n') {
+        // CRLF row terminator
+        row.push(current)
+        current = ''
+        rows.push(row)
+        row = []
+        i++ // skip the \n
+      } else if (char === '\n' || char === '\r') {
+        // LF or lone CR row terminator
+        row.push(current)
+        current = ''
+        rows.push(row)
+        row = []
       } else {
         current += char
       }
     }
-    values.push(current)
+  }
+
+  // Flush the last field and row
+  row.push(current)
+  if (row.some((f) => f.trim() !== '')) rows.push(row)
+
+  return rows
+}
+
+// ─── Export ───────────────────────────────────────────────────────────────────
+
+export function exportToCSV(todos: Todo[]) {
+  const rows = [TODO_HEADERS.join(',')]
+  for (const todo of todos) {
+    rows.push(TODO_HEADERS.map((h) => escapeCSV((todo as any)[h])).join(','))
+  }
+  downloadCSV(rows.join('\n'), `tasks_${Date.now()}.csv`)
+}
+
+export function exportCommentsToCSV(comments: Comment[]) {
+  const rows = [COMMENT_HEADERS.join(',')]
+  for (const c of comments) {
+    rows.push(COMMENT_HEADERS.map((h) => escapeCSV((c as any)[h])).join(','))
+  }
+  downloadCSV(rows.join('\n'), `comments_${Date.now()}.csv`)
+}
+
+// ─── Import ───────────────────────────────────────────────────────────────────
+
+export function parseCSV(csvText: string): Todo[] {
+  const rows = parseCSVRows(csvText)
+  if (rows.length < 2) return []
+
+  const headers = rows[0].map((h) => h.trim())
+  const todos: Todo[] = []
+
+  for (let i = 1; i < rows.length; i++) {
+    const values = rows[i]
+    if (values.every((v) => v.trim() === '')) continue
 
     const todo: any = {}
-    headers.forEach((header, index) => {
-      let val = values[index]
-      if (val === undefined) return
 
-      val = val.trim()
+    headers.forEach((header, index) => {
+      const raw = values[index] ?? ''
+      // Preserve whitespace for content fields; trim metadata fields
+      const val = PRESERVE_WHITESPACE.has(header) ? raw : raw.trim()
 
       if (header === 'completed' || header === 'notify') {
         todo[header] = val.toLowerCase() === 'true'
-      } else if (
-        header === 'updatedAt' ||
-        header === 'completedAt' ||
-        header === 'dueDate'
-      ) {
-        todo[header] = val === '' ? null : val
+      } else if (['updatedAt', 'completedAt', 'dueDate'].includes(header)) {
+        todo[header] = val.trim() === '' ? null : val.trim()
       } else {
         todo[header] = val
       }
@@ -112,4 +160,30 @@ export function parseCSV(csvText: string): Todo[] {
   }
 
   return todos
+}
+
+export function parseCommentsCSV(csvText: string): Comment[] {
+  const rows = parseCSVRows(csvText)
+  if (rows.length < 2) return []
+
+  const headers = rows[0].map((h) => h.trim())
+  const comments: Comment[] = []
+
+  for (let i = 1; i < rows.length; i++) {
+    const values = rows[i]
+    if (values.every((v) => v.trim() === '')) continue
+
+    const comment: any = {}
+
+    headers.forEach((header, index) => {
+      const raw = values[index] ?? ''
+      comment[header] = PRESERVE_WHITESPACE.has(header) ? raw : raw.trim()
+    })
+
+    if (!comment.id || !comment.todoId || !comment.text || !comment.createdAt) continue
+
+    comments.push(comment as Comment)
+  }
+
+  return comments
 }

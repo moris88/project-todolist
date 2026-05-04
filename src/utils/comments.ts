@@ -35,3 +35,12 @@ export function removeCommentsByTodoId(
 ): Comment[] {
   return saveComments(comments.filter((c) => c.todoId !== todoId))
 }
+
+export function mergeCommentsStorage(
+  incoming: Comment[],
+  existing: Comment[]
+): Comment[] {
+  const existingIds = new Set(existing.map((c) => c.id))
+  const toAdd = incoming.filter((c) => !existingIds.has(c.id))
+  return saveComments([...existing, ...toAdd])
+}

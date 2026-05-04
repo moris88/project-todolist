@@ -166,7 +166,7 @@ function DroppableColumn({
 
 function TodoList() {
   const [todos, setTodos] = useAtom(todoListAtom)
-  const [, setComments] = useAtom(commentsAtom)
+  const [comments, setComments] = useAtom(commentsAtom)
   const dict = useAtomValue(dictAtom)
   const [activeTask, setActiveTask] = React.useState<Todo | null>(null)
   const [overColumn, setOverColumn] = React.useState(null)
@@ -404,7 +404,12 @@ function TodoList() {
             </div>
           ))
       )}
-      <DangerZone setTodos={setTodos} todos={todos} />
+      <DangerZone
+        comments={comments}
+        setComments={setComments}
+        setTodos={setTodos}
+        todos={todos}
+      />
     </div>
   )
 }

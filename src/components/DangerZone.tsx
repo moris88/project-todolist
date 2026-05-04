@@ -1,14 +1,18 @@
 import { useAtomValue } from 'jotai'
 import React from 'react'
+import { HiArrowDownTray, HiArrowUpTray } from 'react-icons/hi2'
 
 import { dictAtom } from '@/atoms'
 import { ConfirmModal } from '@/components'
 import { Button, ButtonGroup, Switch } from '@/components/UI'
-import { Todo } from '@/types'
+import { Comment, Todo } from '@/types'
 import {
   clearTodosCompleted,
   clearTodosExpired,
+  exportCommentsToCSV,
   exportToCSV,
+  mergeCommentsStorage,
+  parseCommentsCSV,
   parseCSV,
   removeAllTodos,
   updateTodoStorage,
@@ -17,71 +21,66 @@ import {
 interface DangerZoneProps {
   todos: Todo[]
   setTodos: React.Dispatch<React.SetStateAction<Todo[]>>
+  comments: Comment[]
+  setComments: React.Dispatch<React.SetStateAction<Comment[]>>
 }
 
-function DangerZone({ todos, setTodos }: DangerZoneProps) {
+function DangerZone({ todos, setTodos, comments, setComments }: DangerZoneProps) {
   const dict = useAtomValue(dictAtom)
   const [showDangerZone, setShowDangerZone] = React.useState(false)
-  const fileInputRef = React.useRef<HTMLInputElement>(null)
+  const todosFileRef = React.useRef<HTMLInputElement>(null)
+  const commentsFileRef = React.useRef<HTMLInputElement>(null)
   const [showDeleteModal, setShowDeleteModal] = React.useState<{
     completed: boolean
     expired: boolean
     all: boolean
-  }>({
-    completed: false,
-    expired: false,
-    all: false,
-  })
+  }>({ completed: false, expired: false, all: false })
 
-  const handleDelete = (key: keyof typeof showDeleteModal) => {
-    setShowDeleteModal({ ...showDeleteModal, [key]: true })
-  }
+  const csv = dict.todolist.listitem.filter.csv
 
-  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+  const handleImportTodos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
     if (!file) return
-
     const reader = new FileReader()
-    reader.onload = (e) => {
-      const text = e.target?.result as string
+    reader.onload = (ev) => {
       try {
-        const importedTodos = parseCSV(text)
-        if (importedTodos.length > 0) {
-          // Merge imported todos with existing ones, avoiding duplicates by ID
+        const imported = parseCSV(ev.target?.result as string)
+        if (imported.length > 0) {
           const existingIds = new Set(todos.map((t) => t.id))
-          const newTodosToAdd = importedTodos.filter(
-            (t) => !existingIds.has(t.id)
-          )
-
-          const finalTodos = [...todos, ...newTodosToAdd]
-          setTodos(updateTodoStorage(finalTodos))
-
-          // Save to individual items in storage too (updateTodoStorage handles this)
-          // But we need to update the list of IDs
-          localStorage.setItem(
-            'todos',
-            JSON.stringify(finalTodos.map((t) => t.id))
-          )
-
-          alert(dict.todolist.listitem.filter.csv.success)
+          const toAdd = imported.filter((t) => !existingIds.has(t.id))
+          const merged = [...todos, ...toAdd]
+          setTodos(updateTodoStorage(merged))
+          localStorage.setItem('todos', JSON.stringify(merged.map((t) => t.id)))
+          alert(csv.success)
         }
-      } catch (error) {
-        alert(
-          dict.todolist.listitem.filter.csv.error +
-            (error instanceof Error ? `: ${error.message}` : '')
-        )
+      } catch {
+        alert(csv.error)
       }
     }
     reader.readAsText(file)
-    // Reset input
-    event.target.value = ''
+    e.target.value = ''
   }
 
-  const buttons: {
-    key: 'completed' | 'expired' | 'all'
-    text: string
-    message: string
-  }[] = [
+  const handleImportComments = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      try {
+        const imported = parseCommentsCSV(ev.target?.result as string)
+        if (imported.length > 0) {
+          setComments(mergeCommentsStorage(imported, comments))
+          alert(csv.success_comments)
+        }
+      } catch {
+        alert(csv.error_comments)
+      }
+    }
+    reader.readAsText(file)
+    e.target.value = ''
+  }
+
+  const buttons: { key: 'completed' | 'expired' | 'all'; text: string; message: string }[] = [
     {
       key: 'completed',
       text: dict.todolist.listitem.filter.buttons.clear_completed.label,
@@ -116,30 +115,51 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
             </Switch>
           </div>
 
-          <div className="flex flex-wrap gap-2">
-            <Button
-              size="sm"
-              variant="secondary"
-              onPress={() => exportToCSV(todos)}
-            >
-              {dict.todolist.listitem.filter.csv.export}
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onPress={() => fileInputRef.current?.click()}
-            >
-              {dict.todolist.listitem.filter.csv.import}
-            </Button>
-            <input
-              ref={fileInputRef}
-              accept=".csv"
-              className="hidden"
-              type="file"
-              onChange={handleImportCSV}
-            />
+          {/* CSV section */}
+          <div className="flex flex-col gap-1.5">
+            {/* Tasks row */}
+            <div className="flex items-center gap-2">
+              <span className="w-20 shrink-0 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                {csv.section_tasks}
+              </span>
+              <Button size="sm" variant="secondary" onPress={() => exportToCSV(todos)}>
+                <HiArrowDownTray className="mr-1 h-3.5 w-3.5" />
+                CSV
+              </Button>
+              <Button size="sm" variant="secondary" onPress={() => todosFileRef.current?.click()}>
+                <HiArrowUpTray className="mr-1 h-3.5 w-3.5" />
+                CSV
+              </Button>
+            </div>
+            {/* Comments row */}
+            <div className="flex items-center gap-2">
+              <span className="w-20 shrink-0 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
+                {csv.section_comments}
+              </span>
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => exportCommentsToCSV(comments)}
+              >
+                <HiArrowDownTray className="mr-1 h-3.5 w-3.5" />
+                CSV
+              </Button>
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => commentsFileRef.current?.click()}
+              >
+                <HiArrowUpTray className="mr-1 h-3.5 w-3.5" />
+                CSV
+              </Button>
+            </div>
           </div>
+
+          {/* Hidden file inputs */}
+          <input ref={todosFileRef} accept=".csv" className="hidden" type="file" onChange={handleImportTodos} />
+          <input ref={commentsFileRef} accept=".csv" className="hidden" type="file" onChange={handleImportComments} />
         </div>
+
         {showDangerZone && (
           <>
             <div className="hidden w-full flex-col items-center justify-center md:flex">
@@ -152,7 +172,7 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
                     key={button.key}
                     size="lg"
                     variant="primary"
-                    onPress={() => handleDelete(button.key)}
+                    onPress={() => setShowDeleteModal({ ...showDeleteModal, [button.key]: true })}
                   >
                     {button.text}
                   </Button>
@@ -168,7 +188,7 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
                   key={button.key}
                   size="sm"
                   variant="primary"
-                  onPress={() => handleDelete(button.key)}
+                  onPress={() => setShowDeleteModal({ ...showDeleteModal, [button.key]: true })}
                 >
                   {button.text}
                 </Button>
@@ -177,30 +197,21 @@ function DangerZone({ todos, setTodos }: DangerZoneProps) {
           </>
         )}
       </div>
+
       {Object.keys(showDeleteModal).map((key) => (
         <ConfirmModal
           key={key}
           buttonCancel={dict.todolist.deleteTask.cancel}
           buttonConfirm={dict.todolist.deleteTask.delete}
-          description={
-            buttons.find((button) => button.key === key)?.message ?? ''
-          }
+          description={buttons.find((b) => b.key === key)?.message ?? ''}
           isOpen={showDeleteModal[key as keyof typeof showDeleteModal]}
-          title={buttons.find((button) => button.key === key)?.text ?? ''}
-          onCancel={() =>
-            setShowDeleteModal({ ...showDeleteModal, [key]: false })
-          }
+          title={buttons.find((b) => b.key === key)?.text ?? ''}
+          onCancel={() => setShowDeleteModal({ ...showDeleteModal, [key]: false })}
           onConfirm={() => {
             switch (key) {
-              case 'completed':
-                setTodos(clearTodosCompleted(todos))
-                break
-              case 'expired':
-                setTodos(clearTodosExpired(todos))
-                break
-              case 'all':
-                setTodos(removeAllTodos())
-                break
+              case 'completed': setTodos(clearTodosCompleted(todos)); break
+              case 'expired': setTodos(clearTodosExpired(todos)); break
+              case 'all': setTodos(removeAllTodos()); break
             }
             setShowDeleteModal({ ...showDeleteModal, [key]: false })
           }}
