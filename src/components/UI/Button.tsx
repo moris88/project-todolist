@@ -1,20 +1,12 @@
 import React from 'react'
 
-type ButtonColor =
-  | 'default'
-  | 'primary'
-  | 'success'
-  | 'warning'
-  | 'danger'
-  | 'secondary'
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost'
 type ButtonSize = 'sm' | 'md' | 'lg'
-type ButtonVariant = 'solid' | 'light' | 'ghost'
 
 interface ButtonProps {
   children?: React.ReactNode
-  color?: ButtonColor
-  size?: ButtonSize
   variant?: ButtonVariant
+  size?: ButtonSize
   isDisabled?: boolean
   onPress?: () => void
   onClick?: () => void
@@ -22,36 +14,13 @@ interface ButtonProps {
   type?: 'button' | 'submit' | 'reset'
 }
 
-const solidColors: Record<ButtonColor, string> = {
-  default: 'bg-gray-200 text-gray-800 hover:bg-gray-300',
-  primary: 'bg-blue-500 text-white hover:bg-blue-600',
-  success: 'bg-green-500 text-white hover:bg-green-600',
-  warning: 'bg-yellow-400 text-white hover:bg-yellow-500',
-  danger: 'bg-red-500 text-white hover:bg-red-600',
-  secondary: 'bg-purple-500 text-white hover:bg-purple-600',
-}
-
-const lightColors: Record<ButtonColor, string> = {
-  default: 'bg-transparent text-gray-800 hover:bg-gray-50',
-  primary: 'bg-transparent text-blue-500 hover:bg-blue-50',
-  success: 'bg-transparent text-green-500 hover:bg-green-50',
-  warning: 'bg-transparent text-yellow-500 hover:bg-yellow-50',
-  danger: 'bg-transparent text-red-500 hover:bg-red-50',
-  secondary: 'bg-transparent text-purple-500 hover:bg-purple-50',
-}
-
-const ghostColors: Record<ButtonColor, string> = {
-  default:
-    'bg-transparent border border-gray-300 text-gray-800 hover:bg-gray-50',
+const variants: Record<ButtonVariant, string> = {
   primary:
-    'bg-transparent border border-blue-500 text-blue-500 hover:bg-blue-50',
-  success:
-    'bg-transparent border border-green-500 text-green-500 hover:bg-green-50',
-  warning:
-    'bg-transparent border border-yellow-400 text-yellow-500 hover:bg-yellow-50',
-  danger: 'bg-transparent border border-red-500 text-red-500 hover:bg-red-50',
+    'bg-blue-500 text-white hover:bg-blue-600 dark:bg-blue-600 dark:hover:bg-blue-700',
   secondary:
-    'bg-transparent border border-purple-500 text-purple-500 hover:bg-purple-50',
+    'border border-blue-500 bg-transparent text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/30',
+  ghost:
+    'border border-transparent bg-transparent text-blue-500 hover:border-blue-500 hover:bg-blue-50 dark:text-blue-400 dark:hover:border-blue-400 dark:hover:bg-blue-900/30',
 }
 
 const sizes: Record<ButtonSize, string> = {
@@ -62,25 +31,17 @@ const sizes: Record<ButtonSize, string> = {
 
 function Button({
   children,
-  color = 'default',
+  variant = 'ghost',
   size = 'md',
-  variant = 'solid',
   isDisabled = false,
   onPress,
   onClick,
   className = '',
   type = 'button',
 }: ButtonProps) {
-  const colorClass =
-    variant === 'light'
-      ? lightColors[color]
-      : variant === 'ghost'
-        ? ghostColors[color]
-        : solidColors[color]
-
   return (
     <button
-      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors ${colorClass} ${sizes[size]} ${isDisabled ? 'cursor-not-allowed opacity-50' : ''} ${className}`}
+      className={`inline-flex items-center justify-center rounded-lg font-medium transition-colors ${variants[variant]} ${sizes[size]} ${isDisabled ? 'cursor-not-allowed opacity-50' : ''} ${className}`}
       disabled={isDisabled}
       type={type}
       onClick={onPress ?? onClick}

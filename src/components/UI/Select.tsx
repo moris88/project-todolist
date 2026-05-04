@@ -82,10 +82,12 @@ function Select({
       className={`relative flex w-full flex-col gap-1 ${className}`}
     >
       {label && (
-        <label className="text-sm font-medium text-gray-700">{label}</label>
+        <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {label}
+        </label>
       )}
       <button
-        className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
         type="button"
         onClick={() => setIsOpen(!isOpen)}
       >
@@ -93,7 +95,7 @@ function Select({
           {selectedLabel || 'Seleziona...'}
         </span>
         <HiChevronDown
-          className={`h-5 w-5 text-gray-400 transition-transform ${isOpen ? 'rotate-180' : ''}`}
+          className={`h-5 w-5 text-gray-400 transition-transform dark:text-gray-400 ${isOpen ? 'rotate-180' : ''}`}
         />
       </button>
 
@@ -101,7 +103,7 @@ function Select({
         {isOpen && (
           <motion.div
             animate={{ opacity: 1, y: 0 }}
-            className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg"
+            className="absolute left-0 top-full z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800"
             exit={{ opacity: 0, y: -10 }}
             initial={{ opacity: 0, y: -10 }}
             transition={{ duration: 0.1 }}

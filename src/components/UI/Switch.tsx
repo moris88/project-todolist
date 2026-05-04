@@ -42,7 +42,7 @@ function Switch({
           onChange={onChange}
         />
         <div
-          className={`rounded-full bg-gray-300 transition-colors ${trackColor} ${trackSize}`}
+          className={`rounded-full bg-gray-300 transition-colors dark:bg-gray-600 ${trackColor} ${trackSize}`}
         />
         <div
           className={`absolute left-0.5 rounded-full bg-white shadow transition-transform ${thumbSize}`}

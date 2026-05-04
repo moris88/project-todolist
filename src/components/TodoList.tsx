@@ -1,6 +1,7 @@
 import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { useAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import moment from 'moment'
 import React from 'react'
 import { createPortal } from 'react-dom'
@@ -8,16 +9,11 @@ import { AiOutlineFullscreen, AiOutlineFullscreenExit } from 'react-icons/ai'
 import { GoAlertFill } from 'react-icons/go'
 import { HiFlag } from 'react-icons/hi2'
 
-import { todoListAtom } from '@/atoms'
+import { dictAtom, todoListAtom } from '@/atoms'
 import { Button, Chip, Select, SelectItem } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import { Todo } from '@/types'
-import {
-  dict,
-  getTodosStorage,
-  isTaskOverdue,
-  updateTodoStorage,
-} from '@/utils'
+import { getTodosStorage, isTaskOverdue, updateTodoStorage } from '@/utils'
 
 import DangerZone from './DangerZone'
 import TodoItem from './TodoItem'
@@ -35,6 +31,7 @@ function Separated() {
 function DraggableItem({ todo }: { todo: Todo }) {
   const { attributes, listeners, setNodeRef } = useDraggable({ id: todo.id })
   const [onClicked, setOnClicked] = React.useState(false)
+  const dict = useAtomValue(dictAtom)
 
   const flagIcon: Record<string, React.ReactNode> = {
     low: <HiFlag className="h-3 w-3 text-green-600" />,
@@ -52,13 +49,13 @@ function DraggableItem({ todo }: { todo: Todo }) {
     return (
       <div
         ref={setNodeRef}
-        className={`relative rounded-xl border ${todo.completed ? 'bg-green-100' : todo.priority === 'urgent' ? 'bg-red-100' : 'bg-gray-100'} p-2`}
+        className={`relative rounded-xl border ${todo.completed ? 'bg-green-100 dark:bg-green-900/30' : todo.priority === 'urgent' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-700'} p-2`}
       >
         <div
           className="absolute right-2 top-2 z-10"
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <Button size="sm" variant="light" onPress={() => setOnClicked(false)}>
+          <Button size="sm" variant="ghost" onPress={() => setOnClicked(false)}>
             <AiOutlineFullscreenExit className="h-6 w-6" />
           </Button>
         </div>
@@ -117,7 +114,7 @@ function DraggableItem({ todo }: { todo: Todo }) {
         {todo.title}
       </div>
       <div onPointerDown={(e) => e.stopPropagation()}>
-        <Button size="sm" variant="light" onPress={() => setOnClicked(true)}>
+        <Button size="sm" variant="ghost" onPress={() => setOnClicked(true)}>
           <AiOutlineFullscreen className="h-6 w-6" />
         </Button>
       </div>
@@ -140,7 +137,7 @@ function DroppableColumn({
   return (
     <div
       ref={setNodeRef}
-      className={`max-h-[calc(100vh-250px)] min-h-[calc(100vh-250px)] w-full overflow-y-auto rounded p-4 md:w-1/3 ${isOver ? 'bg-blue-300' : 'bg-gray-200'}`}
+      className={`max-h-[calc(100vh-250px)] min-h-[calc(100vh-250px)] w-full overflow-y-auto rounded p-4 md:w-1/3 ${isOver ? 'bg-blue-300 dark:bg-blue-900/50' : 'bg-gray-200 dark:bg-gray-700/60'}`}
     >
       <h2 className="mb-2 text-lg font-bold">{title}</h2>
       {todos
@@ -168,6 +165,7 @@ function DroppableColumn({
 
 function TodoList() {
   const [todos, setTodos] = useAtom(todoListAtom)
+  const dict = useAtomValue(dictAtom)
   const [activeTask, setActiveTask] = React.useState<Todo | null>(null)
   const [overColumn, setOverColumn] = React.useState(null)
   const [filter, setFilter] = React.useState('1')
@@ -336,7 +334,7 @@ function TodoList() {
           .map((todo) => (
             <div
               key={todo.id}
-              className={`rounded-lg ${todo.priority !== 'urgent' ? 'bg-gray-200 hover:shadow-slate-500 dark:bg-slate-600' : 'bg-red-100 !text-black hover:shadow-red-500'} p-2 hover:shadow-lg md:p-5`}
+              className={`rounded-lg ${todo.priority !== 'urgent' ? 'bg-gray-200 hover:shadow-slate-500 dark:bg-slate-600 dark:text-white' : 'bg-red-100 text-black hover:shadow-red-500 dark:bg-red-900/40 dark:text-red-100'} p-2 hover:shadow-lg md:p-5`}
             >
               <TodoItem todo={todo} />
               <small className="flex flex-col items-start md:flex-row md:items-center">
