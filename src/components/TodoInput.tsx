@@ -47,9 +47,11 @@ function TodoInput() {
     }
     setTodos(addTodoStorage(newTodo, todos))
     setTitle('')
+    setDescription('')
     setDueDate(null)
     setRequired(false)
     setShowAdd(false)
+    setShowDescription(false)
   }
 
   const confirmAddTodo = () => {
@@ -119,6 +121,7 @@ function TodoInput() {
               ))}
             </Select>
             <Switch
+              checked={showDescription}
               size="sm"
               onChange={(e) => setShowDescription(e.target.checked)}
             >

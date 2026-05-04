@@ -1,4 +1,6 @@
 const itDict = {
+  title: 'Gestore di Compiti',
+  subtitle: 'Gestisci i tuoi compiti in modo efficiente',
   todolist: {
     listitem: {
       title: 'Lista dei Compiti',
@@ -11,6 +13,9 @@ const itDict = {
       dueDateAt: 'Scade il',
       expired: 'Scaduto',
       no_task: 'Nessun compito disponibile',
+      show_descriptions: 'Mostra descrizioni',
+      show_more: 'Mostra tutto',
+      show_less: 'Mostra meno',
       priority: {
         label: 'Seleziona una priorità',
         items: {
@@ -41,9 +46,17 @@ const itDict = {
           import: 'Importa da CSV',
           success: 'Importazione completata con successo',
           error: "Errore durante l'importazione del file CSV",
+          export_comments: 'Esporta commenti',
+          import_comments: 'Importa commenti',
+          success_comments: 'Importazione commenti completata con successo',
+          error_comments: "Errore durante l'importazione dei commenti",
+          section_tasks: 'Task',
+          section_comments: 'Commenti',
         },
         buttons: {
           message: 'Che operazione vuoi fare?',
+          description:
+            'Queste operazioni sono irreversibili, procedi con cautela.',
           clear_completed: {
             label: 'Pulisci completati',
             message: 'Sei sicuro di voler eliminare i compiti completati?',
@@ -56,6 +69,7 @@ const itDict = {
             label: 'Rimuovi tutti i compiti',
             message: 'Sei sicuro di voler eliminare tutti i compiti?',
           },
+          no_tasks: 'Non ci sono compiti da filtrare',
         },
       },
     },
@@ -63,8 +77,9 @@ const itDict = {
       hiddenForm: 'Nascondi il form',
       name: 'Titolo del compito',
       title: 'Aggiungi un compito',
-      description: 'Inserisci la descrizione del compito da completare',
-      label: 'Descrizione',
+      description:
+        'Inserisci la descrizione del compito da completare. N.B.: puoi inserire Markdown per formattare il testo',
+      label: 'Descrizione (Markdown)',
       confirm: "Confermi l'aggiunta del compito?",
       error: 'Il compito non può essere vuoto',
       placeholder: 'esempio "compra il latte"',
@@ -75,8 +90,8 @@ const itDict = {
     editTask: {
       info: 'Modifica le informazioni del compito',
       title: 'Modifica Titolo',
-      description: 'Vuoi modificare il compito selezionato?',
-      submit: 'Modifica',
+      description: 'Vuoi salvare il compito selezionato?',
+      submit: 'Salva',
       cancel: 'Annulla',
     },
     deleteTask: {
@@ -85,10 +100,19 @@ const itDict = {
       delete: 'Elimina',
       cancel: 'Annulla',
     },
+    comments: {
+      title: 'Commenti',
+      placeholder:
+        'Scrivi un commento… (Invio per inviare, Shift+Invio per andare a capo)',
+      send: 'Invia',
+      no_comments: 'Nessun commento ancora',
+    },
   },
 }
 
 const enDict = {
+  title: 'Task Manager',
+  subtitle: 'Manage your tasks efficiently',
   todolist: {
     listitem: {
       title: 'Task List',
@@ -101,6 +125,9 @@ const enDict = {
       dueDateAt: 'Due date',
       expired: 'Overdue',
       no_task: 'No tasks available',
+      show_descriptions: 'Show descriptions',
+      show_more: 'Show more',
+      show_less: 'Show less',
       priority: {
         label: 'Select a priority',
         items: {
@@ -131,9 +158,16 @@ const enDict = {
           import: 'Import from CSV',
           success: 'Import completed successfully',
           error: 'Error while importing the CSV file',
+          export_comments: 'Export comments',
+          import_comments: 'Import comments',
+          success_comments: 'Comments import completed successfully',
+          error_comments: 'Error while importing comments',
+          section_tasks: 'Tasks',
+          section_comments: 'Comments',
         },
         buttons: {
           message: 'What do you want to do?',
+          description: 'These actions are irreversible, proceed with caution.',
           clear_completed: {
             label: 'Clear completed',
             message: 'Are you sure you want to delete completed tasks?',
@@ -146,6 +180,7 @@ const enDict = {
             label: 'Remove all tasks',
             message: 'Are you sure you want to delete all tasks?',
           },
+          no_tasks: 'There are no tasks to filter',
         },
       },
     },
@@ -153,8 +188,9 @@ const enDict = {
       hiddenForm: 'Hide form',
       name: 'Task title',
       title: 'Add a task',
-      description: 'Enter the description of the task to complete',
-      label: 'Description',
+      description:
+        'Enter the description of the task to complete. N.B.: you can use Markdown to format the text',
+      label: 'Description (Markdown)',
       confirm: 'Confirm adding the task?',
       error: 'The task cannot be empty',
       placeholder: 'e.g. "buy milk"',
@@ -165,8 +201,8 @@ const enDict = {
     editTask: {
       info: 'Edit task information',
       title: 'Edit Title',
-      description: 'Do you want to edit the selected task?',
-      submit: 'Edit',
+      description: 'Do you want to save the selected task?',
+      submit: 'Save',
       cancel: 'Cancel',
     },
     deleteTask: {
@@ -174,6 +210,12 @@ const enDict = {
       description: 'Are you sure you want to delete this task?',
       delete: 'Delete',
       cancel: 'Cancel',
+    },
+    comments: {
+      title: 'Comments',
+      placeholder: 'Write a comment… (Enter to send, Shift+Enter for new line)',
+      send: 'Send',
+      no_comments: 'No comments yet',
     },
   },
 }

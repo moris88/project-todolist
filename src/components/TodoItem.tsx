@@ -2,9 +2,14 @@ import { useAtom, useAtomValue } from 'jotai'
 import React from 'react'
 import { BiSolidDetail } from 'react-icons/bi'
 import { GoAlertFill } from 'react-icons/go'
-import { HiFlag, HiMiniTrash, HiOutlinePencilSquare } from 'react-icons/hi2'
+import {
+  HiChatBubbleLeftEllipsis,
+  HiFlag,
+  HiMiniTrash,
+  HiOutlinePencilSquare,
+} from 'react-icons/hi2'
 
-import { dictAtom, todoListAtom } from '@/atoms/atoms'
+import { commentsAtom, dictAtom, todoListAtom } from '@/atoms/atoms'
 import { ConfirmModal, MarkdownContent } from '@/components'
 import {
   Button,
@@ -25,6 +30,7 @@ import { Category, Priority, Todo } from '@/types'
 import {
   isTaskOverdue,
   priorityItems,
+  removeCommentsByTodoId,
   removeTodoStorage,
   updateTodoStorage,
 } from '@/utils'
@@ -32,12 +38,23 @@ import {
 interface TodoItemProps {
   todo: Todo
   kanban?: boolean
+  showDescriptions?: boolean
+  onCommentPress?: () => void
+  isCommentOpen?: boolean
 }
 
-function TodoItem({ todo, kanban }: TodoItemProps) {
+function TodoItem({
+  todo,
+  kanban,
+  showDescriptions,
+  onCommentPress,
+  isCommentOpen,
+}: TodoItemProps) {
   const [todos, setTodos] = useAtom(todoListAtom)
+  const [comments, setComments] = useAtom(commentsAtom)
   const dict = useAtomValue(dictAtom)
   const [isEditing, setIsEditing] = React.useState(false)
+  const [isExpanded, setIsExpanded] = React.useState(false)
   const [editTitle, setEditTitle] = React.useState(todo.title)
   const [editDescription, setEditDescription] = React.useState(todo.description)
   const [editPriority, setEditPriority] = React.useState<Priority>(
@@ -45,7 +62,7 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
   )
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
   const [showEditModal, setShowEditModal] = React.useState(false)
-  const [showDetailModal, setShowDetailModal] = React.useState(false)
+  const [showInlineDetail, setShowInlineDetail] = React.useState(false)
   const [editDueDate, setEditDueDate] = React.useState<string | null>(
     todo.dueDate ?? null
   )
@@ -81,6 +98,7 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
 
   const confirmRemoveTodo = () => {
     setTodos(removeTodoStorage(todos, todo.id))
+    setComments(removeCommentsByTodoId(todo.id, comments))
     setShowDeleteModal(false)
   }
 
@@ -270,6 +288,7 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
             onClick={toggleTodo}
           >
             <div
+              className="flex items-center"
               onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
             >
@@ -287,49 +306,77 @@ function TodoItem({ todo, kanban }: TodoItemProps) {
                   : todo.dueDate && new Date(todo.dueDate) < new Date()
                     ? 'text-red-600'
                     : todo.priority === 'urgent'
-                      ? 'text-black'
+                      ? 'text-black dark:text-white'
                       : ''
               } ${kanban ? 'max-w-[70%]' : 'max-w-[80%]'} overflow-hidden text-ellipsis`}
             >
               {todo.title}
             </span>
           </div>
+          {(showDescriptions || showInlineDetail) && todo.description && (
+            <div
+              className="w-full px-1"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              <div className={isExpanded ? '' : 'line-clamp-3'}>
+                <MarkdownContent content={todo.description} />
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                onPress={() => setIsExpanded((prev) => !prev)}
+              >
+                {isExpanded
+                  ? dict.todolist.listitem.show_less
+                  : dict.todolist.listitem.show_more}
+              </Button>
+            </div>
+          )}
         </div>
         <div
-          className="flex justify-start"
+          className="flex justify-start md:justify-end"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <ButtonGroup>
             <Button
+              className="md:px-4 md:py-2 md:text-base"
               isDisabled={todo.description === '' || todo.description === null}
               size="sm"
-              variant="primary"
-              onPress={() => setShowDetailModal(true)}
+              variant={showInlineDetail ? 'secondary' : 'primary'}
+              onPress={() => setShowInlineDetail((prev) => !prev)}
             >
-              <BiSolidDetail className="h-3 w-3" />
+              <BiSolidDetail className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
             <Button
+              className="md:px-4 md:py-2 md:text-base"
               isDisabled={todo.completed}
               size="sm"
               variant="primary"
               onPress={() => setIsEditing(true)}
             >
-              <HiOutlinePencilSquare className="h-3 w-3" />
+              <HiOutlinePencilSquare className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
-            <Button size="sm" variant="primary" onPress={removeTodo}>
-              <HiMiniTrash className="h-3 w-3" />
+            <Button
+              className="md:px-4 md:py-2 md:text-base"
+              size="sm"
+              variant="primary"
+              onPress={removeTodo}
+            >
+              <HiMiniTrash className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
+            {onCommentPress && (
+              <Button
+                className="md:px-4 md:py-2 md:text-base"
+                size="sm"
+                variant={isCommentOpen ? 'secondary' : 'primary'}
+                onPress={onCommentPress}
+              >
+                <HiChatBubbleLeftEllipsis className="h-3 w-3 md:h-5 md:w-5" />
+              </Button>
+            )}
           </ButtonGroup>
         </div>
       </div>
-
-      <ConfirmModal
-        isMarkdown
-        description={todo.description}
-        isOpen={showDetailModal}
-        title={todo.title}
-        onCancel={() => setShowDetailModal(false)}
-      />
 
       <ConfirmModal
         buttonCancel={dict.todolist.deleteTask.cancel}

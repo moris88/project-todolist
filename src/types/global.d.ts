@@ -14,3 +14,10 @@ export interface Todo {
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
 export type Category = 'todo' | 'inProgress' | 'done'
+
+export interface Comment {
+  id: string
+  todoId: string
+  text: string
+  createdAt: string
+}
