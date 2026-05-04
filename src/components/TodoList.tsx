@@ -14,7 +14,12 @@ import { Comments } from '@/components'
 import { Button, Chip, Select, SelectItem, Switch } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import { Todo } from '@/types'
-import { getCommentsStorage, getTodosStorage, isTaskOverdue, updateTodoStorage } from '@/utils'
+import {
+  getCommentsStorage,
+  getTodosStorage,
+  isTaskOverdue,
+  updateTodoStorage,
+} from '@/utils'
 
 import DangerZone from './DangerZone'
 import TodoItem from './TodoItem'
@@ -172,7 +177,9 @@ function TodoList() {
   const [overColumn, setOverColumn] = React.useState(null)
   const [filter, setFilter] = React.useState('1')
   const [showDescriptions, setShowDescriptions] = React.useState(false)
-  const [selectedTodoId, setSelectedTodoId] = React.useState<string | null>(null)
+  const [selectedTodoId, setSelectedTodoId] = React.useState<string | null>(
+    null
+  )
   const { notifyUser } = useNotificationRequest()
 
   React.useEffect(() => {
@@ -241,7 +248,7 @@ function TodoList() {
   return (
     <div className="mt-4 space-y-4" id="todo-list">
       <div className="flex justify-center">
-        <h2 className="text-2xl font-semibold">
+        <h2 className="text-lg font-semibold">
           {dict.todolist.listitem.title}
         </h2>
       </div>
@@ -359,7 +366,9 @@ function TodoList() {
                 showDescriptions={showDescriptions}
                 todo={todo}
                 onCommentPress={() =>
-                  setSelectedTodoId((prev) => (prev === todo.id ? null : todo.id))
+                  setSelectedTodoId((prev) =>
+                    prev === todo.id ? null : todo.id
+                  )
                 }
               />
               <small className="flex flex-col items-start md:flex-row md:items-center">

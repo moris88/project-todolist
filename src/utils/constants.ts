@@ -55,6 +55,8 @@ const itDict = {
         },
         buttons: {
           message: 'Che operazione vuoi fare?',
+          description:
+            'Queste operazioni sono irreversibili, procedi con cautela.',
           clear_completed: {
             label: 'Pulisci completati',
             message: 'Sei sicuro di voler eliminare i compiti completati?',
@@ -67,6 +69,7 @@ const itDict = {
             label: 'Rimuovi tutti i compiti',
             message: 'Sei sicuro di voler eliminare tutti i compiti?',
           },
+          no_tasks: 'Non ci sono compiti da filtrare',
         },
       },
     },
@@ -164,6 +167,7 @@ const enDict = {
         },
         buttons: {
           message: 'What do you want to do?',
+          description: 'These actions are irreversible, proceed with caution.',
           clear_completed: {
             label: 'Clear completed',
             message: 'Are you sure you want to delete completed tasks?',
@@ -176,6 +180,7 @@ const enDict = {
             label: 'Remove all tasks',
             message: 'Are you sure you want to delete all tasks?',
           },
+          no_tasks: 'There are no tasks to filter',
         },
       },
     },

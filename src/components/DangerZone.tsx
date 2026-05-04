@@ -25,7 +25,12 @@ interface DangerZoneProps {
   setComments: React.Dispatch<React.SetStateAction<Comment[]>>
 }
 
-function DangerZone({ todos, setTodos, comments, setComments }: DangerZoneProps) {
+function DangerZone({
+  todos,
+  setTodos,
+  comments,
+  setComments,
+}: DangerZoneProps) {
   const dict = useAtomValue(dictAtom)
   const [showDangerZone, setShowDangerZone] = React.useState(false)
   const todosFileRef = React.useRef<HTMLInputElement>(null)
@@ -80,7 +85,11 @@ function DangerZone({ todos, setTodos, comments, setComments }: DangerZoneProps)
     e.target.value = ''
   }
 
-  const buttons: { key: 'completed' | 'expired' | 'all'; text: string; message: string }[] = [
+  const buttons: {
+    key: 'completed' | 'expired' | 'all'
+    text: string
+    message: string
+  }[] = [
     {
       key: 'completed',
       text: dict.todolist.listitem.filter.buttons.clear_completed.label,
@@ -101,7 +110,7 @@ function DangerZone({ todos, setTodos, comments, setComments }: DangerZoneProps)
   return (
     <>
       <div
-        className={`${showDangerZone ? 'rounded-lg bg-red-200 p-1 hover:shadow-lg hover:shadow-red-500 md:p-5' : ''}`}
+        className={`${showDangerZone ? 'rounded-lg bg-red-200 p-1 hover:shadow-lg hover:shadow-red-500 md:p-5' : 'border-t border-gray-200 pt-4 dark:border-gray-700'}`}
       >
         <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex dark:text-black">
@@ -122,11 +131,19 @@ function DangerZone({ todos, setTodos, comments, setComments }: DangerZoneProps)
               <span className="w-20 shrink-0 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
                 {csv.section_tasks}
               </span>
-              <Button size="sm" variant="secondary" onPress={() => exportToCSV(todos)}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => exportToCSV(todos)}
+              >
                 <HiArrowDownTray className="mr-1 h-3.5 w-3.5" />
                 CSV
               </Button>
-              <Button size="sm" variant="secondary" onPress={() => todosFileRef.current?.click()}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => todosFileRef.current?.click()}
+              >
                 <HiArrowUpTray className="mr-1 h-3.5 w-3.5" />
                 CSV
               </Button>
@@ -156,15 +173,30 @@ function DangerZone({ todos, setTodos, comments, setComments }: DangerZoneProps)
           </div>
 
           {/* Hidden file inputs */}
-          <input ref={todosFileRef} accept=".csv" className="hidden" type="file" onChange={handleImportTodos} />
-          <input ref={commentsFileRef} accept=".csv" className="hidden" type="file" onChange={handleImportComments} />
+          <input
+            ref={todosFileRef}
+            accept=".csv"
+            className="hidden"
+            type="file"
+            onChange={handleImportTodos}
+          />
+          <input
+            ref={commentsFileRef}
+            accept=".csv"
+            className="hidden"
+            type="file"
+            onChange={handleImportComments}
+          />
         </div>
 
-        {showDangerZone && (
+        {showDangerZone && todos.length > 0 && (
           <>
             <div className="hidden w-full flex-col items-center justify-center md:flex">
               <p className="py-5 font-bold text-black">
                 {dict.todolist.listitem.filter.buttons.message}
+              </p>
+              <p className="mb-5 text-center text-sm italic text-gray-500 dark:text-gray-400">
+                {dict.todolist.listitem.filter.buttons.description}
               </p>
               <ButtonGroup>
                 {buttons.map((button) => (
@@ -172,7 +204,12 @@ function DangerZone({ todos, setTodos, comments, setComments }: DangerZoneProps)
                     key={button.key}
                     size="lg"
                     variant="primary"
-                    onPress={() => setShowDeleteModal({ ...showDeleteModal, [button.key]: true })}
+                    onPress={() =>
+                      setShowDeleteModal({
+                        ...showDeleteModal,
+                        [button.key]: true,
+                      })
+                    }
                   >
                     {button.text}
                   </Button>
@@ -188,13 +225,24 @@ function DangerZone({ todos, setTodos, comments, setComments }: DangerZoneProps)
                   key={button.key}
                   size="sm"
                   variant="primary"
-                  onPress={() => setShowDeleteModal({ ...showDeleteModal, [button.key]: true })}
+                  onPress={() =>
+                    setShowDeleteModal({
+                      ...showDeleteModal,
+                      [button.key]: true,
+                    })
+                  }
                 >
                   {button.text}
                 </Button>
               ))}
             </div>
           </>
+        )}
+
+        {showDangerZone && todos.length === 0 && (
+          <p className="py-5 text-center font-bold text-gray-500 dark:text-gray-400">
+            {dict.todolist.listitem.filter.buttons.no_tasks}
+          </p>
         )}
       </div>
 
@@ -206,12 +254,20 @@ function DangerZone({ todos, setTodos, comments, setComments }: DangerZoneProps)
           description={buttons.find((b) => b.key === key)?.message ?? ''}
           isOpen={showDeleteModal[key as keyof typeof showDeleteModal]}
           title={buttons.find((b) => b.key === key)?.text ?? ''}
-          onCancel={() => setShowDeleteModal({ ...showDeleteModal, [key]: false })}
+          onCancel={() =>
+            setShowDeleteModal({ ...showDeleteModal, [key]: false })
+          }
           onConfirm={() => {
             switch (key) {
-              case 'completed': setTodos(clearTodosCompleted(todos)); break
-              case 'expired': setTodos(clearTodosExpired(todos)); break
-              case 'all': setTodos(removeAllTodos()); break
+              case 'completed':
+                setTodos(clearTodosCompleted(todos))
+                break
+              case 'expired':
+                setTodos(clearTodosExpired(todos))
+                break
+              case 'all':
+                setTodos(removeAllTodos())
+                break
             }
             setShowDeleteModal({ ...showDeleteModal, [key]: false })
           }}
