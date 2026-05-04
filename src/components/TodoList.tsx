@@ -1,14 +1,13 @@
 import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { useAtom } from 'jotai'
+import { useAtomValue } from 'jotai'
 import moment from 'moment'
 import React from 'react'
 import { createPortal } from 'react-dom'
 import { AiOutlineFullscreen, AiOutlineFullscreenExit } from 'react-icons/ai'
 import { GoAlertFill } from 'react-icons/go'
 import { HiFlag } from 'react-icons/hi2'
-
-import { useAtomValue } from 'jotai'
 
 import { dictAtom, todoListAtom } from '@/atoms'
 import { Button, Chip, Select, SelectItem } from '@/components/UI'

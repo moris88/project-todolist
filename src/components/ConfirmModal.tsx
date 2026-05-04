@@ -1,5 +1,12 @@
 import MarkdownContent from '@/components/MarkdownContent'
-import { Button, Modal, ModalBody, ModalContent, ModalFooter, ModalHeader } from '@/components/UI'
+import {
+  Button,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from '@/components/UI'
 import type { ButtonVariant } from '@/components/UI/Button'
 
 interface ConfirmModalProps {
