@@ -253,7 +253,7 @@ function TodoList() {
             ))}
           </Select>
           {filter !== '0' && (
-            <div className="hidden md:flex md:items-center md:shrink-0">
+            <div className="hidden md:flex md:shrink-0 md:items-center">
               <Switch
                 checked={showDescriptions}
                 onChange={(e) => setShowDescriptions(e.target.checked)}

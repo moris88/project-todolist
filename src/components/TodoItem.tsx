@@ -298,7 +298,10 @@ function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
             </span>
           </div>
           {showDescriptions && todo.description && (
-            <div className="w-full px-1" onPointerDown={(e) => e.stopPropagation()}>
+            <div
+              className="w-full px-1"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
               <div className={isExpanded ? '' : 'line-clamp-3'}>
                 <MarkdownContent content={todo.description} />
               </div>
@@ -320,8 +323,8 @@ function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
         >
           <ButtonGroup>
             <Button
-              isDisabled={todo.description === '' || todo.description === null}
               className="md:px-4 md:py-2 md:text-base"
+              isDisabled={todo.description === '' || todo.description === null}
               size="sm"
               variant="primary"
               onPress={() => setShowDetailModal(true)}
@@ -329,8 +332,8 @@ function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
               <BiSolidDetail className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
             <Button
-              isDisabled={todo.completed}
               className="md:px-4 md:py-2 md:text-base"
+              isDisabled={todo.completed}
               size="sm"
               variant="primary"
               onPress={() => setIsEditing(true)}
