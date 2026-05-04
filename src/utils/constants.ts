@@ -1,4 +1,6 @@
 const itDict = {
+  title: 'Gestore di Compiti',
+  subtitle: 'Gestisci i tuoi compiti in modo efficiente',
   todolist: {
     listitem: {
       title: 'Lista dei Compiti',
@@ -93,6 +95,8 @@ const itDict = {
 }
 
 const enDict = {
+  title: 'Task Manager',
+  subtitle: 'Manage your tasks efficiently',
   todolist: {
     listitem: {
       title: 'Task List',
