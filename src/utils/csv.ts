@@ -1,4 +1,4 @@
-import { Category, Priority, Todo, Comment } from '@/types'
+import { Category, Comment, Priority, Todo } from '@/types'
 
 import { generateUniqueId } from './utils'
 
@@ -25,7 +25,12 @@ function escapeCSV(value: any): string {
   if (value === null || value === undefined) return ''
   const str = String(value)
   // Quote if contains comma, double-quote, newline or carriage-return
-  if (str.includes(',') || str.includes('"') || str.includes('\n') || str.includes('\r')) {
+  if (
+    str.includes(',') ||
+    str.includes('"') ||
+    str.includes('\n') ||
+    str.includes('\r')
+  ) {
     return `"${str.replace(/"/g, '""')}"`
   }
   return str
@@ -180,7 +185,8 @@ export function parseCommentsCSV(csvText: string): Comment[] {
       comment[header] = PRESERVE_WHITESPACE.has(header) ? raw : raw.trim()
     })
 
-    if (!comment.id || !comment.todoId || !comment.text || !comment.createdAt) continue
+    if (!comment.id || !comment.todoId || !comment.text || !comment.createdAt)
+      continue
 
     comments.push(comment as Comment)
   }
