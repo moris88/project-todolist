@@ -9,11 +9,12 @@ import { AiOutlineFullscreen, AiOutlineFullscreenExit } from 'react-icons/ai'
 import { GoAlertFill } from 'react-icons/go'
 import { HiFlag } from 'react-icons/hi2'
 
-import { dictAtom, todoListAtom } from '@/atoms'
+import { commentsAtom, dictAtom, todoListAtom } from '@/atoms'
+import { Comments } from '@/components'
 import { Button, Chip, Select, SelectItem, Switch } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import { Todo } from '@/types'
-import { getTodosStorage, isTaskOverdue, updateTodoStorage } from '@/utils'
+import { getCommentsStorage, getTodosStorage, isTaskOverdue, updateTodoStorage } from '@/utils'
 
 import DangerZone from './DangerZone'
 import TodoItem from './TodoItem'
@@ -165,12 +166,18 @@ function DroppableColumn({
 
 function TodoList() {
   const [todos, setTodos] = useAtom(todoListAtom)
+  const [, setComments] = useAtom(commentsAtom)
   const dict = useAtomValue(dictAtom)
   const [activeTask, setActiveTask] = React.useState<Todo | null>(null)
   const [overColumn, setOverColumn] = React.useState(null)
   const [filter, setFilter] = React.useState('1')
   const [showDescriptions, setShowDescriptions] = React.useState(false)
+  const [selectedTodoId, setSelectedTodoId] = React.useState<string | null>(null)
   const { notifyUser } = useNotificationRequest()
+
+  React.useEffect(() => {
+    setComments(getCommentsStorage())
+  }, [setComments])
 
   React.useEffect(() => {
     const newTodos = todos.map((todo) => {
@@ -347,7 +354,14 @@ function TodoList() {
               key={todo.id}
               className={`rounded-lg ${todo.priority !== 'urgent' ? 'bg-gray-200 hover:shadow-slate-500 dark:bg-slate-600 dark:text-white' : 'bg-red-100 text-black hover:shadow-red-500 dark:bg-red-900/40 dark:text-red-100'} p-2 hover:shadow-lg md:p-5`}
             >
-              <TodoItem showDescriptions={showDescriptions} todo={todo} />
+              <TodoItem
+                isCommentOpen={selectedTodoId === todo.id}
+                showDescriptions={showDescriptions}
+                todo={todo}
+                onCommentPress={() =>
+                  setSelectedTodoId((prev) => (prev === todo.id ? null : todo.id))
+                }
+              />
               <small className="flex flex-col items-start md:flex-row md:items-center">
                 {todo.createdAt && (
                   <span>
@@ -386,6 +400,7 @@ function TodoList() {
                   </span>
                 )}
               </small>
+              {selectedTodoId === todo.id && <Comments todoId={todo.id} />}
             </div>
           ))
       )}

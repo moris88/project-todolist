@@ -81,8 +81,8 @@ const itDict = {
     editTask: {
       info: 'Modifica le informazioni del compito',
       title: 'Modifica Titolo',
-      description: 'Vuoi modificare il compito selezionato?',
-      submit: 'Modifica',
+      description: 'Vuoi salvare il compito selezionato?',
+      submit: 'Salva',
       cancel: 'Annulla',
     },
     deleteTask: {
@@ -90,6 +90,13 @@ const itDict = {
       description: 'Sei sicuro di voler eliminare questo compito?',
       delete: 'Elimina',
       cancel: 'Annulla',
+    },
+    comments: {
+      title: 'Commenti',
+      placeholder:
+        'Scrivi un commento… (Invio per inviare, Shift+Invio per andare a capo)',
+      send: 'Invia',
+      no_comments: 'Nessun commento ancora',
     },
   },
 }
@@ -177,8 +184,8 @@ const enDict = {
     editTask: {
       info: 'Edit task information',
       title: 'Edit Title',
-      description: 'Do you want to edit the selected task? ',
-      submit: 'Edit',
+      description: 'Do you want to save the selected task?',
+      submit: 'Save',
       cancel: 'Cancel',
     },
     deleteTask: {
@@ -186,6 +193,12 @@ const enDict = {
       description: 'Are you sure you want to delete this task?',
       delete: 'Delete',
       cancel: 'Cancel',
+    },
+    comments: {
+      title: 'Comments',
+      placeholder: 'Write a comment… (Enter to send, Shift+Enter for new line)',
+      send: 'Send',
+      no_comments: 'No comments yet',
     },
   },
 }

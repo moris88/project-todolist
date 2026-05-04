@@ -2,9 +2,14 @@ import { useAtom, useAtomValue } from 'jotai'
 import React from 'react'
 import { BiSolidDetail } from 'react-icons/bi'
 import { GoAlertFill } from 'react-icons/go'
-import { HiFlag, HiMiniTrash, HiOutlinePencilSquare } from 'react-icons/hi2'
+import {
+  HiChatBubbleLeftEllipsis,
+  HiFlag,
+  HiMiniTrash,
+  HiOutlinePencilSquare,
+} from 'react-icons/hi2'
 
-import { dictAtom, todoListAtom } from '@/atoms/atoms'
+import { commentsAtom, dictAtom, todoListAtom } from '@/atoms/atoms'
 import { ConfirmModal, MarkdownContent } from '@/components'
 import {
   Button,
@@ -25,6 +30,7 @@ import { Category, Priority, Todo } from '@/types'
 import {
   isTaskOverdue,
   priorityItems,
+  removeCommentsByTodoId,
   removeTodoStorage,
   updateTodoStorage,
 } from '@/utils'
@@ -33,10 +39,19 @@ interface TodoItemProps {
   todo: Todo
   kanban?: boolean
   showDescriptions?: boolean
+  onCommentPress?: () => void
+  isCommentOpen?: boolean
 }
 
-function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
+function TodoItem({
+  todo,
+  kanban,
+  showDescriptions,
+  onCommentPress,
+  isCommentOpen,
+}: TodoItemProps) {
   const [todos, setTodos] = useAtom(todoListAtom)
+  const [comments, setComments] = useAtom(commentsAtom)
   const dict = useAtomValue(dictAtom)
   const [isEditing, setIsEditing] = React.useState(false)
   const [isExpanded, setIsExpanded] = React.useState(false)
@@ -47,7 +62,7 @@ function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
   )
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
   const [showEditModal, setShowEditModal] = React.useState(false)
-  const [showDetailModal, setShowDetailModal] = React.useState(false)
+  const [showInlineDetail, setShowInlineDetail] = React.useState(false)
   const [editDueDate, setEditDueDate] = React.useState<string | null>(
     todo.dueDate ?? null
   )
@@ -83,6 +98,7 @@ function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
 
   const confirmRemoveTodo = () => {
     setTodos(removeTodoStorage(todos, todo.id))
+    setComments(removeCommentsByTodoId(todo.id, comments))
     setShowDeleteModal(false)
   }
 
@@ -297,7 +313,7 @@ function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
               {todo.title}
             </span>
           </div>
-          {showDescriptions && todo.description && (
+          {(showDescriptions || showInlineDetail) && todo.description && (
             <div
               className="w-full px-1"
               onPointerDown={(e) => e.stopPropagation()}
@@ -326,8 +342,8 @@ function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
               className="md:px-4 md:py-2 md:text-base"
               isDisabled={todo.description === '' || todo.description === null}
               size="sm"
-              variant="primary"
-              onPress={() => setShowDetailModal(true)}
+              variant={showInlineDetail ? 'secondary' : 'primary'}
+              onPress={() => setShowInlineDetail((prev) => !prev)}
             >
               <BiSolidDetail className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
@@ -348,17 +364,19 @@ function TodoItem({ todo, kanban, showDescriptions }: TodoItemProps) {
             >
               <HiMiniTrash className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
+            {onCommentPress && (
+              <Button
+                className="md:px-4 md:py-2 md:text-base"
+                size="sm"
+                variant={isCommentOpen ? 'secondary' : 'primary'}
+                onPress={onCommentPress}
+              >
+                <HiChatBubbleLeftEllipsis className="h-3 w-3 md:h-5 md:w-5" />
+              </Button>
+            )}
           </ButtonGroup>
         </div>
       </div>
-
-      <ConfirmModal
-        isMarkdown
-        description={todo.description}
-        isOpen={showDetailModal}
-        title={todo.title}
-        onCancel={() => setShowDetailModal(false)}
-      />
 
       <ConfirmModal
         buttonCancel={dict.todolist.deleteTask.cancel}
