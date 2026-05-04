@@ -14,12 +14,12 @@ function Header() {
   const [darkMode, setDarkMode] = useAtom(darkModeAtom)
 
   return (
-    <header className="flex items-center justify-between border-b border-gray-200 px-5 py-2 dark:border-gray-700 lg:px-20">
+    <header className="flex flex-col items-center justify-center gap-y-2 border-b border-gray-200 px-5 py-2 dark:border-gray-700 sm:flex-row sm:justify-between lg:px-20">
       <div>
-        <h1 className="text-lg font-bold text-gray-800 dark:text-gray-100">
+        <h1 className="text-center text-lg font-bold text-gray-800 dark:text-gray-100 sm:text-left">
           {dicts[language].title}
         </h1>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-center text-sm text-gray-500 dark:text-gray-400 sm:text-left">
           {dicts[language].subtitle}
         </p>
       </div>
