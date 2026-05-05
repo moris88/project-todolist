@@ -8,9 +8,13 @@ import {
   Button,
   DatePicker,
   Input,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
   Select,
   SelectItem,
-  Switch,
   Textarea,
 } from '@/components/UI'
 import { Priority, Todo } from '@/types'
@@ -23,13 +27,20 @@ function TodoInput() {
   const [todos, setTodos] = useAtom(todoListAtom)
   const dict = useAtomValue(dictAtom)
   const [dueDate, setDueDate] = React.useState<string | null>(null)
-  const [showInput, setShowInput] = React.useState(true)
+  const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [showAdd, setShowAdd] = React.useState(false)
   const [showError, setShowError] = React.useState(false)
-  const [showDescription, setShowDescription] = React.useState(false)
   const [required, setRequired] = React.useState(false)
 
   const minValue = new Date().toISOString().slice(0, 16)
+
+  const resetForm = () => {
+    setTitle('')
+    setDescription('')
+    setDueDate(null)
+    setPriority('medium')
+    setRequired(false)
+  }
 
   const addTodo = () => {
     const newTodo: Todo = {
@@ -46,16 +57,13 @@ function TodoInput() {
       category: 'todo',
     }
     setTodos(addTodoStorage(newTodo, todos))
-    setTitle('')
-    setDescription('')
-    setDueDate(null)
-    setRequired(false)
+    resetForm()
     setShowAdd(false)
-    setShowDescription(false)
+    setIsFormOpen(false)
   }
 
   const confirmAddTodo = () => {
-    if (!required && title.trim() === '') {
+    if (!required || title.trim() === '') {
       setShowError(true)
       return
     }
@@ -63,97 +71,94 @@ function TodoInput() {
   }
 
   const handlePriorityChange = (value: string) => {
-    const mappaPriority: Record<string, string> = {
+    const map: Record<string, Priority> = {
       '0': 'urgent',
       '1': 'high',
       '2': 'medium',
       '3': 'low',
     }
-    setPriority(mappaPriority[value] as Priority)
+    setPriority(map[value])
+  }
+
+  const handleClose = () => {
+    resetForm()
+    setIsFormOpen(false)
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-y-4" id="todo-input">
-      <Switch
-        checked={showInput}
-        className="flex items-center lg:hidden"
-        size="sm"
-        onChange={(e) => setShowInput(!e.target.checked)}
+    <>
+      <Button
+        className="fixed bottom-6 right-6 z-40 gap-2 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
+        size="lg"
+        variant="primary"
+        onPress={() => setIsFormOpen(true)}
       >
-        {dict.todolist.addTask.hiddenForm}
-      </Switch>
-      {showInput && (
-        <>
-          <div className="flex w-full flex-col items-center gap-4 lg:flex-row">
-            <Input
-              isRequired
-              className="w-full"
-              label={dict.todolist.addTask.name}
-              placeholder={dict.todolist.addTask.placeholder}
-              value={title}
-              onChange={(e) => {
-                setRequired(true)
-                setTitle(e.target.value)
-              }}
-            />
-            <DatePicker
-              showMonthAndYearPickers
-              className="w-full"
-              granularity="minute"
-              label={dict.todolist.addTask.due_date}
-              minValue={minValue}
-              value={dueDate}
-              onChange={(iso) => setDueDate(iso)}
-            />
-            <Select
-              defaultSelectedKeys={priorityItems.indexOf(priority).toString()}
-              label={dict.todolist.listitem.priority.label}
-              onChange={(e) => handlePriorityChange(e.target.value)}
-            >
-              {priorityItems.map((item, index) => (
-                <SelectItem key={index} value={String(index)}>
-                  {
-                    dict.todolist.listitem.priority.items[
-                      item as keyof typeof dict.todolist.listitem.priority.items
-                    ]
-                  }
-                </SelectItem>
-              ))}
-            </Select>
-            <Switch
-              checked={showDescription}
-              size="sm"
-              onChange={(e) => setShowDescription(e.target.checked)}
-            >
-              {dict.todolist.addTask.label}
-            </Switch>
-            <Button
-              className="flex min-w-12 gap-1 md:min-w-36"
-              size="lg"
-              variant="primary"
-              onPress={confirmAddTodo}
-            >
-              <HiMiniPlus className="h-6 w-6" />
-              <span className="hidden md:inline">
-                {dict.todolist.addTask.submit}
-              </span>
+        <HiMiniPlus className="h-5 w-5" />
+        <span className="hidden text-sm font-semibold sm:inline">{dict.todolist.addTask.title}</span>
+      </Button>
+
+      <Modal isDismissable isOpen={isFormOpen} onClose={handleClose}>
+        <ModalContent>
+          <ModalHeader>{dict.todolist.addTask.title}</ModalHeader>
+          <ModalBody>
+            <div className="flex flex-col gap-4">
+              <Input
+                isRequired
+                className="w-full"
+                label={dict.todolist.addTask.name}
+                placeholder={dict.todolist.addTask.placeholder}
+                value={title}
+                onChange={(e) => {
+                  setRequired(true)
+                  setTitle(e.target.value)
+                }}
+              />
+              <DatePicker
+                showMonthAndYearPickers
+                className="w-full"
+                granularity="minute"
+                label={dict.todolist.addTask.due_date}
+                minValue={minValue}
+                value={dueDate}
+                onChange={(iso) => setDueDate(iso)}
+              />
+              <Select
+                defaultSelectedKeys={priorityItems.indexOf(priority).toString()}
+                label={dict.todolist.listitem.priority.label}
+                onChange={(e) => handlePriorityChange(e.target.value)}
+              >
+                {priorityItems.map((item, index) => (
+                  <SelectItem key={index} value={String(index)}>
+                    {
+                      dict.todolist.listitem.priority.items[
+                        item as keyof typeof dict.todolist.listitem.priority.items
+                      ]
+                    }
+                  </SelectItem>
+                ))}
+              </Select>
+              <Textarea
+                className="w-full"
+                label={dict.todolist.addTask.description}
+                maxRows={8}
+                minRows={4}
+                size="sm"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
+            </div>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="ghost" onPress={handleClose}>
+              {dict.todolist.addTask.cancel}
             </Button>
-          </div>
-          {showDescription && (
-            <Textarea
-              className="w-full"
-              label={dict.todolist.addTask.description}
-              maxRows={10}
-              minRows={5}
-              size="sm"
-              value={description}
-              onChange={(e) => {
-                setDescription(e.target.value)
-              }}
-            />
-          )}
-        </>
-      )}
+            <Button variant="primary" onPress={confirmAddTodo}>
+              {dict.todolist.addTask.submit}
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
+
       {showAdd && (
         <ConfirmModal
           buttonCancel={dict.todolist.addTask.cancel}
@@ -167,14 +172,14 @@ function TodoInput() {
       )}
       {showError && (
         <ConfirmModal
-          buttonConfirm={dict.todolist.addTask.submit}
+          buttonConfirm="OK"
           description={dict.todolist.addTask.error}
           isOpen={showError}
           title={dict.todolist.addTask.title}
           onCancel={() => setShowError(false)}
         />
       )}
-    </div>
+    </>
   )
 }
 
