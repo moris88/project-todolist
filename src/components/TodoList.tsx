@@ -2,7 +2,6 @@ import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core'
 import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { useAtom } from 'jotai'
 import { useAtomValue } from 'jotai'
-import moment from 'moment'
 import React from 'react'
 import { createPortal } from 'react-dom'
 import { AiOutlineFullscreen, AiOutlineFullscreenExit } from 'react-icons/ai'
@@ -11,7 +10,7 @@ import { HiFlag } from 'react-icons/hi2'
 
 import { commentsAtom, dictAtom, todoListAtom } from '@/atoms'
 import { Comments } from '@/components'
-import { Button, Chip, Select, SelectItem, Switch } from '@/components/UI'
+import { Button, Select, SelectItem, Switch } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import { Todo } from '@/types'
 import {
@@ -27,7 +26,6 @@ import TodoItem from './TodoItem'
 function DraggableItem({ todo }: { todo: Todo }) {
   const { attributes, listeners, setNodeRef } = useDraggable({ id: todo.id })
   const [onClicked, setOnClicked] = React.useState(false)
-  const dict = useAtomValue(dictAtom)
 
   const flagIcon: Record<string, React.ReactNode> = {
     low: <HiFlag className="h-3 w-3 text-green-600" />,
@@ -58,37 +56,6 @@ function DraggableItem({ todo }: { todo: Todo }) {
         <div className="flex flex-col">
           <div {...attributes} {...listeners} className="cursor-grab">
             <TodoItem kanban todo={todo} />
-          </div>
-          <div className="flex flex-col items-start px-2 pb-2">
-            {todo.createdAt && (
-              <span>
-                {dict.todolist.listitem.createdAt}:{' '}
-                {moment(todo.createdAt).format('DD/MM/YYYY HH:mm')}
-              </span>
-            )}
-            {todo.updatedAt && (
-              <span>
-                {dict.todolist.listitem.updatedAt}:{' '}
-                {moment(todo.updatedAt).format('DD/MM/YYYY HH:mm')}
-              </span>
-            )}
-            {todo.completed && (
-              <Chip color="success" size="sm">
-                {dict.todolist.listitem.completedAt}:{' '}
-                {moment(todo.completedAt).format('DD/MM/YYYY HH:mm')}
-              </Chip>
-            )}
-            {todo.dueDate && !todo.completed && (
-              <Chip
-                color={isTaskOverdue(todo.dueDate) ? 'danger' : 'warning'}
-                size="sm"
-              >
-                {isTaskOverdue(todo.dueDate)
-                  ? dict.todolist.listitem.expired
-                  : dict.todolist.listitem.dueDateAt}
-                : {moment(todo.dueDate).format('DD/MM/YYYY HH:mm')}
-              </Chip>
-            )}
           </div>
         </div>
       </div>

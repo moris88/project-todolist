@@ -12,6 +12,7 @@ import {
   HiMiniTrash,
   HiOutlinePencilSquare,
 } from 'react-icons/hi2'
+import { twMerge } from 'tailwind-merge'
 
 import { commentsAtom, dictAtom, todoListAtom } from '@/atoms/atoms'
 import {
@@ -250,7 +251,7 @@ function TodoItem({
       <div className="flex w-full flex-col gap-y-4">
         <div className="flex w-full flex-col items-start gap-y-2">
           <div
-            className={`line-clamp-1 flex w-full cursor-pointer items-center gap-2 font-bold ${todo.completed ? 'line-through' : ''}`}
+            className={`line-clamp-1 flex cursor-pointer items-center gap-2 font-bold ${todo.completed ? 'line-through' : ''}`}
             onClick={toggleTodo}
           >
             <div
@@ -391,7 +392,10 @@ function TodoItem({
           )}
         </div>
         <div
-          className="flex flex-col justify-start gap-y-4 md:flex-row md:justify-between"
+          className={twMerge(
+            'flex justify-start gap-y-4 md:justify-between',
+            kanban ? 'flex-col' : 'flex-row'
+          )}
           onPointerDown={(e) => e.stopPropagation()}
         >
           <small className="flex flex-row flex-wrap items-center">
