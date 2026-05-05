@@ -24,6 +24,7 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
     notify: false,
     priority: 'medium',
     category: 'todo',
+    subtasks: [],
     ...overrides,
   }
 }

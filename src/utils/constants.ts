@@ -14,6 +14,7 @@ const itDict = {
       expired: 'Scaduto',
       no_task: 'Nessun compito disponibile',
       show_descriptions: 'Mostra descrizioni',
+      show_subtasks: 'Mostra sottotask',
       show_more: 'Mostra tutto',
       show_less: 'Mostra meno',
       priority: {
@@ -74,11 +75,8 @@ const itDict = {
       },
     },
     addTask: {
-      hiddenForm: 'Nascondi il form',
       name: 'Titolo del compito',
       title: 'Aggiungi un compito',
-      description:
-        'Inserisci la descrizione del compito da completare. N.B.: puoi inserire Markdown per formattare il testo',
       label: 'Descrizione (Markdown)',
       confirm: "Confermi l'aggiunta del compito?",
       error: 'Il compito non può essere vuoto',
@@ -93,6 +91,9 @@ const itDict = {
       description: 'Vuoi salvare il compito selezionato?',
       submit: 'Salva',
       cancel: 'Annulla',
+      edit: 'Modifica',
+      preview: 'Anteprima',
+      emptyPreview: 'Nessun contenuto da visualizzare',
     },
     deleteTask: {
       title: 'Elimina compito',
@@ -106,6 +107,17 @@ const itDict = {
         'Scrivi un commento… (Invio per inviare, Shift+Invio per andare a capo)',
       send: 'Invia',
       no_comments: 'Nessun commento ancora',
+    },
+    subtasks: {
+      title: 'Sottotask',
+      add: 'Aggiungi sottotask',
+      placeholder: 'Titolo del sottotask',
+      empty: 'Nessun sottotask aggiunto',
+      progress: 'completati',
+      move: 'Sposta sottotask',
+      move_title: 'Sposta sottotask',
+      move_to: 'Seleziona task di destinazione',
+      move_confirm: 'Sposta',
     },
   },
 }
@@ -126,6 +138,7 @@ const enDict = {
       expired: 'Overdue',
       no_task: 'No tasks available',
       show_descriptions: 'Show descriptions',
+      show_subtasks: 'Show subtasks',
       show_more: 'Show more',
       show_less: 'Show less',
       priority: {
@@ -185,11 +198,8 @@ const enDict = {
       },
     },
     addTask: {
-      hiddenForm: 'Hide form',
       name: 'Task title',
       title: 'Add a task',
-      description:
-        'Enter the description of the task to complete. N.B.: you can use Markdown to format the text',
       label: 'Description (Markdown)',
       confirm: 'Confirm adding the task?',
       error: 'The task cannot be empty',
@@ -204,6 +214,9 @@ const enDict = {
       description: 'Do you want to save the selected task?',
       submit: 'Save',
       cancel: 'Cancel',
+      edit: 'Edit',
+      preview: 'Preview',
+      emptyPreview: 'No content to display',
     },
     deleteTask: {
       title: 'Delete task',
@@ -216,6 +229,17 @@ const enDict = {
       placeholder: 'Write a comment… (Enter to send, Shift+Enter for new line)',
       send: 'Send',
       no_comments: 'No comments yet',
+    },
+    subtasks: {
+      title: 'Subtasks',
+      add: 'Add subtask',
+      placeholder: 'Subtask title',
+      empty: 'No subtasks added',
+      progress: 'completed',
+      move: 'Move subtask',
+      move_title: 'Move subtask',
+      move_to: 'Select destination task',
+      move_confirm: 'Move',
     },
   },
 }

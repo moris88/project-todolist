@@ -14,6 +14,7 @@ const TODO_HEADERS = [
   'notify',
   'priority',
   'category',
+  'subtasks',
 ]
 
 const COMMENT_HEADERS = ['id', 'todoId', 'text', 'createdAt']
@@ -112,7 +113,13 @@ function parseCSVRows(csvText: string): string[][] {
 export function exportToCSV(todos: Todo[]) {
   const rows = [TODO_HEADERS.join(',')]
   for (const todo of todos) {
-    rows.push(TODO_HEADERS.map((h) => escapeCSV((todo as any)[h])).join(','))
+    rows.push(
+      TODO_HEADERS.map((h) => {
+        if (h === 'subtasks')
+          return escapeCSV(JSON.stringify(todo.subtasks ?? []))
+        return escapeCSV((todo as any)[h])
+      }).join(',')
+    )
   }
   downloadCSV(rows.join('\n'), `tasks_${Date.now()}.csv`)
 }
@@ -149,6 +156,12 @@ export function parseCSV(csvText: string): Todo[] {
         todo[header] = val.toLowerCase() === 'true'
       } else if (['updatedAt', 'completedAt', 'dueDate'].includes(header)) {
         todo[header] = val.trim() === '' ? null : val.trim()
+      } else if (header === 'subtasks') {
+        try {
+          todo[header] = val.trim() ? JSON.parse(val) : []
+        } catch {
+          todo[header] = []
+        }
       } else {
         todo[header] = val
       }
@@ -160,6 +173,7 @@ export function parseCSV(csvText: string): Todo[] {
     if (!todo.category) todo.category = 'todo' as Category
     if (todo.completed === undefined) todo.completed = false
     if (!todo.createdAt) todo.createdAt = new Date().toISOString()
+    if (!Array.isArray(todo.subtasks)) todo.subtasks = []
 
     todos.push(todo as Todo)
   }
