@@ -4,22 +4,37 @@ import React from 'react'
 import { BiSolidDetail } from 'react-icons/bi'
 import { GoAlertFill } from 'react-icons/go'
 import {
+  HiArrowRight,
   HiChatBubbleLeftEllipsis,
   HiFlag,
+  HiMiniPlus,
   HiMiniTrash,
   HiOutlinePencilSquare,
 } from 'react-icons/hi2'
 
 import { commentsAtom, dictAtom, todoListAtom } from '@/atoms/atoms'
-import { ConfirmModal, MarkdownContent, TaskFormModal, TaskFormValues } from '@/components'
+import {
+  ConfirmModal,
+  MarkdownContent,
+  TaskFormModal,
+  TaskFormValues,
+} from '@/components'
 import {
   Button,
   ButtonGroup,
   Checkbox,
   Chip,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+  Select,
+  SelectItem,
 } from '@/components/UI'
 import { Todo } from '@/types'
 import {
+  generateUniqueId,
   isTaskOverdue,
   removeCommentsByTodoId,
   removeTodoStorage,
@@ -40,6 +55,7 @@ interface TodoItemProps {
   todo: Todo
   kanban?: boolean
   showDescriptions?: boolean
+  showSubtasks?: boolean
   onCommentPress?: () => void
   isCommentOpen?: boolean
 }
@@ -48,6 +64,7 @@ function TodoItem({
   todo,
   kanban,
   showDescriptions,
+  showSubtasks,
   onCommentPress,
   isCommentOpen,
 }: TodoItemProps) {
@@ -59,7 +76,11 @@ function TodoItem({
   const [showDeleteModal, setShowDeleteModal] = React.useState(false)
   const [showEditModal, setShowEditModal] = React.useState(false)
   const [showInlineDetail, setShowInlineDetail] = React.useState(false)
-  const [pendingEditValues, setPendingEditValues] = React.useState<TaskFormValues | null>(null)
+  const [pendingEditValues, setPendingEditValues] =
+    React.useState<TaskFormValues | null>(null)
+  const [quickAddTitle, setQuickAddTitle] = React.useState('')
+  const [moveSubtaskId, setMoveSubtaskId] = React.useState<string | null>(null)
+  const [moveTargetTodoId, setMoveTargetTodoId] = React.useState('')
 
   const toggleTodo = (
     e?: React.MouseEvent<HTMLParagraphElement, MouseEvent>
@@ -68,13 +89,17 @@ function TodoItem({
       e.preventDefault()
       e.stopPropagation()
     }
+    const nowCompleting = !todo.completed
     const updatedTodos = todos.map((t) => {
       if (t.id === todo.id) {
         return {
           ...t,
-          category: !t.completed ? 'done' : todo.category,
-          completed: !t.completed,
-          completedAt: !t.completed ? new Date().toISOString() : null,
+          category: nowCompleting ? 'done' : todo.category,
+          completed: nowCompleting,
+          completedAt: nowCompleting ? new Date().toISOString() : null,
+          subtasks: nowCompleting
+            ? t.subtasks.map((s) => ({ ...s, completed: true }))
+            : t.subtasks,
           updatedAt: new Date().toISOString(),
         }
       }
@@ -109,8 +134,12 @@ function TodoItem({
           priority: pendingEditValues.priority as Todo['priority'],
           dueDate: pendingEditValues.dueDate,
           category: pendingEditValues.category,
+          subtasks: pendingEditValues.subtasks,
           completed: pendingEditValues.category === 'done' ? true : t.completed,
-          completedAt: pendingEditValues.category === 'done' && !t.completed ? new Date().toISOString() : t.completedAt,
+          completedAt:
+            pendingEditValues.category === 'done' && !t.completed
+              ? new Date().toISOString()
+              : t.completedAt,
           updatedAt: new Date().toISOString(),
         }
       }
@@ -120,6 +149,67 @@ function TodoItem({
     setPendingEditValues(null)
     setIsEditing(false)
     setShowEditModal(false)
+  }
+
+  const addSubtaskInline = () => {
+    if (!quickAddTitle.trim()) return
+    const updatedTodos = todos.map((t) => {
+      if (t.id !== todo.id) return t
+      return {
+        ...t,
+        subtasks: [
+          ...t.subtasks,
+          {
+            id: generateUniqueId(),
+            title: quickAddTitle.trim(),
+            completed: false,
+          },
+        ],
+        updatedAt: new Date().toISOString(),
+      }
+    })
+    setTodos(updateTodoStorage(updatedTodos))
+    setQuickAddTitle('')
+  }
+
+  const toggleSubtaskInList = (subtaskId: string) => {
+    const updatedTodos = todos.map((t) => {
+      if (t.id !== todo.id) return t
+      return {
+        ...t,
+        subtasks: t.subtasks.map((s) =>
+          s.id === subtaskId ? { ...s, completed: !s.completed } : s
+        ),
+        updatedAt: new Date().toISOString(),
+      }
+    })
+    setTodos(updateTodoStorage(updatedTodos))
+  }
+
+  const confirmMoveSubtask = () => {
+    if (!moveSubtaskId || !moveTargetTodoId) return
+    const subtask = todo.subtasks.find((s) => s.id === moveSubtaskId)
+    if (!subtask) return
+    const updated = todos.map((t) => {
+      if (t.id === todo.id) {
+        return {
+          ...t,
+          subtasks: t.subtasks.filter((s) => s.id !== moveSubtaskId),
+          updatedAt: new Date().toISOString(),
+        }
+      }
+      if (t.id === moveTargetTodoId) {
+        return {
+          ...t,
+          subtasks: [...t.subtasks, subtask],
+          updatedAt: new Date().toISOString(),
+        }
+      }
+      return t
+    })
+    setTodos(updateTodoStorage(updated))
+    setMoveSubtaskId(null)
+    setMoveTargetTodoId('')
   }
 
   const flagIcon: Record<string, React.ReactNode> = {
@@ -139,7 +229,6 @@ function TodoItem({
       className={`flex w-full flex-col items-start justify-start gap-y-2 py-2 ${kanban ? '' : 'md:flex-row md:items-center md:justify-between'}`}
     >
       <TaskFormModal
-        showCategory
         cancelLabel={dict.todolist.editTask.cancel}
         headerLabel={dict.todolist.editTask.info}
         initialValues={{
@@ -148,6 +237,7 @@ function TodoItem({
           priority: todo.priority,
           dueDate: todo.dueDate,
           category: todo.category,
+          subtasks: todo.subtasks,
         }}
         isDismissable={false}
         isOpen={isEditing}
@@ -187,6 +277,97 @@ function TodoItem({
               {todo.title}
             </span>
           </div>
+          {(todo.subtasks?.length > 0 || showInlineDetail) && showSubtasks && (
+            <div
+              className="w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/40"
+              onPointerDown={(e) => e.stopPropagation()}
+            >
+              {todo.subtasks?.length > 0 && (
+                <>
+                  <div className="flex items-center justify-between px-3 pb-1 pt-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                      {dict.todolist.subtasks.title}
+                    </span>
+                    <span className="text-xs text-gray-400">
+                      {todo.subtasks.filter((s) => s.completed).length}/
+                      {todo.subtasks.length} {dict.todolist.subtasks.progress}
+                    </span>
+                  </div>
+                  <div className="h-1 w-full bg-gray-200 dark:bg-gray-700">
+                    <div
+                      className="h-full bg-blue-500 transition-all duration-300"
+                      style={{
+                        width: `${(todo.subtasks.filter((s) => s.completed).length / todo.subtasks.length) * 100}%`,
+                      }}
+                    />
+                  </div>
+                  <ul className="flex flex-col gap-0.5 px-2 py-1">
+                    {todo.subtasks.map((s) => (
+                      <li
+                        key={s.id}
+                        className="group flex cursor-pointer items-center gap-2 rounded px-1 py-1 transition-colors hover:bg-gray-100 dark:hover:bg-gray-700/50"
+                        onClick={() => toggleSubtaskInList(s.id)}
+                      >
+                        <input
+                          checked={s.completed}
+                          className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-blue-500"
+                          type="checkbox"
+                          onChange={() => toggleSubtaskInList(s.id)}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                        <span
+                          className={`flex-1 text-sm leading-snug ${s.completed ? 'text-gray-400 line-through' : ''}`}
+                        >
+                          {s.title}
+                        </span>
+                        {todos.filter((t) => t.id !== todo.id).length > 0 && (
+                          <button
+                            className="shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all hover:text-blue-500 group-hover:opacity-100 dark:text-gray-600"
+                            title={dict.todolist.subtasks.move}
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setMoveSubtaskId(s.id)
+                              setMoveTargetTodoId(
+                                todos.filter((t) => t.id !== todo.id)[0]?.id ??
+                                  ''
+                              )
+                            }}
+                          >
+                            <HiArrowRight className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+              {showInlineDetail && !todo.completed && (
+                <div className="flex items-center gap-2 border-t border-gray-200 px-2 py-2 dark:border-gray-700">
+                  <input
+                    className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                    placeholder={dict.todolist.subtasks.placeholder}
+                    type="text"
+                    value={quickAddTitle}
+                    onChange={(e) => setQuickAddTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault()
+                        addSubtaskInline()
+                      }
+                    }}
+                  />
+                  <button
+                    className="shrink-0 rounded bg-blue-500 p-1 text-white transition-colors hover:bg-blue-600"
+                    type="button"
+                    onClick={addSubtaskInline}
+                  >
+                    <HiMiniPlus className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
           {(showDescriptions || showInlineDetail) && todo.description && (
             <div
               className="w-full px-1"
@@ -309,6 +490,45 @@ function TodoItem({
         onCancel={() => setShowEditModal(false)}
         onConfirm={confirmUpdateTodo}
       />
+
+      {moveSubtaskId && (
+        <Modal
+          isDismissable
+          isOpen={!!moveSubtaskId}
+          onClose={() => setMoveSubtaskId(null)}
+        >
+          <ModalContent>
+            <ModalHeader>{dict.todolist.subtasks.move_title}</ModalHeader>
+            <ModalBody>
+              <Select
+                defaultSelectedKeys={moveTargetTodoId}
+                label={dict.todolist.subtasks.move_to}
+                onChange={(e) => setMoveTargetTodoId(e.target.value)}
+              >
+                {todos
+                  .filter((t) => t.id !== todo.id)
+                  .map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.title}
+                    </SelectItem>
+                  ))}
+              </Select>
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                size="lg"
+                variant="ghost"
+                onPress={() => setMoveSubtaskId(null)}
+              >
+                {dict.todolist.editTask.cancel}
+              </Button>
+              <Button size="lg" variant="primary" onPress={confirmMoveSubtask}>
+                {dict.todolist.subtasks.move_confirm}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
     </div>
   )
 }

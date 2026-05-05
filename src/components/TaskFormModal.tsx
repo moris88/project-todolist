@@ -16,8 +16,8 @@ import {
   SelectItem,
   Textarea,
 } from '@/components/UI'
-import { Category, Priority } from '@/types'
-import { priorityItems } from '@/utils'
+import { Category, Priority, SubTask } from '@/types'
+import { generateUniqueId, priorityItems } from '@/utils'
 
 export interface TaskFormValues {
   title: string
@@ -25,11 +25,11 @@ export interface TaskFormValues {
   priority: Priority
   dueDate: string | null
   category: Category
+  subtasks: SubTask[]
 }
 
 interface TaskFormBodyProps {
   initialValues: Partial<TaskFormValues>
-  showCategory: boolean
   headerLabel: string
   submitLabel: string
   cancelLabel: string
@@ -39,7 +39,6 @@ interface TaskFormBodyProps {
 
 function TaskFormBody({
   initialValues,
-  showCategory,
   headerLabel,
   submitLabel,
   cancelLabel,
@@ -60,9 +59,36 @@ function TaskFormBody({
   const [category, setCategory] = React.useState<Category>(
     initialValues.category ?? 'todo'
   )
+  const [subtasks, setSubtasks] = React.useState<SubTask[]>(
+    initialValues.subtasks ?? []
+  )
+  const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [markdownPreview, setMarkdownPreview] = React.useState(false)
 
   const minValue = new Date().toISOString().slice(0, 16)
+
+  const addSubtask = () => {
+    if (!newSubtaskTitle.trim()) return
+    setSubtasks((prev) => [
+      ...prev,
+      {
+        id: generateUniqueId(),
+        title: newSubtaskTitle.trim(),
+        completed: false,
+      },
+    ])
+    setNewSubtaskTitle('')
+  }
+
+  const toggleSubtask = (id: string) => {
+    setSubtasks((prev) =>
+      prev.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s))
+    )
+  }
+
+  const removeSubtask = (id: string) => {
+    setSubtasks((prev) => prev.filter((s) => s.id !== id))
+  }
 
   const handlePriorityChange = (value: string) => {
     const map: Record<string, Priority> = {
@@ -111,24 +137,22 @@ function TaskFormBody({
               </SelectItem>
             ))}
           </Select>
-          {showCategory && (
-            <Select
-              className="w-full"
-              defaultSelectedKeys={category}
-              label={dict.todolist.listitem.category.label}
-              onChange={(e) => setCategory(e.target.value as Category)}
-            >
-              <SelectItem value="todo">
-                {dict.todolist.listitem.category.items.todo}
-              </SelectItem>
-              <SelectItem value="inProgress">
-                {dict.todolist.listitem.category.items.inProgress}
-              </SelectItem>
-              <SelectItem value="done">
-                {dict.todolist.listitem.category.items.done}
-              </SelectItem>
-            </Select>
-          )}
+          <Select
+            className="w-full"
+            defaultSelectedKeys={category}
+            label={dict.todolist.listitem.category.label}
+            onChange={(e) => setCategory(e.target.value as Category)}
+          >
+            <SelectItem value="todo">
+              {dict.todolist.listitem.category.items.todo}
+            </SelectItem>
+            <SelectItem value="inProgress">
+              {dict.todolist.listitem.category.items.inProgress}
+            </SelectItem>
+            <SelectItem value="done">
+              {dict.todolist.listitem.category.items.done}
+            </SelectItem>
+          </Select>
           <div className="flex flex-col gap-2">
             <div className="flex gap-2">
               <button
@@ -172,6 +196,62 @@ function TaskFormBody({
               />
             )}
           </div>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {dict.todolist.subtasks.title}
+            </p>
+            {subtasks.length === 0 ? (
+              <p className="text-sm italic text-gray-400">
+                {dict.todolist.subtasks.empty}
+              </p>
+            ) : (
+              <ul className="flex flex-col gap-1">
+                {subtasks.map((s) => (
+                  <li
+                    key={s.id}
+                    className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 dark:border-gray-700 dark:bg-gray-700/50"
+                  >
+                    <input
+                      checked={s.completed}
+                      className="h-4 w-4 cursor-pointer accent-blue-500"
+                      type="checkbox"
+                      onChange={() => toggleSubtask(s.id)}
+                    />
+                    <span
+                      className={`flex-1 text-sm ${s.completed ? 'text-gray-400 line-through' : ''}`}
+                    >
+                      {s.title}
+                    </span>
+                    <button
+                      className="text-gray-400 transition-colors hover:text-red-500"
+                      type="button"
+                      onClick={() => removeSubtask(s.id)}
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+            <div className="flex gap-2">
+              <input
+                className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                placeholder={dict.todolist.subtasks.placeholder}
+                type="text"
+                value={newSubtaskTitle}
+                onChange={(e) => setNewSubtaskTitle(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addSubtask()
+                  }
+                }}
+              />
+              <Button size="sm" variant="secondary" onPress={addSubtask}>
+                {dict.todolist.subtasks.add}
+              </Button>
+            </div>
+          </div>
         </div>
       </ModalBody>
       <ModalFooter>
@@ -181,7 +261,16 @@ function TaskFormBody({
         <Button
           size="lg"
           variant="primary"
-          onPress={() => onSubmit({ title, description, priority, dueDate, category })}
+          onPress={() =>
+            onSubmit({
+              title,
+              description,
+              priority,
+              dueDate,
+              category,
+              subtasks,
+            })
+          }
         >
           {submitLabel}
         </Button>
@@ -198,7 +287,6 @@ interface TaskFormModalProps {
   submitLabel: string
   cancelLabel: string
   initialValues?: Partial<TaskFormValues>
-  showCategory?: boolean
   isDismissable?: boolean
 }
 
@@ -210,7 +298,6 @@ function TaskFormModal({
   submitLabel,
   cancelLabel,
   initialValues = {},
-  showCategory = false,
   isDismissable = true,
 }: TaskFormModalProps) {
   if (!isOpen) return null
@@ -222,7 +309,6 @@ function TaskFormModal({
           cancelLabel={cancelLabel}
           headerLabel={headerLabel}
           initialValues={initialValues}
-          showCategory={showCategory}
           submitLabel={submitLabel}
           onClose={onClose}
           onSubmit={onSubmit}

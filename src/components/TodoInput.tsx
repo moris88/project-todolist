@@ -14,7 +14,8 @@ function TodoInput() {
   const [isFormOpen, setIsFormOpen] = React.useState(false)
   const [showAdd, setShowAdd] = React.useState(false)
   const [showError, setShowError] = React.useState(false)
-  const [pendingValues, setPendingValues] = React.useState<TaskFormValues | null>(null)
+  const [pendingValues, setPendingValues] =
+    React.useState<TaskFormValues | null>(null)
 
   const handleSubmit = (values: TaskFormValues) => {
     if (!values.title.trim()) {
@@ -39,6 +40,7 @@ function TodoInput() {
       notify: false,
       priority: pendingValues.priority,
       category: 'todo',
+      subtasks: pendingValues.subtasks,
     }
     setTodos(addTodoStorage(newTodo, todos))
     setPendingValues(null)

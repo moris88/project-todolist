@@ -167,6 +167,7 @@ function TodoList() {
   const [overColumn, setOverColumn] = React.useState(null)
   const [filter, setFilter] = React.useState('1')
   const [showDescriptions, setShowDescriptions] = React.useState(false)
+  const [showSubtasks, setShowSubtasks] = React.useState(false)
   const [selectedTodoId, setSelectedTodoId] = React.useState<string | null>(
     null
   )
@@ -251,12 +252,18 @@ function TodoList() {
             ))}
           </Select>
           {filter !== '0' && (
-            <div className="hidden md:flex md:shrink-0 md:items-center">
+            <div className="hidden md:flex md:shrink-0 md:flex-col md:gap-1">
               <Switch
                 checked={showDescriptions}
                 onChange={(e) => setShowDescriptions(e.target.checked)}
               >
                 {dict.todolist.listitem.show_descriptions}
+              </Switch>
+              <Switch
+                checked={showSubtasks}
+                onChange={(e) => setShowSubtasks(e.target.checked)}
+              >
+                {dict.todolist.listitem.show_subtasks}
               </Switch>
             </div>
           )}
@@ -348,6 +355,7 @@ function TodoList() {
               <TodoItem
                 isCommentOpen={selectedTodoId === todo.id}
                 showDescriptions={showDescriptions}
+                showSubtasks={showSubtasks}
                 todo={todo}
                 onCommentPress={() =>
                   setSelectedTodoId((prev) =>

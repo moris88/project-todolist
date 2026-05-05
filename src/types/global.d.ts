@@ -1,3 +1,9 @@
+export interface SubTask {
+  id: string
+  title: string
+  completed: boolean
+}
+
 export interface Todo {
   id: string
   title: string
@@ -10,6 +16,7 @@ export interface Todo {
   notify: boolean
   priority: Priority
   category: Category
+  subtasks: SubTask[]
 }
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { parseCommentsCSV, parseCSV } from '../src/utils/csv'
 
 const TODO_HEADER =
-  'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,category'
+  'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,category,subtasks'
 
 const COMMENT_HEADER = 'id,todoId,text,createdAt'
 
@@ -20,6 +20,7 @@ function todoRow(overrides: Record<string, string> = {}): string {
     notify: 'false',
     priority: 'medium',
     category: 'todo',
+    subtasks: '[]',
   }
   const row = { ...defaults, ...overrides }
   return [
@@ -34,6 +35,7 @@ function todoRow(overrides: Record<string, string> = {}): string {
     row.notify,
     row.priority,
     row.category,
+    row.subtasks,
   ].join(',')
 }
 
@@ -129,6 +131,27 @@ describe('parseCSV', () => {
   it('handles CRLF line endings', () => {
     const csv = [TODO_HEADER, todoRow()].join('\r\n')
     expect(parseCSV(csv)).toHaveLength(1)
+  })
+
+  it('parses subtasks from JSON column', () => {
+    const subtasks = JSON.stringify([{ id: 's1', title: 'Sub 1', completed: false }])
+    const csv = [TODO_HEADER, todoRow({ subtasks: `"${subtasks.replace(/"/g, '""')}"` })].join('\n')
+    const result = parseCSV(csv)
+    expect(result[0].subtasks).toHaveLength(1)
+    expect(result[0].subtasks[0].title).toBe('Sub 1')
+    expect(result[0].subtasks[0].completed).toBe(false)
+  })
+
+  it('defaults subtasks to empty array when column is missing', () => {
+    const headerNoSubtasks = 'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,category'
+    const row = 'abc,My task,,false,2024-01-01T00:00:00.000Z,,,,,medium,todo'
+    const result = parseCSV([headerNoSubtasks, row].join('\n'))
+    expect(result[0].subtasks).toEqual([])
+  })
+
+  it('defaults subtasks to empty array on invalid JSON', () => {
+    const csv = [TODO_HEADER, todoRow({ subtasks: 'not-json' })].join('\n')
+    expect(parseCSV(csv)[0].subtasks).toEqual([])
   })
 })
 

@@ -14,6 +14,7 @@ const itDict = {
       expired: 'Scaduto',
       no_task: 'Nessun compito disponibile',
       show_descriptions: 'Mostra descrizioni',
+      show_subtasks: 'Mostra sottotask',
       show_more: 'Mostra tutto',
       show_less: 'Mostra meno',
       priority: {
@@ -107,6 +108,17 @@ const itDict = {
       send: 'Invia',
       no_comments: 'Nessun commento ancora',
     },
+    subtasks: {
+      title: 'Sottotask',
+      add: 'Aggiungi sottotask',
+      placeholder: 'Titolo del sottotask',
+      empty: 'Nessun sottotask aggiunto',
+      progress: 'completati',
+      move: 'Sposta sottotask',
+      move_title: 'Sposta sottotask',
+      move_to: 'Seleziona task di destinazione',
+      move_confirm: 'Sposta',
+    },
   },
 }
 
@@ -126,6 +138,7 @@ const enDict = {
       expired: 'Overdue',
       no_task: 'No tasks available',
       show_descriptions: 'Show descriptions',
+      show_subtasks: 'Show subtasks',
       show_more: 'Show more',
       show_less: 'Show less',
       priority: {
@@ -216,6 +229,17 @@ const enDict = {
       placeholder: 'Write a comment… (Enter to send, Shift+Enter for new line)',
       send: 'Send',
       no_comments: 'No comments yet',
+    },
+    subtasks: {
+      title: 'Subtasks',
+      add: 'Add subtask',
+      placeholder: 'Subtask title',
+      empty: 'No subtasks added',
+      progress: 'completed',
+      move: 'Move subtask',
+      move_title: 'Move subtask',
+      move_to: 'Select destination task',
+      move_confirm: 'Move',
     },
   },
 }
