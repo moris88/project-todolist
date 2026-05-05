@@ -3,7 +3,12 @@ import React from 'react'
 import { HiMiniPlus } from 'react-icons/hi2'
 
 import { dictAtom, todoListAtom } from '@/atoms'
-import { ConfirmModal, TaskFormModal, TaskFormValues } from '@/components'
+import {
+  ConfirmModal,
+  SubtaskTransfer,
+  TaskFormModal,
+  TaskFormValues,
+} from '@/components'
 import { Button } from '@/components/UI'
 import { Todo } from '@/types'
 import { addTodoStorage, generateUniqueId } from '@/utils'
@@ -17,7 +22,10 @@ function TodoInput() {
   const [pendingValues, setPendingValues] =
     React.useState<TaskFormValues | null>(null)
 
-  const handleSubmit = (values: TaskFormValues) => {
+  const handleSubmit = (
+    values: TaskFormValues,
+    _transfers: SubtaskTransfer[]
+  ) => {
     if (!values.title.trim()) {
       setShowError(true)
       return

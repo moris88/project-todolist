@@ -1,5 +1,20 @@
 import { useAtomValue } from 'jotai'
+import moment from 'moment'
 import React from 'react'
+import { HiFlag, HiMiniPlus } from 'react-icons/hi2'
+import {
+  LuBold,
+  LuCheck,
+  LuHeading1,
+  LuHeading2,
+  LuHeading3,
+  LuItalic,
+  LuList,
+  LuListOrdered,
+  LuPencil,
+  LuUndo2,
+  LuX,
+} from 'react-icons/lu'
 
 import { dictAtom } from '@/atoms'
 import { MarkdownContent } from '@/components'
@@ -16,7 +31,7 @@ import {
   SelectItem,
   Textarea,
 } from '@/components/UI'
-import { Priority, Status, SubTask } from '@/types'
+import { Priority, Status, SubTask, Todo } from '@/types'
 import { generateUniqueId, priorityItems } from '@/utils'
 
 export interface TaskFormValues {
@@ -28,13 +43,20 @@ export interface TaskFormValues {
   subtasks: SubTask[]
 }
 
+export interface SubtaskTransfer {
+  subtask: SubTask
+  targetTaskId: string
+}
+
 interface TaskFormBodyProps {
   initialValues: Partial<TaskFormValues>
   headerLabel: string
   submitLabel: string
   cancelLabel: string
+  allTasks?: Todo[]
+  currentTaskId?: string
   onClose: () => void
-  onSubmit: (values: TaskFormValues) => void
+  onSubmit: (values: TaskFormValues, transfers: SubtaskTransfer[]) => void
 }
 
 function TaskFormBody({
@@ -42,6 +64,8 @@ function TaskFormBody({
   headerLabel,
   submitLabel,
   cancelLabel,
+  allTasks,
+  currentTaskId,
   onClose,
   onSubmit,
 }: TaskFormBodyProps) {
@@ -64,8 +88,89 @@ function TaskFormBody({
   )
   const [newSubtaskTitle, setNewSubtaskTitle] = React.useState('')
   const [markdownPreview, setMarkdownPreview] = React.useState(false)
+  const textareaRef = React.useRef<HTMLTextAreaElement>(null)
+  const [formatHistory, setFormatHistory] = React.useState<string[]>([])
+  const [editingSubtaskId, setEditingSubtaskId] = React.useState<string | null>(
+    null
+  )
+  const [editingSubtaskTitle, setEditingSubtaskTitle] = React.useState('')
+  const [editingSubtaskTargetId, setEditingSubtaskTargetId] =
+    React.useState<string>('')
+  const [subtaskTransfers, setSubtaskTransfers] = React.useState<
+    SubtaskTransfer[]
+  >([])
 
   const minValue = new Date().toISOString().slice(0, 16)
+
+  const applyFormat = (
+    format: 'bold' | 'italic' | 'h1' | 'h2' | 'h3' | 'ul' | 'ol'
+  ) => {
+    const textarea = textareaRef.current
+    if (!textarea) return
+
+    const start = textarea.selectionStart
+    const end = textarea.selectionEnd
+    const selected = description.slice(start, end)
+    const before = description.slice(0, start)
+    const after = description.slice(end)
+
+    let newValue: string
+    let newStart: number
+    let newEnd: number
+
+    if (format === 'bold') {
+      const text = selected || 'testo in grassetto'
+      newValue = before + `**${text}**` + after
+      newStart = start + 2
+      newEnd = start + 2 + text.length
+    } else if (format === 'italic') {
+      const text = selected || 'testo in corsivo'
+      newValue = before + `*${text}*` + after
+      newStart = start + 1
+      newEnd = start + 1 + text.length
+    } else {
+      const lineStart = before.lastIndexOf('\n') + 1
+      const linesBefore = description.slice(0, lineStart)
+      const fromLineStart = description.slice(lineStart)
+      const newlineIdx = fromLineStart.indexOf('\n')
+      const lineEnd =
+        newlineIdx === -1 ? description.length : lineStart + newlineIdx
+      const currentLine = description.slice(lineStart, lineEnd)
+      const linesAfter = description.slice(lineEnd)
+      const cleanLine = currentLine.replace(/^(#{1,3} |- |\d+\. )/, '')
+      const prefix =
+        format === 'h1'
+          ? '# '
+          : format === 'h2'
+            ? '## '
+            : format === 'h3'
+              ? '### '
+              : format === 'ul'
+                ? '- '
+                : '1. '
+      const newLine = prefix + cleanLine
+      newValue = linesBefore + newLine + linesAfter
+      newStart = lineStart + newLine.length
+      newEnd = newStart
+    }
+
+    setFormatHistory((prev) => [...prev, description])
+    setDescription(newValue)
+    requestAnimationFrame(() => {
+      textarea.focus()
+      textarea.setSelectionRange(newStart, newEnd)
+    })
+  }
+
+  const undoFormat = () => {
+    if (formatHistory.length === 0) return
+    const previous = formatHistory[formatHistory.length - 1]
+    setFormatHistory((prev) => prev.slice(0, -1))
+    setDescription(previous)
+    requestAnimationFrame(() => {
+      textareaRef.current?.focus()
+    })
+  }
 
   const addSubtask = () => {
     if (!newSubtaskTitle.trim()) return
@@ -75,6 +180,7 @@ function TaskFormBody({
         id: generateUniqueId(),
         title: newSubtaskTitle.trim(),
         completed: false,
+        completedAt: null,
       },
     ])
     setNewSubtaskTitle('')
@@ -82,12 +188,62 @@ function TaskFormBody({
 
   const toggleSubtask = (id: string) => {
     setSubtasks((prev) =>
-      prev.map((s) => (s.id === id ? { ...s, completed: !s.completed } : s))
+      prev.map((s) =>
+        s.id === id
+          ? {
+              ...s,
+              completed: !s.completed,
+              completedAt: !s.completed ? new Date().toISOString() : null,
+            }
+          : s
+      )
     )
   }
 
   const removeSubtask = (id: string) => {
     setSubtasks((prev) => prev.filter((s) => s.id !== id))
+  }
+
+  const startEditSubtask = (id: string, currentTitle: string) => {
+    setEditingSubtaskId(id)
+    setEditingSubtaskTitle(currentTitle)
+    setEditingSubtaskTargetId(currentTaskId ?? '')
+  }
+
+  const saveEditSubtask = () => {
+    if (!editingSubtaskId) return
+    const trimmed = editingSubtaskTitle.trim()
+    if (!trimmed) {
+      cancelEditSubtask()
+      return
+    }
+    const subtask = subtasks.find((s) => s.id === editingSubtaskId)
+    if (!subtask) return
+    if (editingSubtaskTargetId && editingSubtaskTargetId !== currentTaskId) {
+      setSubtasks((prev) => prev.filter((s) => s.id !== editingSubtaskId))
+      setSubtaskTransfers((prev) => [
+        ...prev,
+        {
+          subtask: { ...subtask, title: trimmed },
+          targetTaskId: editingSubtaskTargetId,
+        },
+      ])
+    } else {
+      setSubtasks((prev) =>
+        prev.map((s) =>
+          s.id === editingSubtaskId ? { ...s, title: trimmed } : s
+        )
+      )
+    }
+    setEditingSubtaskId(null)
+    setEditingSubtaskTitle('')
+    setEditingSubtaskTargetId('')
+  }
+
+  const cancelEditSubtask = () => {
+    setEditingSubtaskId(null)
+    setEditingSubtaskTitle('')
+    setEditingSubtaskTargetId('')
   }
 
   const handlePriorityChange = (value: string) => {
@@ -128,7 +284,21 @@ function TaskFormBody({
             onChange={(e) => handlePriorityChange(e.target.value)}
           >
             {priorityItems.map((item, index) => (
-              <SelectItem key={index} value={String(index)}>
+              <SelectItem
+                key={index}
+                startContent={
+                  item === 'urgent' ? (
+                    <HiFlag className="h-3.5 w-3.5 text-red-600" />
+                  ) : item === 'high' ? (
+                    <HiFlag className="h-3.5 w-3.5 text-yellow-500" />
+                  ) : item === 'low' ? (
+                    <HiFlag className="h-3.5 w-3.5 text-green-600" />
+                  ) : (
+                    <HiFlag className="h-3.5 w-3.5 text-gray-400" />
+                  )
+                }
+                value={String(index)}
+              >
                 {
                   dict.todolist.listitem.priority.items[
                     item as keyof typeof dict.todolist.listitem.priority.items
@@ -185,6 +355,45 @@ function TaskFormBody({
                 {dict.todolist.editTask.preview}
               </button>
             </div>
+            {!markdownPreview && (
+              <div className="flex flex-wrap items-center gap-1 rounded-lg border border-gray-200 bg-gray-50 px-2 py-1 dark:border-gray-700 dark:bg-gray-800/50">
+                {(
+                  [
+                    { format: 'bold', icon: LuBold, title: 'Grassetto' },
+                    { format: 'italic', icon: LuItalic, title: 'Corsivo' },
+                    { format: 'h1', icon: LuHeading1, title: 'Titolo H1' },
+                    { format: 'h2', icon: LuHeading2, title: 'Titolo H2' },
+                    { format: 'h3', icon: LuHeading3, title: 'Titolo H3' },
+                    { format: 'ul', icon: LuList, title: 'Lista puntata' },
+                    {
+                      format: 'ol',
+                      icon: LuListOrdered,
+                      title: 'Lista numerata',
+                    },
+                  ] as const
+                ).map(({ format, icon: Icon, title }) => (
+                  <button
+                    key={format}
+                    className="rounded p-1.5 text-gray-600 transition-colors hover:bg-gray-200 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-100"
+                    title={title}
+                    type="button"
+                    onClick={() => applyFormat(format)}
+                  >
+                    <Icon size={16} />
+                  </button>
+                ))}
+                <div className="mx-1 h-4 w-px bg-gray-300 dark:bg-gray-600" />
+                <button
+                  className="rounded p-1.5 transition-colors enabled:text-gray-600 enabled:hover:bg-gray-200 enabled:hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-30 dark:enabled:text-gray-400 dark:enabled:hover:bg-gray-700 dark:enabled:hover:text-gray-100"
+                  disabled={formatHistory.length === 0}
+                  title="Annulla ultima operazione"
+                  type="button"
+                  onClick={undoFormat}
+                >
+                  <LuUndo2 size={16} />
+                </button>
+              </div>
+            )}
             {markdownPreview ? (
               <div className="min-h-[120px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
                 {description ? (
@@ -197,6 +406,7 @@ function TaskFormBody({
               </div>
             ) : (
               <Textarea
+                ref={textareaRef}
                 className="w-full"
                 label={dict.todolist.addTask.label}
                 maxRows={10}
@@ -228,27 +438,108 @@ function TaskFormBody({
                   >
                     <input
                       checked={s.completed}
-                      className="h-4 w-4 cursor-pointer accent-blue-500"
+                      className="h-4 w-4 shrink-0 cursor-pointer accent-blue-500"
                       type="checkbox"
                       onChange={() => toggleSubtask(s.id)}
                     />
-                    <span
-                      className={`flex-1 text-sm ${s.completed ? 'text-gray-400 line-through' : ''}`}
-                    >
-                      {s.title}
-                    </span>
-                    <button
-                      className="text-gray-400 transition-colors hover:text-red-500"
-                      type="button"
-                      onClick={() => removeSubtask(s.id)}
-                    >
-                      ×
-                    </button>
+                    {editingSubtaskId === s.id ? (
+                      <div className="flex flex-1 flex-col gap-1">
+                        <div className="flex items-center gap-1">
+                          <input
+                            autoFocus
+                            className="flex-1 rounded border border-blue-400 bg-white px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+                            type="text"
+                            value={editingSubtaskTitle}
+                            onChange={(e) =>
+                              setEditingSubtaskTitle(e.target.value)
+                            }
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault()
+                                saveEditSubtask()
+                              } else if (e.key === 'Escape') {
+                                cancelEditSubtask()
+                              }
+                            }}
+                          />
+                          {allTasks && allTasks.length > 1 && (
+                            <select
+                              className="rounded border border-gray-300 bg-white px-2 py-0.5 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+                              title="Task padre"
+                              value={editingSubtaskTargetId}
+                              onChange={(e) =>
+                                setEditingSubtaskTargetId(e.target.value)
+                              }
+                            >
+                              {allTasks
+                                .filter(
+                                  (t) => !t.completed || t.id === currentTaskId
+                                )
+                                .map((t) => (
+                                  <option key={t.id} value={t.id}>
+                                    {t.title}
+                                    {t.id === currentTaskId
+                                      ? ' (corrente)'
+                                      : ''}
+                                  </option>
+                                ))}
+                            </select>
+                          )}
+                          <button
+                            className="text-green-500 transition-colors hover:text-green-700"
+                            title="Salva"
+                            type="button"
+                            onClick={saveEditSubtask}
+                          >
+                            <LuCheck size={15} />
+                          </button>
+                          <button
+                            className="text-gray-400 transition-colors hover:text-gray-600"
+                            title="Annulla"
+                            type="button"
+                            onClick={cancelEditSubtask}
+                          >
+                            <LuX size={15} />
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <span className="flex-1">
+                          <span
+                            className={`block text-sm ${s.completed ? 'text-gray-400 line-through' : ''}`}
+                          >
+                            {s.title}
+                          </span>
+                          {s.completed && s.completedAt && (
+                            <span className="block text-xs text-gray-400 dark:text-gray-500">
+                              {moment(s.completedAt).format('DD/MM/YYYY HH:mm')}
+                            </span>
+                          )}
+                        </span>
+                        <button
+                          className="text-gray-400 transition-colors hover:text-blue-500"
+                          title="Modifica"
+                          type="button"
+                          onClick={() => startEditSubtask(s.id, s.title)}
+                        >
+                          <LuPencil size={13} />
+                        </button>
+                        <button
+                          className="text-gray-400 transition-colors hover:text-red-500"
+                          title="Elimina"
+                          type="button"
+                          onClick={() => removeSubtask(s.id)}
+                        >
+                          <LuX size={15} />
+                        </button>
+                      </>
+                    )}
                   </li>
                 ))}
               </ul>
             )}
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 md:flex-row">
               <input
                 className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
                 placeholder={dict.todolist.subtasks.placeholder}
@@ -263,6 +554,7 @@ function TaskFormBody({
                 }}
               />
               <Button size="sm" variant="secondary" onPress={addSubtask}>
+                <HiMiniPlus className="h-4 w-4" />
                 {dict.todolist.subtasks.add}
               </Button>
             </div>
@@ -277,14 +569,10 @@ function TaskFormBody({
           size="lg"
           variant="primary"
           onPress={() =>
-            onSubmit({
-              title,
-              description,
-              priority,
-              dueDate,
-              status,
-              subtasks,
-            })
+            onSubmit(
+              { title, description, priority, dueDate, status, subtasks },
+              subtaskTransfers
+            )
           }
         >
           {submitLabel}
@@ -297,12 +585,14 @@ function TaskFormBody({
 interface TaskFormModalProps {
   isOpen: boolean
   onClose: () => void
-  onSubmit: (values: TaskFormValues) => void
+  onSubmit: (values: TaskFormValues, transfers: SubtaskTransfer[]) => void
   headerLabel: string
   submitLabel: string
   cancelLabel: string
   initialValues?: Partial<TaskFormValues>
   isDismissable?: boolean
+  allTasks?: Todo[]
+  currentTaskId?: string
 }
 
 function TaskFormModal({
@@ -314,6 +604,8 @@ function TaskFormModal({
   cancelLabel,
   initialValues = {},
   isDismissable = true,
+  allTasks,
+  currentTaskId,
 }: TaskFormModalProps) {
   if (!isOpen) return null
 
@@ -321,7 +613,9 @@ function TaskFormModal({
     <Modal isDismissable={isDismissable} isOpen={isOpen} onClose={onClose}>
       <ModalContent>
         <TaskFormBody
+          allTasks={allTasks}
           cancelLabel={cancelLabel}
+          currentTaskId={currentTaskId}
           headerLabel={headerLabel}
           initialValues={initialValues}
           submitLabel={submitLabel}

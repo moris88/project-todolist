@@ -26,18 +26,20 @@ function Select({
   // Use prop if provided, otherwise internal state
   const currentValue = defaultSelectedKeys ?? internalValue
 
-  // Derive label from current value
-  const selectedLabel = React.useMemo(() => {
-    let foundLabel = ''
+  // Derive label and startContent from current value
+  const { selectedLabel, selectedStartContent } = React.useMemo(() => {
+    let foundLabel: React.ReactNode = ''
+    let foundStart: React.ReactNode = null
     React.Children.forEach(children, (child) => {
       if (
         React.isValidElement(child) &&
         (child.props as any).value === currentValue
       ) {
         foundLabel = (child.props as any).children
+        foundStart = (child.props as any).startContent ?? null
       }
     })
-    return foundLabel
+    return { selectedLabel: foundLabel, selectedStartContent: foundStart }
   }, [children, currentValue])
 
   // Click outside handler
@@ -70,7 +72,7 @@ function Select({
     if (React.isValidElement(child)) {
       return React.cloneElement(child as React.ReactElement<any>, {
         onClick: handleSelect,
-        isSelected: (child.props as any).value === currentValue,
+        isSelected: !((child.props as any).value === currentValue),
       })
     }
     return child
@@ -91,7 +93,8 @@ function Select({
         type="button"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span className="block truncate text-sm">
+        <span className="flex items-center gap-2 truncate text-sm">
+          {selectedStartContent}
           {selectedLabel || 'Seleziona...'}
         </span>
         <HiChevronDown

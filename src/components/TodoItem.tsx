@@ -18,6 +18,7 @@ import { commentsAtom, dictAtom, todoListAtom } from '@/atoms/atoms'
 import {
   ConfirmModal,
   MarkdownContent,
+  SubtaskTransfer,
   TaskFormModal,
   TaskFormValues,
 } from '@/components'
@@ -34,7 +35,7 @@ import {
   Select,
   SelectItem,
 } from '@/components/UI'
-import { Todo } from '@/types'
+import { Status, Todo } from '@/types'
 import {
   generateUniqueId,
   isTaskOverdue,
@@ -68,10 +69,15 @@ function TodoItem({
   const [showInlineDetail, setShowInlineDetail] = React.useState(false)
   const [pendingEditValues, setPendingEditValues] =
     React.useState<TaskFormValues | null>(null)
+  const [pendingTransfers, setPendingTransfers] = React.useState<
+    SubtaskTransfer[]
+  >([])
   const [quickAddTitle, setQuickAddTitle] = React.useState('')
   const [showSubtasksLocal, setShowSubtasksLocal] = React.useState(false)
   const [moveSubtaskId, setMoveSubtaskId] = React.useState<string | null>(null)
   const [moveTargetTodoId, setMoveTargetTodoId] = React.useState('')
+  const [isEditingStatus, setIsEditingStatus] = React.useState(false)
+  const statusDropdownRef = React.useRef<HTMLDivElement>(null)
 
   const hasComments = comments.filter((c) => c.todoId === todo.id)?.length > 0
   const hasSubtasks = todo.subtasks?.length > 0
@@ -94,7 +100,11 @@ function TodoItem({
           completed: nowCompleting,
           completedAt: nowCompleting ? new Date().toISOString() : null,
           subtasks: nowCompleting
-            ? t.subtasks.map((s) => ({ ...s, completed: true }))
+            ? t.subtasks.map((s) => ({
+                ...s,
+                completed: true,
+                completedAt: s.completedAt ?? new Date().toISOString(),
+              }))
             : t.subtasks,
           updatedAt: new Date().toISOString(),
         }
@@ -114,14 +124,18 @@ function TodoItem({
     setShowDeleteModal(false)
   }
 
-  const handleEditSubmit = (values: TaskFormValues) => {
+  const handleEditSubmit = (
+    values: TaskFormValues,
+    transfers: SubtaskTransfer[]
+  ) => {
     setPendingEditValues(values)
+    setPendingTransfers(transfers)
     setShowEditModal(true)
   }
 
   const confirmUpdateTodo = () => {
     if (!pendingEditValues) return
-    const updatedTodos = todos.map((t) => {
+    let updatedTodos = todos.map((t) => {
       if (t.id === todo.id) {
         return {
           ...t,
@@ -141,8 +155,19 @@ function TodoItem({
       }
       return t
     })
+    for (const transfer of pendingTransfers) {
+      updatedTodos = updatedTodos.map((t) => {
+        if (t.id !== transfer.targetTaskId) return t
+        return {
+          ...t,
+          subtasks: [...t.subtasks, transfer.subtask],
+          updatedAt: new Date().toISOString(),
+        }
+      })
+    }
     setTodos(updateTodoStorage(updatedTodos))
     setPendingEditValues(null)
+    setPendingTransfers([])
     setIsEditing(false)
     setShowEditModal(false)
   }
@@ -159,6 +184,7 @@ function TodoItem({
             id: generateUniqueId(),
             title: quickAddTitle.trim(),
             completed: false,
+            completedAt: null,
           },
         ],
         updatedAt: new Date().toISOString(),
@@ -174,7 +200,13 @@ function TodoItem({
       return {
         ...t,
         subtasks: t.subtasks.map((s) =>
-          s.id === subtaskId ? { ...s, completed: !s.completed } : s
+          s.id === subtaskId
+            ? {
+                ...s,
+                completed: !s.completed,
+                completedAt: !s.completed ? new Date().toISOString() : null,
+              }
+            : s
         ),
         updatedAt: new Date().toISOString(),
       }
@@ -208,6 +240,53 @@ function TodoItem({
     setMoveTargetTodoId('')
   }
 
+  const allStatuses: Status[] = [
+    'todo',
+    'progress',
+    'review',
+    'testing',
+    'blocked',
+    'paused',
+    'done',
+    'archived',
+  ]
+
+  const statusColor = (s: Status) =>
+    s === 'done'
+      ? 'bg-green-500'
+      : s === 'todo'
+        ? 'bg-gray-400'
+        : 'bg-yellow-500'
+
+  const updateStatusInline = (newStatus: Status) => {
+    const updatedTodos = todos.map((t) => {
+      if (t.id !== todo.id) return t
+      return {
+        ...t,
+        status: newStatus,
+        completed: newStatus === 'done',
+        completedAt:
+          newStatus === 'done' && !t.completed
+            ? new Date().toISOString()
+            : t.completedAt,
+        updatedAt: new Date().toISOString(),
+      }
+    })
+    setTodos(updateTodoStorage(updatedTodos))
+    setIsEditingStatus(false)
+  }
+
+  React.useEffect(() => {
+    if (!isEditingStatus) return
+    const handler = (e: MouseEvent) => {
+      if (!statusDropdownRef.current?.contains(e.target as Node)) {
+        setIsEditingStatus(false)
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [isEditingStatus])
+
   const flagIcon: Record<string, React.ReactNode> = {
     low: <HiFlag className="h-3 w-3 text-green-600" />,
     medium: <></>,
@@ -223,7 +302,9 @@ function TodoItem({
   return (
     <div className={`flex w-full flex-col items-start justify-start gap-y-2`}>
       <TaskFormModal
+        allTasks={todos}
         cancelLabel={dict.todolist.editTask.cancel}
+        currentTaskId={todo.id}
         headerLabel={dict.todolist.editTask.info}
         initialValues={{
           title: todo.title,
@@ -309,14 +390,22 @@ function TodoItem({
                           onChange={() => toggleSubtaskInList(s.id)}
                           onClick={(e) => e.stopPropagation()}
                         />
-                        <span
-                          className={`flex-1 text-sm leading-snug ${s.completed ? 'text-gray-400 line-through' : ''}`}
-                        >
-                          {s.title}
+                        <span className="flex-1">
+                          <span
+                            className={`block text-sm leading-snug ${s.completed ? 'text-gray-400 line-through' : ''}`}
+                          >
+                            {s.title}
+                          </span>
+                          {s.completed && s.completedAt && (
+                            <span className="block text-xs text-gray-400 dark:text-gray-500">
+                              {dict.todolist.listitem.completedAt}:{' '}
+                              {moment(s.completedAt).format('DD/MM/YYYY HH:mm')}
+                            </span>
+                          )}
                         </span>
                         {todos.filter((t) => t.id !== todo.id).length > 0 && (
                           <button
-                            className="shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all hover:text-blue-500 group-hover:opacity-100 dark:text-gray-600"
+                            className="shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all hover:text-blue-500 group-hover:opacity-100 dark:text-white"
                             title={dict.todolist.subtasks.move}
                             type="button"
                             onClick={(e) => {
@@ -446,6 +535,16 @@ function TodoItem({
             >
               <HiListBullet className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
+            {onCommentPress && (
+              <Button
+                className="md:px-4 md:py-2 md:text-base"
+                size="sm"
+                variant={isCommentOpen ? 'secondary' : 'primary'}
+                onPress={onCommentPress}
+              >
+                <HiChatBubbleLeftEllipsis className="h-3 w-3 md:h-5 md:w-5" />
+              </Button>
+            )}
             <Button
               className="md:px-4 md:py-2 md:text-base"
               isDisabled={todo.completed}
@@ -463,32 +562,59 @@ function TodoItem({
             >
               <HiMiniTrash className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
-            {onCommentPress && (
-              <Button
-                className="md:px-4 md:py-2 md:text-base"
-                size="sm"
-                variant={isCommentOpen ? 'secondary' : 'primary'}
-                onPress={onCommentPress}
-              >
-                <HiChatBubbleLeftEllipsis className="h-3 w-3 md:h-5 md:w-5" />
-              </Button>
-            )}
           </ButtonGroup>
         </div>
         <div className="flex w-full items-center justify-between gap-2">
-          <div>
-            <Chip
-              color={
-                todo.status === 'done'
-                  ? 'success'
-                  : todo.status === 'todo'
-                    ? 'default'
-                    : 'warning'
-              }
-            >
-              {dict.todolist.listitem.status.status}:{' '}
-              {dict.todolist.listitem.status.items[todo.status]}
-            </Chip>
+          <div ref={statusDropdownRef} className="relative">
+            <div className="flex items-center gap-1">
+              <Chip
+                color={
+                  todo.status === 'done'
+                    ? 'success'
+                    : todo.status === 'todo'
+                      ? 'default'
+                      : 'warning'
+                }
+              >
+                {dict.todolist.listitem.status.status}:{' '}
+                {dict.todolist.listitem.status.items[todo.status]}
+              </Chip>
+              <button
+                className="rounded p-0.5 text-gray-400 transition-colors hover:text-blue-500"
+                title="Modifica stato"
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setIsEditingStatus((v) => !v)
+                }}
+              >
+                <HiOutlinePencilSquare className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            {isEditingStatus && (
+              <div className="absolute left-0 top-full z-50 mt-1 min-w-[160px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+                {allStatuses.map((s) => (
+                  <button
+                    key={s}
+                    className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
+                      todo.status === s
+                        ? 'font-semibold text-blue-600 dark:text-blue-400'
+                        : 'text-gray-700 dark:text-gray-300'
+                    }`}
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      updateStatusInline(s)
+                    }}
+                  >
+                    <span
+                      className={`h-2 w-2 shrink-0 rounded-full ${statusColor(s)}`}
+                    />
+                    {dict.todolist.listitem.status.items[s]}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-2">
             {hasSubtasks && (
@@ -538,19 +664,29 @@ function TodoItem({
           <ModalContent>
             <ModalHeader>{dict.todolist.subtasks.move_title}</ModalHeader>
             <ModalBody>
-              <Select
-                defaultSelectedKeys={moveTargetTodoId}
-                label={dict.todolist.subtasks.move_to}
-                onChange={(e) => setMoveTargetTodoId(e.target.value)}
-              >
-                {todos
-                  .filter((t) => t.id !== todo.id)
-                  .map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.title}
+              <div className="min-h-52">
+                <Select
+                  defaultSelectedKeys={moveTargetTodoId}
+                  label={dict.todolist.subtasks.move_to}
+                  onChange={(e) => setMoveTargetTodoId(e.target.value)}
+                >
+                  {todos.filter(
+                    (t) => t.id !== todo.id && t.completed === false
+                  ).length === 0 ? (
+                    <SelectItem key="no-todos" isSelected={false} value="">
+                      {dict.todolist.subtasks.move_no_tasks}
                     </SelectItem>
-                  ))}
-              </Select>
+                  ) : (
+                    todos
+                      .filter((t) => t.id !== todo.id && t.completed === false)
+                      .map((t) => (
+                        <SelectItem key={t.id} value={t.id}>
+                          {t.title}
+                        </SelectItem>
+                      ))
+                  )}
+                </Select>
+              </div>
             </ModalBody>
             <ModalFooter>
               <Button
