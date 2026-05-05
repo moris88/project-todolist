@@ -290,6 +290,7 @@ function DangerZone({
                 setTodos(removeAllTodos())
                 break
             }
+            setShowDangerZone(false)
             setShowDeleteModal({ ...showDeleteModal, [key]: false })
           }}
         />

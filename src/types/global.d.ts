@@ -2,6 +2,7 @@ export interface SubTask {
   id: string
   title: string
   completed: boolean
+  completedAt: string | null
 }
 
 export interface Todo {
@@ -28,6 +29,7 @@ export type Status =
   | 'blocked'
   | 'paused'
   | 'done'
+  | 'archived'
 
 export interface Comment {
   id: string

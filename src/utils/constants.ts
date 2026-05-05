@@ -131,6 +131,7 @@ const itDict = {
       move_title: 'Sposta sottocompito',
       move_to: 'Seleziona compito di destinazione',
       move_confirm: 'Sposta',
+      move_no_tasks: 'Non ci sono compiti',
     },
   },
 }
@@ -266,6 +267,7 @@ const enDict = {
       move_title: 'Move subtask',
       move_to: 'Select destination task',
       move_confirm: 'Move',
+      move_no_tasks: 'There are no tasks',
     },
   },
 }

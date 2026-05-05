@@ -86,22 +86,20 @@ function TodoList() {
               </SelectItem>
             ))}
           </Select>
-          {filter !== '0' && (
-            <div className="hidden md:flex md:shrink-0 md:flex-col md:gap-1">
-              <Switch
-                checked={showDescriptions}
-                onChange={(e) => setShowDescriptions(e.target.checked)}
-              >
-                {dict.todolist.listitem.show_descriptions}
-              </Switch>
-              <Switch
-                checked={showSubtasks}
-                onChange={(e) => setShowSubtasks(e.target.checked)}
-              >
-                {dict.todolist.listitem.show_subtasks}
-              </Switch>
-            </div>
-          )}
+          <div className="hidden md:flex md:shrink-0 md:flex-col md:gap-1">
+            <Switch
+              checked={showDescriptions}
+              onChange={(e) => setShowDescriptions(e.target.checked)}
+            >
+              {dict.todolist.listitem.show_descriptions}
+            </Switch>
+            <Switch
+              checked={showSubtasks}
+              onChange={(e) => setShowSubtasks(e.target.checked)}
+            >
+              {dict.todolist.listitem.show_subtasks}
+            </Switch>
+          </div>
         </div>
       )}
       {todos.filter((todo) => filterTodoByStatus(todo, filter)).length === 0 ? (
