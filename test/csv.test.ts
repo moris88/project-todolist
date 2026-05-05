@@ -146,6 +146,21 @@ describe('parseCSV', () => {
     expect(result[0].subtasks).toHaveLength(1)
     expect(result[0].subtasks[0].title).toBe('Sub 1')
     expect(result[0].subtasks[0].completed).toBe(false)
+    // completedAt must be migrated to null for old CSV without the field
+    expect(result[0].subtasks[0].completedAt).toBeNull()
+  })
+
+  it('preserves completedAt when present in subtask JSON', () => {
+    const ts = '2024-06-01T12:00:00.000Z'
+    const subtasks = JSON.stringify([
+      { id: 's2', title: 'Done sub', completed: true, completedAt: ts },
+    ])
+    const csv = [
+      TODO_HEADER,
+      todoRow({ subtasks: `"${subtasks.replace(/"/g, '""')}"` }),
+    ].join('\n')
+    const result = parseCSV(csv)
+    expect(result[0].subtasks[0].completedAt).toBe(ts)
   })
 
   it('defaults subtasks to empty array when column is missing', () => {

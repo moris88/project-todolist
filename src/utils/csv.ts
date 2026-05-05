@@ -174,6 +174,11 @@ export function parseCSV(csvText: string): Todo[] {
     if (todo.completed === undefined) todo.completed = false
     if (!todo.createdAt) todo.createdAt = new Date().toISOString()
     if (!Array.isArray(todo.subtasks)) todo.subtasks = []
+    // Migrate subtasks exported before completedAt was added
+    todo.subtasks = todo.subtasks.map((s: any) => ({
+      ...s,
+      completedAt: s.completedAt !== undefined ? s.completedAt : null,
+    }))
 
     todos.push(todo as Todo)
   }
