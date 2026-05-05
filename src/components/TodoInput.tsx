@@ -94,7 +94,9 @@ function TodoInput() {
         onPress={() => setIsFormOpen(true)}
       >
         <HiMiniPlus className="h-5 w-5" />
-        <span className="hidden text-sm font-semibold sm:inline">{dict.todolist.addTask.title}</span>
+        <span className="hidden text-sm font-semibold sm:inline">
+          {dict.todolist.addTask.title}
+        </span>
       </Button>
 
       <Modal isDismissable isOpen={isFormOpen} onClose={handleClose}>
