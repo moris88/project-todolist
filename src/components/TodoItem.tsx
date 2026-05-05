@@ -94,6 +94,7 @@ function TodoItem({
     const nowCompleting = !todo.completed
     const updatedTodos = todos.map((t) => {
       if (t.id === todo.id) {
+        if (t.status === 'archived') return t
         return {
           ...t,
           status: nowCompleting ? 'done' : todo.status,
@@ -256,7 +257,9 @@ function TodoItem({
       ? 'bg-green-500'
       : s === 'todo'
         ? 'bg-gray-400'
-        : 'bg-yellow-500'
+        : s === 'archived'
+          ? 'bg-red-500'
+          : 'bg-yellow-500'
 
   const updateStatusInline = (newStatus: Status) => {
     const updatedTodos = todos.map((t) => {
@@ -332,6 +335,7 @@ function TodoItem({
               onPointerDown={(e) => e.stopPropagation()}
             >
               <Checkbox
+                isDisabled={todo.status === 'archived'}
                 isSelected={todo.completed}
                 onChange={() => toggleTodo()}
               />
@@ -425,30 +429,32 @@ function TodoItem({
                   </ul>
                 </>
               )}
-              {(showSubtasks || showSubtasksLocal) && !todo.completed && (
-                <div className="flex items-center gap-2 border-t border-gray-200 px-2 py-2 dark:border-gray-700">
-                  <input
-                    className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
-                    placeholder={dict.todolist.subtasks.placeholder}
-                    type="text"
-                    value={quickAddTitle}
-                    onChange={(e) => setQuickAddTitle(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault()
-                        addSubtaskInline()
-                      }
-                    }}
-                  />
-                  <button
-                    className="shrink-0 rounded bg-blue-500 p-1 text-white transition-colors hover:bg-blue-600"
-                    type="button"
-                    onClick={addSubtaskInline}
-                  >
-                    <HiMiniPlus className="h-4 w-4" />
-                  </button>
-                </div>
-              )}
+              {(showSubtasks || showSubtasksLocal) &&
+                !todo.completed &&
+                todo.status !== 'archived' && (
+                  <div className="flex items-center gap-2 border-t border-gray-200 px-2 py-2 dark:border-gray-700">
+                    <input
+                      className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                      placeholder={dict.todolist.subtasks.placeholder}
+                      type="text"
+                      value={quickAddTitle}
+                      onChange={(e) => setQuickAddTitle(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          addSubtaskInline()
+                        }
+                      }}
+                    />
+                    <button
+                      className="shrink-0 rounded bg-blue-500 p-1 text-white transition-colors hover:bg-blue-600"
+                      type="button"
+                      onClick={addSubtaskInline}
+                    >
+                      <HiMiniPlus className="h-4 w-4" />
+                    </button>
+                  </div>
+                )}
             </div>
           )}
           {(showDescriptions || showInlineDetail) && todo.description && (
@@ -547,7 +553,7 @@ function TodoItem({
             )}
             <Button
               className="md:px-4 md:py-2 md:text-base"
-              isDisabled={todo.completed}
+              isDisabled={todo.completed || todo.status === 'archived'}
               size="sm"
               variant="primary"
               onPress={() => setIsEditing(true)}
@@ -573,7 +579,9 @@ function TodoItem({
                     ? 'success'
                     : todo.status === 'todo'
                       ? 'default'
-                      : 'warning'
+                      : todo.status === 'archived'
+                        ? 'danger'
+                        : 'warning'
                 }
               >
                 {dict.todolist.listitem.status.status}:{' '}

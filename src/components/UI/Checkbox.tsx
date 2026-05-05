@@ -2,17 +2,19 @@ import React from 'react'
 
 interface CheckboxProps {
   isSelected?: boolean
+  isDisabled?: boolean
   onChange?: () => void
   children?: React.ReactNode
 }
 
-function Checkbox({ isSelected, onChange, children }: CheckboxProps) {
+function Checkbox({ isSelected, isDisabled, onChange, children }: CheckboxProps) {
   return (
-    <label className="inline-flex cursor-pointer items-center gap-2">
+    <label className={`inline-flex items-center gap-2 ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
       <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
         <input
           checked={isSelected}
-          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0"
+          disabled={isDisabled}
+          className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
           type="checkbox"
           onChange={onChange}
         />
