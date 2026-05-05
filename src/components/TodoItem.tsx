@@ -43,16 +43,6 @@ import {
   updateTodoStorage,
 } from '@/utils'
 
-function Separated() {
-  return (
-    <span className="hidden md:inline">
-      &nbsp;
-      {'-'}
-      &nbsp;
-    </span>
-  )
-}
-
 interface TodoItemProps {
   todo: Todo
   showDescriptions?: boolean
@@ -399,32 +389,28 @@ function TodoItem({
           )}
           onPointerDown={(e) => e.stopPropagation()}
         >
-          <small className="flex flex-row flex-wrap items-center">
+          <small className="flex flex-wrap items-center gap-1">
             {todo.createdAt && (
-              <span>
+              <Chip color="default" size="sm">
                 {dict.todolist.listitem.createdAt}:{' '}
                 {moment(todo.createdAt).format('DD/MM/YYYY HH:mm')}
-              </span>
+              </Chip>
             )}
+
             {todo.updatedAt && (
-              <span>
-                <Separated />
+              <Chip color="default" size="sm">
                 {dict.todolist.listitem.updatedAt}:{' '}
                 {moment(todo.updatedAt).format('DD/MM/YYYY HH:mm')}
-              </span>
+              </Chip>
             )}
-            {todo.completed && (
-              <span>
-                <Separated />
-                <Chip color="success" size="sm">
-                  {dict.todolist.listitem.completedAt}:{' '}
-                  {moment(todo.completedAt).format('DD/MM/YYYY HH:mm')}
-                </Chip>
-              </span>
-            )}
-            {todo.dueDate && !todo.completed && (
-              <span>
-                <Separated />
+
+            {todo.completed ? (
+              <Chip color="success" size="sm">
+                {dict.todolist.listitem.completedAt}:{' '}
+                {moment(todo.completedAt).format('DD/MM/YYYY HH:mm')}
+              </Chip>
+            ) : (
+              todo.dueDate && (
                 <Chip
                   color={isTaskOverdue(todo.dueDate) ? 'danger' : 'warning'}
                   size="sm"
@@ -434,7 +420,7 @@ function TodoItem({
                     : dict.todolist.listitem.dueDateAt}
                   : {moment(todo.dueDate).format('DD/MM/YYYY HH:mm')}
                 </Chip>
-              </span>
+              )
             )}
           </small>
           <ButtonGroup>
@@ -491,7 +477,15 @@ function TodoItem({
         </div>
         <div className="flex w-full items-center justify-between gap-2">
           <div>
-            <Chip color="default">
+            <Chip
+              color={
+                todo.status === 'done'
+                  ? 'success'
+                  : todo.status === 'todo'
+                    ? 'default'
+                    : 'warning'
+              }
+            >
               {dict.todolist.listitem.status.status}:{' '}
               {dict.todolist.listitem.status.items[todo.status]}
             </Chip>
