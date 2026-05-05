@@ -14,7 +14,7 @@ const itDict = {
       expired: 'Scaduto',
       no_task: 'Nessun compito disponibile',
       show_descriptions: 'Mostra descrizioni',
-      show_subtasks: 'Mostra sottotask',
+      show_subtasks: 'Mostra sottocompiti',
       show_more: 'Mostra tutto',
       show_less: 'Mostra meno',
       priority: {
@@ -27,6 +27,7 @@ const itDict = {
         },
       },
       status: {
+        status: 'Stato',
         label: 'Seleziona uno stato',
         items: {
           todo: 'Da fare',
@@ -121,14 +122,14 @@ const itDict = {
       no_comments: 'Nessun commento ancora',
     },
     subtasks: {
-      title: 'Sottotask',
-      add: 'Aggiungi sottotask',
-      placeholder: 'Titolo del sottotask',
-      empty: 'Nessun sottotask aggiunto',
+      title: 'Sottocompito',
+      add: 'Aggiungi sottocompito',
+      placeholder: 'Titolo del sottocompito',
+      empty: 'Nessun sottocompito aggiunto',
       progress: 'completati',
-      move: 'Sposta sottotask',
-      move_title: 'Sposta sottotask',
-      move_to: 'Seleziona task di destinazione',
+      move: 'Sposta sottocompito',
+      move_title: 'Sposta sottocompito',
+      move_to: 'Seleziona compito di destinazione',
       move_confirm: 'Sposta',
     },
   },
@@ -163,6 +164,7 @@ const enDict = {
         },
       },
       status: {
+        status: 'Status',
         label: 'Select a status',
         items: {
           todo: 'To do',

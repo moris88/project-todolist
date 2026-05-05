@@ -55,7 +55,6 @@ function Separated() {
 
 interface TodoItemProps {
   todo: Todo
-  kanban?: boolean
   showDescriptions?: boolean
   showSubtasks?: boolean
   onCommentPress?: () => void
@@ -64,7 +63,6 @@ interface TodoItemProps {
 
 function TodoItem({
   todo,
-  kanban,
   showDescriptions,
   showSubtasks,
   onCommentPress,
@@ -84,6 +82,11 @@ function TodoItem({
   const [showSubtasksLocal, setShowSubtasksLocal] = React.useState(false)
   const [moveSubtaskId, setMoveSubtaskId] = React.useState<string | null>(null)
   const [moveTargetTodoId, setMoveTargetTodoId] = React.useState('')
+
+  const hasComments = comments.filter((c) => c.todoId === todo.id)?.length > 0
+  const hasSubtasks = todo.subtasks?.length > 0
+  const countComments =
+    comments.filter((c) => c.todoId === todo.id)?.length ?? 0
 
   const toggleTodo = (
     e?: React.MouseEvent<HTMLParagraphElement, MouseEvent>
@@ -228,9 +231,7 @@ function TodoItem({
   }
 
   return (
-    <div
-      className={`flex w-full flex-col items-start justify-start gap-y-2 py-2 ${kanban ? '' : 'md:flex-row md:items-center md:justify-between'}`}
-    >
+    <div className={`flex w-full flex-col items-start justify-start gap-y-2`}>
       <TaskFormModal
         cancelLabel={dict.todolist.editTask.cancel}
         headerLabel={dict.todolist.editTask.info}
@@ -275,7 +276,7 @@ function TodoItem({
                     : todo.priority === 'urgent'
                       ? 'text-black dark:text-white'
                       : ''
-              } ${kanban ? 'max-w-[70%]' : 'max-w-[80%]'} overflow-hidden text-ellipsis`}
+              } 'max-w-[80%] overflow-hidden text-ellipsis`}
             >
               {todo.title}
             </span>
@@ -394,7 +395,7 @@ function TodoItem({
         <div
           className={twMerge(
             'flex justify-start gap-y-4 md:justify-between',
-            kanban ? 'flex-col' : 'flex-row'
+            'flex-row'
           )}
           onPointerDown={(e) => e.stopPropagation()}
         >
@@ -488,25 +489,30 @@ function TodoItem({
             )}
           </ButtonGroup>
         </div>
-        {(todo.subtasks?.length > 0 ||
-          comments.filter((c) => c.todoId === todo.id).length > 0) && (
-          <div className="flex w-full items-center justify-end gap-2">
-            {todo.subtasks?.length > 0 && (
+        <div className="flex w-full items-center justify-between gap-2">
+          <div>
+            <Chip color="default">
+              {dict.todolist.listitem.status.status}:{' '}
+              {dict.todolist.listitem.status.items[todo.status]}
+            </Chip>
+          </div>
+          <div className="flex items-center gap-2">
+            {hasSubtasks && (
               <Chip color="default">
                 <HiListBullet className="h-3 w-3 md:h-5 md:w-5" />
                 &nbsp;
                 {todo.subtasks?.length ?? 0}
               </Chip>
             )}
-            {comments.filter((c) => c.todoId === todo.id).length > 0 && (
+            {hasComments && (
               <Chip color="default">
                 <HiChatBubbleLeftEllipsis className="h-3 w-3 md:h-5 md:w-5" />
                 &nbsp;
-                {comments.filter((c) => c.todoId === todo.id).length ?? 0}
+                {countComments}
               </Chip>
             )}
           </div>
-        )}
+        </div>
       </div>
 
       <ConfirmModal

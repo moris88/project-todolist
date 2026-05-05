@@ -7,9 +7,9 @@ import { Comments } from '@/components'
 import { Select, SelectItem, Switch } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import {
+  filterTodoByStatus,
   getCommentsStorage,
   getTodosStorage,
-  isTaskOverdue,
   orderTodos,
   updateTodoStorage,
 } from '@/utils'
@@ -104,40 +104,13 @@ function TodoList() {
           )}
         </div>
       )}
-      {todos.length === 0 ? (
+      {todos.filter((todo) => filterTodoByStatus(todo, filter)).length === 0 ? (
         <p className="select-none text-center">
           {dict.todolist.listitem.no_task}
         </p>
       ) : (
         todos
-          .filter((todo) => {
-            switch (filter) {
-              case '0':
-                return true
-              case '1':
-                return todo.status === 'todo'
-              case '2':
-                return todo.status === 'progress'
-              case '3':
-                return todo.status === 'review'
-              case '4':
-                return todo.status === 'testing'
-              case '5':
-                return todo.status === 'blocked'
-              case '6':
-                return todo.status === 'paused'
-              case '7':
-                return todo.completed
-              case '8':
-                return !todo.completed
-              case '9':
-                return isTaskOverdue(todo.dueDate)
-              case '10':
-                return !isTaskOverdue(todo.dueDate)
-              default:
-                return false
-            }
-          })
+          .filter((todo) => filterTodoByStatus(todo, filter))
           .sort(orderTodos)
           .map((todo) => (
             <div
