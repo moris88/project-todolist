@@ -21,7 +21,7 @@ function TodoList() {
   const [todos, setTodos] = useAtom(todoListAtom)
   const [comments, setComments] = useAtom(commentsAtom)
   const dict = useAtomValue(dictAtom)
-  const [filter, setFilter] = React.useState('1')
+  const [filter, setFilter] = React.useState('0')
   const [showDescriptions, setShowDescriptions] = React.useState(false)
   const [showSubtasks, setShowSubtasks] = React.useState(false)
   const [selectedTodoId, setSelectedTodoId] = React.useState<string | null>(
