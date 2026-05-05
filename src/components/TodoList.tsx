@@ -24,16 +24,6 @@ import {
 import DangerZone from './DangerZone'
 import TodoItem from './TodoItem'
 
-function Separated() {
-  return (
-    <span className="hidden md:inline">
-      &nbsp;
-      {'-'}
-      &nbsp;
-    </span>
-  )
-}
-
 function DraggableItem({ todo }: { todo: Todo }) {
   const { attributes, listeners, setNodeRef } = useDraggable({ id: todo.id })
   const [onClicked, setOnClicked] = React.useState(false)
@@ -247,12 +237,6 @@ function TodoList() {
 
   return (
     <div className="mt-4 space-y-4" id="todo-list">
-      <div className="flex justify-center">
-        <h2 className="text-lg font-semibold">
-          {dict.todolist.listitem.title}
-        </h2>
-      </div>
-
       {todos.length > 0 && (
         <div className="flex w-full flex-col items-center justify-center gap-4 gap-y-2 lg:flex-row">
           <Select
@@ -371,44 +355,6 @@ function TodoList() {
                   )
                 }
               />
-              <small className="flex flex-col items-start md:flex-row md:items-center">
-                {todo.createdAt && (
-                  <span>
-                    {dict.todolist.listitem.createdAt}:{' '}
-                    {moment(todo.createdAt).format('DD/MM/YYYY HH:mm')}
-                  </span>
-                )}
-                {todo.updatedAt && (
-                  <span>
-                    <Separated />
-                    {dict.todolist.listitem.updatedAt}:{' '}
-                    {moment(todo.updatedAt).format('DD/MM/YYYY HH:mm')}
-                  </span>
-                )}
-                {todo.completed && (
-                  <span>
-                    <Separated />
-                    <Chip color="success" size="sm">
-                      {dict.todolist.listitem.completedAt}:{' '}
-                      {moment(todo.completedAt).format('DD/MM/YYYY HH:mm')}
-                    </Chip>
-                  </span>
-                )}
-                {todo.dueDate && !todo.completed && (
-                  <span>
-                    <Separated />
-                    <Chip
-                      color={isTaskOverdue(todo.dueDate) ? 'danger' : 'warning'}
-                      size="sm"
-                    >
-                      {isTaskOverdue(todo.dueDate)
-                        ? dict.todolist.listitem.expired
-                        : dict.todolist.listitem.dueDateAt}
-                      : {moment(todo.dueDate).format('DD/MM/YYYY HH:mm')}
-                    </Chip>
-                  </span>
-                )}
-              </small>
               {selectedTodoId === todo.id && <Comments todoId={todo.id} />}
             </div>
           ))

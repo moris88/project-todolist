@@ -26,7 +26,9 @@ function Modal({
       onClick={handleOverlayClick}
       onPointerDown={(e) => e.stopPropagation()}
     >
-      <div onClick={(e) => e.stopPropagation()}>{children}</div>
+      <div className="w-full px-4" onClick={(e) => e.stopPropagation()}>
+        {children}
+      </div>
     </div>,
     document.body
   )
@@ -34,7 +36,7 @@ function Modal({
 
 function ModalContent({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-4 flex w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl dark:bg-gray-800">
+    <div className="mx-auto flex max-h-[90vh] w-full max-w-2xl flex-col rounded-xl bg-white shadow-xl dark:bg-gray-800">
       {children}
     </div>
   )
@@ -49,7 +51,11 @@ function ModalHeader({ children }: { children: React.ReactNode }) {
 }
 
 function ModalBody({ children }: { children: React.ReactNode }) {
-  return <div className="flex-1 px-6 py-4 dark:text-gray-200">{children}</div>
+  return (
+    <div className="flex-1 overflow-y-auto px-6 py-4 dark:text-gray-200">
+      {children}
+    </div>
+  )
 }
 
 function ModalFooter({ children }: { children: React.ReactNode }) {

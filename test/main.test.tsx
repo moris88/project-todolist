@@ -1,7 +1,6 @@
-// mi fai il test della funzione main di react?
 import '@testing-library/jest-dom'
 
-import { render } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { StrictMode } from 'react'
 
 import { TodoInput, TodoList, Wrapper } from '../src/components'
@@ -16,7 +15,6 @@ test('renders the main app with TodoInput and TodoList', () => {
     </StrictMode>
   )
 
-  // Controlla la presenza dei div con gli ID specificati
-  expect(document.getElementById('todo-input')).toBeInTheDocument()
+  expect(screen.getByRole('button', { name: /aggiungi/i })).toBeInTheDocument()
   expect(document.getElementById('todo-list')).toBeInTheDocument()
 })

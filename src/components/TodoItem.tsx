@@ -1,4 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai'
+import moment from 'moment'
 import React from 'react'
 import { BiSolidDetail } from 'react-icons/bi'
 import { GoAlertFill } from 'react-icons/go'
@@ -15,6 +16,7 @@ import {
   Button,
   ButtonGroup,
   Checkbox,
+  Chip,
   DatePicker,
   Input,
   Modal,
@@ -34,6 +36,16 @@ import {
   removeTodoStorage,
   updateTodoStorage,
 } from '@/utils'
+
+function Separated() {
+  return (
+    <span className="hidden md:inline">
+      &nbsp;
+      {'-'}
+      &nbsp;
+    </span>
+  )
+}
 
 interface TodoItemProps {
   todo: Todo
@@ -334,9 +346,47 @@ function TodoItem({
           )}
         </div>
         <div
-          className="flex justify-start md:justify-end"
+          className="flex flex-col justify-start gap-y-4 md:flex-row md:justify-between"
           onPointerDown={(e) => e.stopPropagation()}
         >
+          <small className="flex flex-row flex-wrap items-center">
+            {todo.createdAt && (
+              <span>
+                {dict.todolist.listitem.createdAt}:{' '}
+                {moment(todo.createdAt).format('DD/MM/YYYY HH:mm')}
+              </span>
+            )}
+            {todo.updatedAt && (
+              <span>
+                <Separated />
+                {dict.todolist.listitem.updatedAt}:{' '}
+                {moment(todo.updatedAt).format('DD/MM/YYYY HH:mm')}
+              </span>
+            )}
+            {todo.completed && (
+              <span>
+                <Separated />
+                <Chip color="success" size="sm">
+                  {dict.todolist.listitem.completedAt}:{' '}
+                  {moment(todo.completedAt).format('DD/MM/YYYY HH:mm')}
+                </Chip>
+              </span>
+            )}
+            {todo.dueDate && !todo.completed && (
+              <span>
+                <Separated />
+                <Chip
+                  color={isTaskOverdue(todo.dueDate) ? 'danger' : 'warning'}
+                  size="sm"
+                >
+                  {isTaskOverdue(todo.dueDate)
+                    ? dict.todolist.listitem.expired
+                    : dict.todolist.listitem.dueDateAt}
+                  : {moment(todo.dueDate).format('DD/MM/YYYY HH:mm')}
+                </Chip>
+              </span>
+            )}
+          </small>
           <ButtonGroup>
             <Button
               className="md:px-4 md:py-2 md:text-base"
