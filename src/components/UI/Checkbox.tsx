@@ -7,14 +7,21 @@ interface CheckboxProps {
   children?: React.ReactNode
 }
 
-function Checkbox({ isSelected, isDisabled, onChange, children }: CheckboxProps) {
+function Checkbox({
+  isSelected,
+  isDisabled,
+  onChange,
+  children,
+}: CheckboxProps) {
   return (
-    <label className={`inline-flex items-center gap-2 ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}>
+    <label
+      className={`inline-flex items-center gap-2 ${isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
+    >
       <div className="relative flex h-5 w-5 shrink-0 items-center justify-center">
         <input
           checked={isSelected}
-          disabled={isDisabled}
           className="peer absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
+          disabled={isDisabled}
           type="checkbox"
           onChange={onChange}
         />

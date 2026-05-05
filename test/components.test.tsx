@@ -34,9 +34,9 @@ describe('Chip', () => {
     expect(screen.getByText('Warn')).toHaveClass('bg-yellow-100')
   })
 
-  it('color="danger" has bg-red-100', () => {
+  it('color="danger" has bg-red-200', () => {
     render(<Chip color="danger">Error</Chip>)
-    expect(screen.getByText('Error')).toHaveClass('bg-red-100')
+    expect(screen.getByText('Error')).toHaveClass('bg-red-200')
   })
 
   it('size="sm" has text-xs', () => {
