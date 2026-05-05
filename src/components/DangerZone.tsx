@@ -110,28 +110,33 @@ function DangerZone({
 
   return (
     <>
+      <div className="flex w-full flex-col gap-4 border-t border-gray-200 pt-4 dark:border-gray-700 lg:flex-row lg:items-center lg:justify-between">
+        <Switch
+          checked={showInportExport}
+          color="default"
+          size="sm"
+          onChange={(e) => setShowImportExport(e.target.checked)}
+        >
+          <span className="font-bold text-black dark:text-blue-500">
+            Inport/Export
+          </span>
+        </Switch>
+        <Switch
+          checked={showDangerZone}
+          color="danger"
+          size="sm"
+          onChange={(e) => setShowDangerZone(e.target.checked)}
+        >
+          <span className="font-bold text-red-600">Danger Zone</span>
+        </Switch>
+      </div>
       <div
-        className={`${showInportExport ? 'rounded-lg bg-blue-200 p-1 hover:shadow-lg hover:shadow-blue-500 md:p-5' : 'border-t border-gray-200 pt-4 dark:border-gray-700'}`}
+        className={`${showInportExport ? 'rounded-lg bg-blue-200 p-1 hover:shadow-lg hover:shadow-blue-500 md:p-5' : ''}`}
       >
-        <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex dark:text-black">
-            <Switch
-              checked={showInportExport}
-              color="default"
-              size="sm"
-              onChange={(e) => setShowImportExport(e.target.checked)}
-            >
-              <span className="font-bold text-black dark:text-blue-500">
-                Inport/Export
-              </span>
-            </Switch>
-          </div>
-        </div>
-
         {/* CSV section */}
         {showInportExport && todos.length > 0 && (
           <>
-            <div className="hidden w-full flex-col items-center justify-center md:flex">
+            <div className="flex w-full flex-col items-center justify-center">
               <p className="py-5 font-bold text-black">
                 {dict.todolist.listitem.filter.buttons.message}
               </p>
@@ -203,21 +208,8 @@ function DangerZone({
       </div>
 
       <div
-        className={`${showDangerZone ? 'rounded-lg bg-red-200 p-1 hover:shadow-lg hover:shadow-red-500 md:p-5' : 'border-t border-gray-200 pt-4 dark:border-gray-700'}`}
+        className={`${showDangerZone ? 'rounded-lg bg-red-200 p-1 hover:shadow-lg hover:shadow-red-500 md:p-5' : ''}`}
       >
-        <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex dark:text-black">
-            <Switch
-              checked={showDangerZone}
-              color="danger"
-              size="sm"
-              onChange={(e) => setShowDangerZone(e.target.checked)}
-            >
-              <span className="font-bold text-red-600">Danger Zone</span>
-            </Switch>
-          </div>
-        </div>
-
         {showDangerZone && todos.length > 0 && (
           <>
             <div className="hidden w-full flex-col items-center justify-center md:flex">
