@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { parseCommentsCSV, parseCSV } from '../src/utils/csv'
+import { exportCommentsToCSV, exportToCSV, parseCommentsCSV, parseCSV } from '../src/utils/csv'
+import { Comment, Todo } from '../src/types'
 
 const TODO_HEADER =
   'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status,subtasks'
@@ -196,5 +197,144 @@ describe('parseCommentsCSV', () => {
       `c2,todo1,Second,${now}`,
     ].join('\n')
     expect(parseCommentsCSV(csv)).toHaveLength(2)
+  })
+})
+
+// ─── Helpers for export tests ─────────────────────────────────────────────────
+
+function makeTodo(overrides: Partial<Todo> = {}): Todo {
+  return {
+    id: 'test-id',
+    title: 'Test task',
+    description: '',
+    completed: false,
+    createdAt: '2024-01-01T00:00:00.000Z',
+    updatedAt: null,
+    completedAt: null,
+    dueDate: null,
+    notify: false,
+    priority: 'medium',
+    status: 'todo',
+    subtasks: [],
+    ...overrides,
+  }
+}
+
+function makeComment(overrides: Partial<Comment> = {}): Comment {
+  return {
+    id: 'comment-id',
+    todoId: 'test-id',
+    text: 'A comment',
+    createdAt: '2024-01-01T00:00:00.000Z',
+    ...overrides,
+  }
+}
+
+// ─── Shared mock setup ────────────────────────────────────────────────────────
+
+function setupDownloadMocks() {
+  let capturedContent = ''
+
+  vi.stubGlobal(
+    'Blob',
+    class MockBlob {
+      constructor(parts: BlobPart[]) {
+        capturedContent = parts.join('')
+      }
+    }
+  )
+  vi.stubGlobal('URL', { createObjectURL: vi.fn().mockReturnValue('blob:mock') })
+
+  const mockLink = {
+    setAttribute: vi.fn(),
+    click: vi.fn(),
+    style: {} as CSSStyleDeclaration,
+  }
+  vi.spyOn(document, 'createElement').mockReturnValue(mockLink as unknown as HTMLElement)
+  vi.spyOn(document.body, 'appendChild').mockImplementation(() => mockLink as unknown as Node)
+  vi.spyOn(document.body, 'removeChild').mockImplementation(() => mockLink as unknown as Node)
+
+  return {
+    mockLink,
+    getContent: () => capturedContent,
+  }
+}
+
+// ─── exportToCSV ──────────────────────────────────────────────────────────────
+
+describe('exportToCSV', () => {
+  let mocks: ReturnType<typeof setupDownloadMocks>
+
+  beforeEach(() => {
+    mocks = setupDownloadMocks()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('triggers a download click', () => {
+    exportToCSV([makeTodo()])
+    expect(mocks.mockLink.click).toHaveBeenCalledOnce()
+  })
+
+  it('CSV starts with correct headers', () => {
+    exportToCSV([makeTodo()])
+    expect(mocks.getContent()).toMatch(/^id,title,description/)
+  })
+
+  it('includes todo data in the CSV', () => {
+    exportToCSV([makeTodo({ id: 'x1', title: 'My Task' })])
+    const content = mocks.getContent()
+    expect(content).toContain('x1')
+    expect(content).toContain('My Task')
+  })
+
+  it('quotes fields that contain commas', () => {
+    exportToCSV([makeTodo({ title: 'Task, One' })])
+    expect(mocks.getContent()).toContain('"Task, One"')
+  })
+
+  it('escapes double-quotes in title', () => {
+    exportToCSV([makeTodo({ title: 'Say "hello"' })])
+    expect(mocks.getContent()).toContain('"Say ""hello"""')
+  })
+
+  it('quotes fields that contain a newline', () => {
+    exportToCSV([makeTodo({ title: 'line1\nline2' })])
+    expect(mocks.getContent()).toContain('"line1\nline2"')
+  })
+})
+
+// ─── exportCommentsToCSV ──────────────────────────────────────────────────────
+
+describe('exportCommentsToCSV', () => {
+  let mocks: ReturnType<typeof setupDownloadMocks>
+
+  beforeEach(() => {
+    mocks = setupDownloadMocks()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+  })
+
+  it('triggers a download click', () => {
+    exportCommentsToCSV([makeComment()])
+    expect(mocks.mockLink.click).toHaveBeenCalledOnce()
+  })
+
+  it('CSV starts with comment headers', () => {
+    exportCommentsToCSV([makeComment()])
+    expect(mocks.getContent()).toMatch(/^id,todoId,text,createdAt/)
+  })
+
+  it('includes comment data', () => {
+    exportCommentsToCSV([makeComment({ id: 'cmt-42', text: 'Hello World' })])
+    const content = mocks.getContent()
+    expect(content).toContain('cmt-42')
+    expect(content).toContain('Hello World')
   })
 })
