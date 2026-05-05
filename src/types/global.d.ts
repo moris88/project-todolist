@@ -15,12 +15,19 @@ export interface Todo {
   dueDate: string | null
   notify: boolean
   priority: Priority
-  category: Category
+  status: Status
   subtasks: SubTask[]
 }
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
-export type Category = 'todo' | 'inProgress' | 'done'
+export type Status =
+  | 'todo'
+  | 'progress'
+  | 'review'
+  | 'testing'
+  | 'blocked'
+  | 'paused'
+  | 'done'
 
 export interface Comment {
   id: string

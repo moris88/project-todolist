@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { parseCommentsCSV, parseCSV } from '../src/utils/csv'
 
 const TODO_HEADER =
-  'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,category,subtasks'
+  'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status,subtasks'
 
 const COMMENT_HEADER = 'id,todoId,text,createdAt'
 
@@ -19,7 +19,7 @@ function todoRow(overrides: Record<string, string> = {}): string {
     dueDate: '',
     notify: 'false',
     priority: 'medium',
-    category: 'todo',
+    status: 'todo',
     subtasks: '[]',
   }
   const row = { ...defaults, ...overrides }
@@ -34,7 +34,7 @@ function todoRow(overrides: Record<string, string> = {}): string {
     row.dueDate,
     row.notify,
     row.priority,
-    row.category,
+    row.status,
     row.subtasks,
   ].join(',')
 }
@@ -55,7 +55,7 @@ describe('parseCSV', () => {
     expect(result[0].id).toBe('abc')
     expect(result[0].title).toBe('My task')
     expect(result[0].priority).toBe('medium')
-    expect(result[0].category).toBe('todo')
+    expect(result[0].status).toBe('todo')
   })
 
   it('parses boolean fields correctly', () => {
@@ -116,9 +116,9 @@ describe('parseCSV', () => {
     expect(parseCSV(csv)[0].priority).toBe('medium')
   })
 
-  it('sets default category when field is empty', () => {
-    const csv = [TODO_HEADER, todoRow({ category: '' })].join('\n')
-    expect(parseCSV(csv)[0].category).toBe('todo')
+  it('sets default status when field is empty', () => {
+    const csv = [TODO_HEADER, todoRow({ status: '' })].join('\n')
+    expect(parseCSV(csv)[0].status).toBe('todo')
   })
 
   it('parses multiple rows', () => {
@@ -134,8 +134,13 @@ describe('parseCSV', () => {
   })
 
   it('parses subtasks from JSON column', () => {
-    const subtasks = JSON.stringify([{ id: 's1', title: 'Sub 1', completed: false }])
-    const csv = [TODO_HEADER, todoRow({ subtasks: `"${subtasks.replace(/"/g, '""')}"` })].join('\n')
+    const subtasks = JSON.stringify([
+      { id: 's1', title: 'Sub 1', completed: false },
+    ])
+    const csv = [
+      TODO_HEADER,
+      todoRow({ subtasks: `"${subtasks.replace(/"/g, '""')}"` }),
+    ].join('\n')
     const result = parseCSV(csv)
     expect(result[0].subtasks).toHaveLength(1)
     expect(result[0].subtasks[0].title).toBe('Sub 1')
@@ -143,7 +148,8 @@ describe('parseCSV', () => {
   })
 
   it('defaults subtasks to empty array when column is missing', () => {
-    const headerNoSubtasks = 'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,category'
+    const headerNoSubtasks =
+      'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status'
     const row = 'abc,My task,,false,2024-01-01T00:00:00.000Z,,,,,medium,todo'
     const result = parseCSV([headerNoSubtasks, row].join('\n'))
     expect(result[0].subtasks).toEqual([])

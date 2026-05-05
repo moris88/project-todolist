@@ -16,7 +16,7 @@ import {
   SelectItem,
   Textarea,
 } from '@/components/UI'
-import { Category, Priority, SubTask } from '@/types'
+import { Priority, Status, SubTask } from '@/types'
 import { generateUniqueId, priorityItems } from '@/utils'
 
 export interface TaskFormValues {
@@ -24,7 +24,7 @@ export interface TaskFormValues {
   description: string
   priority: Priority
   dueDate: string | null
-  category: Category
+  status: Status
   subtasks: SubTask[]
 }
 
@@ -56,8 +56,8 @@ function TaskFormBody({
   const [dueDate, setDueDate] = React.useState<string | null>(
     initialValues.dueDate ?? null
   )
-  const [category, setCategory] = React.useState<Category>(
-    initialValues.category ?? 'todo'
+  const [status, setStatus] = React.useState<Status>(
+    initialValues.status ?? 'todo'
   )
   const [subtasks, setSubtasks] = React.useState<SubTask[]>(
     initialValues.subtasks ?? []
@@ -139,18 +139,33 @@ function TaskFormBody({
           </Select>
           <Select
             className="w-full"
-            defaultSelectedKeys={category}
-            label={dict.todolist.listitem.category.label}
-            onChange={(e) => setCategory(e.target.value as Category)}
+            defaultSelectedKeys={status}
+            label={dict.todolist.listitem.status.label}
+            onChange={(e) => setStatus(e.target.value as Status)}
           >
             <SelectItem value="todo">
-              {dict.todolist.listitem.category.items.todo}
+              {dict.todolist.listitem.status.items.todo}
             </SelectItem>
-            <SelectItem value="inProgress">
-              {dict.todolist.listitem.category.items.inProgress}
+            <SelectItem value="progress">
+              {dict.todolist.listitem.status.items.progress}
             </SelectItem>
             <SelectItem value="done">
-              {dict.todolist.listitem.category.items.done}
+              {dict.todolist.listitem.status.items.done}
+            </SelectItem>
+            <SelectItem value="blocked">
+              {dict.todolist.listitem.status.items.blocked}
+            </SelectItem>
+            <SelectItem value="paused">
+              {dict.todolist.listitem.status.items.paused}
+            </SelectItem>
+            <SelectItem value="review">
+              {dict.todolist.listitem.status.items.review}
+            </SelectItem>
+            <SelectItem value="testing">
+              {dict.todolist.listitem.status.items.testing}
+            </SelectItem>
+            <SelectItem value="archived">
+              {dict.todolist.listitem.status.items.archived}
             </SelectItem>
           </Select>
           <div className="flex flex-col gap-2">
@@ -267,7 +282,7 @@ function TaskFormBody({
               description,
               priority,
               dueDate,
-              category,
+              status,
               subtasks,
             })
           }

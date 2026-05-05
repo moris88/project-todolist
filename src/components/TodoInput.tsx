@@ -39,7 +39,7 @@ function TodoInput() {
       dueDate: pendingValues.dueDate,
       notify: false,
       priority: pendingValues.priority,
-      category: 'todo',
+      status: 'todo',
       subtasks: pendingValues.subtasks,
     }
     setTodos(addTodoStorage(newTodo, todos))

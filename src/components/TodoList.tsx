@@ -1,137 +1,26 @@
-import { closestCenter, DndContext, DragOverlay } from '@dnd-kit/core'
-import { useDraggable, useDroppable } from '@dnd-kit/core'
 import { useAtom } from 'jotai'
 import { useAtomValue } from 'jotai'
 import React from 'react'
-import { createPortal } from 'react-dom'
-import { AiOutlineFullscreen, AiOutlineFullscreenExit } from 'react-icons/ai'
-import { GoAlertFill } from 'react-icons/go'
-import { HiFlag } from 'react-icons/hi2'
 
 import { commentsAtom, dictAtom, todoListAtom } from '@/atoms'
 import { Comments } from '@/components'
-import { Button, Select, SelectItem, Switch } from '@/components/UI'
+import { Select, SelectItem, Switch } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
-import { Todo } from '@/types'
 import {
   getCommentsStorage,
   getTodosStorage,
   isTaskOverdue,
+  orderTodos,
   updateTodoStorage,
 } from '@/utils'
 
 import DangerZone from './DangerZone'
 import TodoItem from './TodoItem'
 
-function DraggableItem({ todo }: { todo: Todo }) {
-  const { attributes, listeners, setNodeRef } = useDraggable({ id: todo.id })
-  const [onClicked, setOnClicked] = React.useState(false)
-
-  const flagIcon: Record<string, React.ReactNode> = {
-    low: <HiFlag className="h-3 w-3 text-green-600" />,
-    medium: <></>,
-    high: <HiFlag className="h-3 w-3 text-yellow-600" />,
-    urgent: <HiFlag className="h-3 w-3 text-red-600" />,
-  }
-
-  const overdue: Record<string, React.ReactNode> = {
-    true: <GoAlertFill className="h-4 w-4 text-red-600" />,
-    false: <></>,
-  }
-
-  if (onClicked) {
-    return (
-      <div
-        ref={setNodeRef}
-        className={`relative rounded-xl border ${todo.completed ? 'bg-green-100 dark:bg-green-900/30' : todo.priority === 'urgent' ? 'bg-red-100 dark:bg-red-900/30' : 'bg-gray-100 dark:bg-gray-700'} p-2`}
-      >
-        <div
-          className="absolute right-2 top-2 z-10"
-          onPointerDown={(e) => e.stopPropagation()}
-        >
-          <Button size="sm" variant="ghost" onPress={() => setOnClicked(false)}>
-            <AiOutlineFullscreenExit className="h-6 w-6" />
-          </Button>
-        </div>
-        <div className="flex flex-col">
-          <div {...attributes} {...listeners} className="cursor-grab">
-            <TodoItem kanban todo={todo} />
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div
-      ref={setNodeRef}
-      className={`flex items-center justify-between rounded-xl border ${todo.completed ? 'bg-green-100 dark:bg-green-900/30 dark:text-green-100' : todo.priority === 'urgent' ? 'bg-red-100 dark:bg-red-900/30 dark:text-red-100' : 'bg-gray-100 dark:bg-gray-800 dark:text-gray-100'} p-2`}
-    >
-      <div
-        {...attributes}
-        {...listeners}
-        className="flex flex-1 cursor-grab items-center gap-2 overflow-hidden text-ellipsis"
-      >
-        {overdue[isTaskOverdue(todo.dueDate) ? 'true' : 'false']}
-        {flagIcon[todo.priority]}
-        {todo.title}
-      </div>
-      <div onPointerDown={(e) => e.stopPropagation()}>
-        <Button size="sm" variant="ghost" onPress={() => setOnClicked(true)}>
-          <AiOutlineFullscreen className="h-6 w-6" />
-        </Button>
-      </div>
-    </div>
-  )
-}
-
-function DroppableColumn({
-  id,
-  title,
-  todos,
-  isOver,
-}: {
-  id: string
-  title: string
-  todos: Todo[]
-  isOver?: boolean
-}) {
-  const { setNodeRef } = useDroppable({ id })
-  return (
-    <div
-      ref={setNodeRef}
-      className={`max-h-[calc(100vh-250px)] min-h-[calc(100vh-250px)] w-full overflow-y-auto rounded p-4 md:w-1/3 ${isOver ? 'bg-blue-300 dark:bg-blue-900/50' : 'bg-gray-200 dark:bg-gray-700/60'}`}
-    >
-      <h2 className="mb-2 text-lg font-bold">{title}</h2>
-      {todos
-        .sort((a, b) => {
-          if (a.completed && !b.completed) return 1
-          if (!a.completed && b.completed) return -1
-          if (isTaskOverdue(a.dueDate) && !isTaskOverdue(b.dueDate)) return -1
-          if (!isTaskOverdue(a.dueDate) && isTaskOverdue(b.dueDate)) return 1
-          if (a.priority === 'urgent' && b.priority !== 'urgent') return -1
-          if (a.priority !== 'urgent' && b.priority === 'urgent') return 1
-          if (a.priority === 'high' && b.priority !== 'high') return -1
-          if (a.priority !== 'high' && b.priority === 'high') return 1
-          if (a.priority === 'medium' && b.priority === 'medium') return -1
-          if (a.priority !== 'medium' && b.priority === 'medium') return 1
-          if (a.priority === 'low' && b.priority === 'low') return -1
-          if (a.priority !== 'low' && b.priority === 'low') return 1
-          return 0
-        })
-        .map((todo) => (
-          <DraggableItem key={todo.id} todo={todo} />
-        ))}
-    </div>
-  )
-}
-
 function TodoList() {
   const [todos, setTodos] = useAtom(todoListAtom)
   const [comments, setComments] = useAtom(commentsAtom)
   const dict = useAtomValue(dictAtom)
-  const [activeTask, setActiveTask] = React.useState<Todo | null>(null)
-  const [overColumn, setOverColumn] = React.useState(null)
   const [filter, setFilter] = React.useState('1')
   const [showDescriptions, setShowDescriptions] = React.useState(false)
   const [showSubtasks, setShowSubtasks] = React.useState(false)
@@ -164,43 +53,22 @@ function TodoList() {
     }
   }, [notifyUser, setTodos, todos])
 
-  const handleDragStart = (event: any) => {
-    const todo = todos.find((t) => t.id === event.active.id)
-    setActiveTask(todo || null)
-  }
-
-  const handleDragOver = (event: any) => {
-    if (event.over) {
-      setOverColumn(event.over.id)
-    } else {
-      setOverColumn(null)
-    }
-  }
-
-  const handleDragEnd = (event: any) => {
-    const { active, over } = event
-    if (!over) return
-
-    setTodos((prev) =>
-      prev.map((task) =>
-        task.id === active.id ? { ...task, category: over.id } : task
-      )
-    )
-    setActiveTask(null)
-    setOverColumn(null)
-  }
-
   React.useEffect(() => {
     setTodos(getTodosStorage())
   }, [setTodos])
 
   const filterItems = [
-    { label: dict.todolist.listitem.filter.all_kanban, key: '0' },
-    { label: dict.todolist.listitem.filter.all, key: '1' },
-    { label: dict.todolist.listitem.filter.completed, key: '2' },
-    { label: dict.todolist.listitem.filter.uncompleted, key: '3' },
-    { label: dict.todolist.listitem.filter.overdue, key: '4' },
-    { label: dict.todolist.listitem.filter.not_overdue, key: '5' },
+    { label: dict.todolist.listitem.filter.all, key: '0' },
+    { label: dict.todolist.listitem.filter.todo, key: '1' },
+    { label: dict.todolist.listitem.filter.progress, key: '2' },
+    { label: dict.todolist.listitem.filter.review, key: '3' },
+    { label: dict.todolist.listitem.filter.testing, key: '4' },
+    { label: dict.todolist.listitem.filter.blocked, key: '5' },
+    { label: dict.todolist.listitem.filter.paused, key: '6' },
+    { label: dict.todolist.listitem.filter.done, key: '7' },
+    { label: dict.todolist.listitem.filter.uncompleted, key: '8' },
+    { label: dict.todolist.listitem.filter.overdue, key: '9' },
+    { label: dict.todolist.listitem.filter.not_overdue, key: '10' },
   ]
 
   return (
@@ -236,45 +104,6 @@ function TodoList() {
           )}
         </div>
       )}
-      {filter === '0' && (
-        <div className="flex min-h-[calc(100vh-250px)] w-full flex-col items-center gap-4 md:flex-row">
-          <DndContext
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            onDragOver={handleDragOver}
-            onDragStart={handleDragStart}
-          >
-            <DroppableColumn
-              id="todo"
-              isOver={overColumn === 'todo'}
-              title={dict.todolist.listitem.category.items.todo}
-              todos={todos.filter((todo) => todo.category === 'todo')}
-            />
-            <DroppableColumn
-              id="inProgress"
-              isOver={overColumn === 'inProgress'}
-              title={dict.todolist.listitem.category.items.inProgress}
-              todos={todos.filter((todo) => todo.category === 'inProgress')}
-            />
-            <DroppableColumn
-              id="done"
-              isOver={overColumn === 'done'}
-              title={dict.todolist.listitem.category.items.done}
-              todos={todos.filter((todo) => todo.category === 'done')}
-            />
-            {createPortal(
-              <DragOverlay>
-                {activeTask ? (
-                  <div className="rounded border bg-gray-300 p-2 shadow-lg dark:bg-gray-600 dark:text-white">
-                    {activeTask.title}
-                  </div>
-                ) : null}
-              </DragOverlay>,
-              document.body
-            )}
-          </DndContext>
-        </div>
-      )}
       {todos.length === 0 ? (
         <p className="select-none text-center">
           {dict.todolist.listitem.no_task}
@@ -284,36 +113,32 @@ function TodoList() {
           .filter((todo) => {
             switch (filter) {
               case '0':
-                return false
-              case '1':
                 return true
+              case '1':
+                return todo.status === 'todo'
               case '2':
-                return todo.completed
+                return todo.status === 'progress'
               case '3':
-                return !todo.completed
+                return todo.status === 'review'
               case '4':
-                return isTaskOverdue(todo.dueDate)
+                return todo.status === 'testing'
               case '5':
+                return todo.status === 'blocked'
+              case '6':
+                return todo.status === 'paused'
+              case '7':
+                return todo.completed
+              case '8':
+                return !todo.completed
+              case '9':
+                return isTaskOverdue(todo.dueDate)
+              case '10':
                 return !isTaskOverdue(todo.dueDate)
               default:
                 return false
             }
           })
-          .sort((a, b) => {
-            if (a.completed && !b.completed) return 1
-            if (!a.completed && b.completed) return -1
-            if (isTaskOverdue(a.dueDate) && !isTaskOverdue(b.dueDate)) return -1
-            if (!isTaskOverdue(a.dueDate) && isTaskOverdue(b.dueDate)) return 1
-            if (a.priority === 'urgent' && b.priority !== 'urgent') return -1
-            if (a.priority !== 'urgent' && b.priority === 'urgent') return 1
-            if (a.priority === 'high' && b.priority !== 'high') return -1
-            if (a.priority !== 'high' && b.priority === 'high') return 1
-            if (a.priority === 'medium' && b.priority === 'medium') return -1
-            if (a.priority !== 'medium' && b.priority === 'medium') return 1
-            if (a.priority === 'low' && b.priority === 'low') return -1
-            if (a.priority !== 'low' && b.priority === 'low') return 1
-            return 0
-          })
+          .sort(orderTodos)
           .map((todo) => (
             <div
               key={todo.id}

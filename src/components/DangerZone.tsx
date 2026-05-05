@@ -109,7 +109,7 @@ function DangerZone({
   ]
 
   return (
-    <>
+    <div className="flex w-full flex-col gap-6 pb-12">
       <div className="flex w-full flex-col gap-4 border-t border-gray-200 pt-4 dark:border-gray-700 lg:flex-row lg:items-center lg:justify-between">
         <Switch
           checked={showInportExport}
@@ -134,7 +134,7 @@ function DangerZone({
         className={`${showInportExport ? 'rounded-lg bg-blue-200 p-1 hover:shadow-lg hover:shadow-blue-500 md:p-5' : ''}`}
       >
         {/* CSV section */}
-        {showInportExport && todos.length > 0 && (
+        {showInportExport && (
           <>
             <div className="flex w-full flex-col items-center justify-center">
               <p className="py-5 font-bold text-black">
@@ -294,7 +294,7 @@ function DangerZone({
           }}
         />
       ))}
-    </>
+    </div>
   )
 }
 

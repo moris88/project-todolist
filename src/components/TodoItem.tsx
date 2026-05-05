@@ -97,7 +97,7 @@ function TodoItem({
       if (t.id === todo.id) {
         return {
           ...t,
-          category: nowCompleting ? 'done' : todo.category,
+          status: nowCompleting ? 'done' : todo.status,
           completed: nowCompleting,
           completedAt: nowCompleting ? new Date().toISOString() : null,
           subtasks: nowCompleting
@@ -136,11 +136,11 @@ function TodoItem({
           description: pendingEditValues.description,
           priority: pendingEditValues.priority as Todo['priority'],
           dueDate: pendingEditValues.dueDate,
-          category: pendingEditValues.category,
+          status: pendingEditValues.status,
           subtasks: pendingEditValues.subtasks,
-          completed: pendingEditValues.category === 'done' ? true : t.completed,
+          completed: pendingEditValues.status === 'done' ? true : t.completed,
           completedAt:
-            pendingEditValues.category === 'done' && !t.completed
+            pendingEditValues.status === 'done' && !t.completed
               ? new Date().toISOString()
               : t.completedAt,
           updatedAt: new Date().toISOString(),
@@ -239,7 +239,7 @@ function TodoItem({
           description: todo.description,
           priority: todo.priority,
           dueDate: todo.dueDate,
-          category: todo.category,
+          status: todo.status,
           subtasks: todo.subtasks,
         }}
         isDismissable={false}

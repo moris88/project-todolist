@@ -23,7 +23,7 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
     dueDate: null,
     notify: false,
     priority: 'medium',
-    category: 'todo',
+    status: 'todo',
     subtasks: [],
     ...overrides,
   }

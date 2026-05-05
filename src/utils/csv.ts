@@ -1,4 +1,4 @@
-import { Category, Comment, Priority, Todo } from '@/types'
+import { Comment, Priority, Status, Todo } from '@/types'
 
 import { generateUniqueId } from './utils'
 
@@ -13,7 +13,7 @@ const TODO_HEADERS = [
   'dueDate',
   'notify',
   'priority',
-  'category',
+  'status',
   'subtasks',
 ]
 
@@ -170,7 +170,7 @@ export function parseCSV(csvText: string): Todo[] {
     if (!todo.id) todo.id = generateUniqueId()
     if (!todo.title) todo.title = 'Imported Task'
     if (!todo.priority) todo.priority = 'medium' as Priority
-    if (!todo.category) todo.category = 'todo' as Category
+    if (!todo.status) todo.status = 'todo' as Status
     if (todo.completed === undefined) todo.completed = false
     if (!todo.createdAt) todo.createdAt = new Date().toISOString()
     if (!Array.isArray(todo.subtasks)) todo.subtasks = []
