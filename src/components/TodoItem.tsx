@@ -7,6 +7,7 @@ import {
   HiArrowRight,
   HiChatBubbleLeftEllipsis,
   HiFlag,
+  HiListBullet,
   HiMiniPlus,
   HiMiniTrash,
   HiOutlinePencilSquare,
@@ -79,6 +80,7 @@ function TodoItem({
   const [pendingEditValues, setPendingEditValues] =
     React.useState<TaskFormValues | null>(null)
   const [quickAddTitle, setQuickAddTitle] = React.useState('')
+  const [showSubtasksLocal, setShowSubtasksLocal] = React.useState(false)
   const [moveSubtaskId, setMoveSubtaskId] = React.useState<string | null>(null)
   const [moveTargetTodoId, setMoveTargetTodoId] = React.useState('')
 
@@ -277,7 +279,7 @@ function TodoItem({
               {todo.title}
             </span>
           </div>
-          {(todo.subtasks?.length > 0 || showInlineDetail) && showSubtasks && (
+          {(showSubtasks || showSubtasksLocal) && (
             <div
               className="w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/40"
               onPointerDown={(e) => e.stopPropagation()}
@@ -342,7 +344,7 @@ function TodoItem({
                   </ul>
                 </>
               )}
-              {showInlineDetail && !todo.completed && (
+              {(showSubtasks || showSubtasksLocal) && !todo.completed && (
                 <div className="flex items-center gap-2 border-t border-gray-200 px-2 py-2 dark:border-gray-700">
                   <input
                     className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
@@ -433,12 +435,25 @@ function TodoItem({
           <ButtonGroup>
             <Button
               className="md:px-4 md:py-2 md:text-base"
-              isDisabled={todo.description === '' || todo.description === null}
+              isDisabled={
+                todo.description === '' ||
+                todo.description === null ||
+                !!showDescriptions
+              }
               size="sm"
               variant={showInlineDetail ? 'secondary' : 'primary'}
               onPress={() => setShowInlineDetail((prev) => !prev)}
             >
               <BiSolidDetail className="h-3 w-3 md:h-5 md:w-5" />
+            </Button>
+            <Button
+              className="md:px-4 md:py-2 md:text-base"
+              isDisabled={!!showSubtasks}
+              size="sm"
+              variant={showSubtasksLocal ? 'secondary' : 'primary'}
+              onPress={() => setShowSubtasksLocal((prev) => !prev)}
+            >
+              <HiListBullet className="h-3 w-3 md:h-5 md:w-5" />
             </Button>
             <Button
               className="md:px-4 md:py-2 md:text-base"
@@ -469,6 +484,25 @@ function TodoItem({
             )}
           </ButtonGroup>
         </div>
+        {(todo.subtasks?.length > 0 ||
+          comments.filter((c) => c.todoId === todo.id).length > 0) && (
+          <div className="flex w-full items-center justify-end gap-2">
+            {todo.subtasks?.length > 0 && (
+              <Chip color="default">
+                <HiListBullet className="h-3 w-3 md:h-5 md:w-5" />
+                &nbsp;
+                {todo.subtasks?.length ?? 0}
+              </Chip>
+            )}
+            {comments.filter((c) => c.todoId === todo.id).length > 0 && (
+              <Chip color="default">
+                <HiChatBubbleLeftEllipsis className="h-3 w-3 md:h-5 md:w-5" />
+                &nbsp;
+                {comments.filter((c) => c.todoId === todo.id).length ?? 0}
+              </Chip>
+            )}
+          </div>
+        )}
       </div>
 
       <ConfirmModal

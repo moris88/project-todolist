@@ -239,7 +239,7 @@ function TodoList() {
   return (
     <div className="mt-4 space-y-4" id="todo-list">
       {todos.length > 0 && (
-        <div className="flex w-full flex-col items-center justify-center gap-4 gap-y-2 lg:flex-row">
+        <div className="flex w-full flex-col items-end justify-center gap-4 gap-y-2 lg:flex-row">
           <Select
             defaultSelectedKeys={filter}
             label={dict.todolist.listitem.filter.label}

@@ -33,6 +33,7 @@ function DangerZone({
 }: DangerZoneProps) {
   const dict = useAtomValue(dictAtom)
   const [showDangerZone, setShowDangerZone] = React.useState(false)
+  const [showInportExport, setShowImportExport] = React.useState(false)
   const todosFileRef = React.useRef<HTMLInputElement>(null)
   const commentsFileRef = React.useRef<HTMLInputElement>(null)
   const [showDeleteModal, setShowDeleteModal] = React.useState<{
@@ -110,6 +111,98 @@ function DangerZone({
   return (
     <>
       <div
+        className={`${showInportExport ? 'rounded-lg bg-blue-200 p-1 hover:shadow-lg hover:shadow-blue-500 md:p-5' : 'border-t border-gray-200 pt-4 dark:border-gray-700'}`}
+      >
+        <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex dark:text-black">
+            <Switch
+              checked={showInportExport}
+              color="default"
+              size="sm"
+              onChange={(e) => setShowImportExport(e.target.checked)}
+            >
+              <span className="font-bold text-black dark:text-blue-500">
+                Inport/Export
+              </span>
+            </Switch>
+          </div>
+        </div>
+
+        {/* CSV section */}
+        {showInportExport && todos.length > 0 && (
+          <>
+            <div className="hidden w-full flex-col items-center justify-center md:flex">
+              <p className="py-5 font-bold text-black">
+                {dict.todolist.listitem.filter.buttons.message}
+              </p>
+              <div className="flex flex-col gap-1.5">
+                {/* Tasks row */}
+                <div className="flex w-full items-center justify-center gap-2">
+                  <span className="w-20 shrink-0 text-right text-xs font-medium text-blue-500">
+                    {csv.section_tasks}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onPress={() => exportToCSV(todos)}
+                  >
+                    <HiArrowDownTray className="mr-1 h-3.5 w-3.5" />
+                    CSV
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onPress={() => todosFileRef.current?.click()}
+                  >
+                    <HiArrowUpTray className="mr-1 h-3.5 w-3.5" />
+                    CSV
+                  </Button>
+                </div>
+                {/* Comments row */}
+                <div className="flex w-full items-center justify-center gap-2">
+                  <span className="w-20 shrink-0 text-right text-xs font-medium text-blue-500">
+                    {csv.section_comments}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onPress={() => exportCommentsToCSV(comments)}
+                  >
+                    <HiArrowDownTray className="mr-1 h-3.5 w-3.5" />
+                    CSV
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onPress={() => commentsFileRef.current?.click()}
+                  >
+                    <HiArrowUpTray className="mr-1 h-3.5 w-3.5" />
+                    CSV
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+
+        {/* Hidden file inputs */}
+        <input
+          ref={todosFileRef}
+          accept=".csv"
+          className="hidden"
+          type="file"
+          onChange={handleImportTodos}
+        />
+        <input
+          ref={commentsFileRef}
+          accept=".csv"
+          className="hidden"
+          type="file"
+          onChange={handleImportComments}
+        />
+      </div>
+
+      <div
         className={`${showDangerZone ? 'rounded-lg bg-red-200 p-1 hover:shadow-lg hover:shadow-red-500 md:p-5' : 'border-t border-gray-200 pt-4 dark:border-gray-700'}`}
       >
         <div className="flex w-full flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -123,70 +216,6 @@ function DangerZone({
               <span className="font-bold text-red-600">Danger Zone</span>
             </Switch>
           </div>
-
-          {/* CSV section */}
-          <div className="flex flex-col gap-1.5">
-            {/* Tasks row */}
-            <div className="flex items-center gap-2">
-              <span className="w-20 shrink-0 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
-                {csv.section_tasks}
-              </span>
-              <Button
-                size="sm"
-                variant="secondary"
-                onPress={() => exportToCSV(todos)}
-              >
-                <HiArrowDownTray className="mr-1 h-3.5 w-3.5" />
-                CSV
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onPress={() => todosFileRef.current?.click()}
-              >
-                <HiArrowUpTray className="mr-1 h-3.5 w-3.5" />
-                CSV
-              </Button>
-            </div>
-            {/* Comments row */}
-            <div className="flex items-center gap-2">
-              <span className="w-20 shrink-0 text-right text-xs font-medium text-gray-500 dark:text-gray-400">
-                {csv.section_comments}
-              </span>
-              <Button
-                size="sm"
-                variant="secondary"
-                onPress={() => exportCommentsToCSV(comments)}
-              >
-                <HiArrowDownTray className="mr-1 h-3.5 w-3.5" />
-                CSV
-              </Button>
-              <Button
-                size="sm"
-                variant="secondary"
-                onPress={() => commentsFileRef.current?.click()}
-              >
-                <HiArrowUpTray className="mr-1 h-3.5 w-3.5" />
-                CSV
-              </Button>
-            </div>
-          </div>
-
-          {/* Hidden file inputs */}
-          <input
-            ref={todosFileRef}
-            accept=".csv"
-            className="hidden"
-            type="file"
-            onChange={handleImportTodos}
-          />
-          <input
-            ref={commentsFileRef}
-            accept=".csv"
-            className="hidden"
-            type="file"
-            onChange={handleImportComments}
-          />
         </div>
 
         {showDangerZone && todos.length > 0 && (
@@ -195,7 +224,7 @@ function DangerZone({
               <p className="py-5 font-bold text-black">
                 {dict.todolist.listitem.filter.buttons.message}
               </p>
-              <p className="mb-5 text-center text-sm italic text-gray-500 dark:text-gray-400">
+              <p className="mb-5 text-center text-sm italic text-red-500 dark:text-red-400">
                 {dict.todolist.listitem.filter.buttons.description}
               </p>
               <ButtonGroup>
