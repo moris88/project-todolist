@@ -385,7 +385,7 @@ function TodoItem({
         <div
           className={twMerge(
             'flex justify-start gap-y-4 md:justify-between',
-            'flex-row'
+            'flex-col md:flex-row'
           )}
           onPointerDown={(e) => e.stopPropagation()}
         >
@@ -439,7 +439,7 @@ function TodoItem({
             </Button>
             <Button
               className="md:px-4 md:py-2 md:text-base"
-              isDisabled={!!showSubtasks}
+              isDisabled={!!showSubtasks || todo.completed}
               size="sm"
               variant={showSubtasksLocal ? 'secondary' : 'primary'}
               onPress={() => setShowSubtasksLocal((prev) => !prev)}
