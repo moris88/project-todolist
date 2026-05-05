@@ -1,5 +1,7 @@
 export { default as Comments } from './Comments'
 export { default as ConfirmModal } from './ConfirmModal'
+export { default as TaskFormModal } from './TaskFormModal'
+export type { TaskFormValues } from './TaskFormModal'
 export { default as Header } from './Header'
 export { default as MarkdownContent } from './MarkdownContent'
 export { default as TodoInput } from './TodoInput'

@@ -74,11 +74,8 @@ const itDict = {
       },
     },
     addTask: {
-      hiddenForm: 'Nascondi il form',
       name: 'Titolo del compito',
       title: 'Aggiungi un compito',
-      description:
-        'Inserisci la descrizione del compito da completare. N.B.: puoi inserire Markdown per formattare il testo',
       label: 'Descrizione (Markdown)',
       confirm: "Confermi l'aggiunta del compito?",
       error: 'Il compito non può essere vuoto',
@@ -93,6 +90,9 @@ const itDict = {
       description: 'Vuoi salvare il compito selezionato?',
       submit: 'Salva',
       cancel: 'Annulla',
+      edit: 'Modifica',
+      preview: 'Anteprima',
+      emptyPreview: 'Nessun contenuto da visualizzare',
     },
     deleteTask: {
       title: 'Elimina compito',
@@ -185,11 +185,8 @@ const enDict = {
       },
     },
     addTask: {
-      hiddenForm: 'Hide form',
       name: 'Task title',
       title: 'Add a task',
-      description:
-        'Enter the description of the task to complete. N.B.: you can use Markdown to format the text',
       label: 'Description (Markdown)',
       confirm: 'Confirm adding the task?',
       error: 'The task cannot be empty',
@@ -204,6 +201,9 @@ const enDict = {
       description: 'Do you want to save the selected task?',
       submit: 'Save',
       cancel: 'Cancel',
+      edit: 'Edit',
+      preview: 'Preview',
+      emptyPreview: 'No content to display',
     },
     deleteTask: {
       title: 'Delete task',
