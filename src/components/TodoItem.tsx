@@ -6,6 +6,7 @@ import { GoAlertFill } from 'react-icons/go'
 import {
   HiArrowRight,
   HiChatBubbleLeftEllipsis,
+  HiEye,
   HiFlag,
   HiListBullet,
   HiMiniPlus,
@@ -51,6 +52,7 @@ interface TodoItemProps {
   showSubtasks?: boolean
   showOnlyTitle?: boolean
   onCommentPress?: () => void
+  onDetailPress?: () => void
   isCommentOpen?: boolean
 }
 
@@ -60,6 +62,7 @@ function TodoItem({
   showSubtasks,
   showOnlyTitle,
   onCommentPress,
+  onDetailPress,
   isCommentOpen,
 }: TodoItemProps) {
   const [todos, setTodos] = useAtom(todoListAtom)
@@ -330,56 +333,71 @@ function TodoItem({
       />
       <div className="flex w-full flex-col gap-y-4">
         <div className="flex w-full flex-col items-start gap-y-2">
-          <div
-            className="flex cursor-pointer flex-wrap items-center gap-2 font-bold"
-            onClick={toggleTodo}
-          >
-            <div
-              className="flex shrink-0 items-center"
-              onClick={(e) => e.stopPropagation()}
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <Checkbox
-                isDisabled={todo.status === 'archived'}
-                isSelected={todo.completed}
-                onChange={() => toggleTodo()}
-              />
-            </div>
-            {overdue[isTaskOverdue(todo.dueDate) ? 'true' : 'false']}{' '}
-            {flagIcon[todo.priority]}{' '}
-            <span
-              className={`line-clamp-1 overflow-hidden text-ellipsis ${
-                todo.completed
-                  ? 'text-green-600 line-through'
-                  : todo.dueDate && new Date(todo.dueDate) < new Date()
-                    ? 'text-red-600'
-                    : todo.priority === 'urgent'
-                      ? 'text-black dark:text-white'
-                      : ''
-              }`}
-            >
-              {todo.title}
-            </span>
-            {(todo.tags ?? []).length > 0 && (
+          <div className="flex w-full items-center gap-2 font-bold">
+            <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
               <div
-                className="flex flex-wrap gap-1"
+                className="flex shrink-0 items-center"
                 onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
-                {(todo.tags ?? []).map((tag) => (
-                  <span
-                    key={tag}
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tagColor(tag)}`}
-                  >
-                    {tag}
-                  </span>
-                ))}
+                <Checkbox
+                  isDisabled={todo.status === 'archived'}
+                  isSelected={todo.completed}
+                  onChange={() => toggleTodo()}
+                />
               </div>
+              {overdue[isTaskOverdue(todo.dueDate) ? 'true' : 'false']}{' '}
+              {flagIcon[todo.priority]}{' '}
+              <span
+                className={`line-clamp-1 overflow-hidden text-ellipsis ${
+                  todo.completed
+                    ? 'text-green-600 line-through'
+                    : todo.dueDate && new Date(todo.dueDate) < new Date()
+                      ? 'text-red-600'
+                      : todo.priority === 'urgent'
+                        ? 'text-black dark:text-white'
+                        : ''
+                }`}
+              >
+                {todo.title}
+              </span>
+              {(todo.tags ?? []).length > 0 && (
+                <div
+                  className="flex flex-wrap gap-1"
+                  onClick={(e) => e.stopPropagation()}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  {(todo.tags ?? []).map((tag) => (
+                    <span
+                      key={tag}
+                      className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tagColor(tag)}`}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+            {onDetailPress && (
+              <Tooltip content={dict.todolist.listitem.detail} placement="left">
+                <button
+                  className="shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-blue-500 dark:hover:text-blue-400"
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    onDetailPress()
+                  }}
+                  onPointerDown={(e) => e.stopPropagation()}
+                >
+                  <HiEye className="h-4 w-4" />
+                </button>
+              </Tooltip>
             )}
           </div>
           {!showOnlyTitle && (showSubtasks || showSubtasksLocal) && (
             <div
               className="w-full rounded-lg border border-gray-200 bg-gray-50 dark:border-gray-700 dark:bg-gray-800/40"
+              onClick={(e) => e.stopPropagation()}
               onPointerDown={(e) => e.stopPropagation()}
             >
               {todo.subtasks?.length > 0 && (
@@ -483,6 +501,7 @@ function TodoItem({
             todo.description && (
               <div
                 className="w-full px-1"
+                onClick={(e) => e.stopPropagation()}
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <div className={isExpanded ? '' : 'line-clamp-3'}>
@@ -507,6 +526,7 @@ function TodoItem({
               ? 'flex justify-start'
               : 'flex flex-col gap-y-4 md:flex-row md:justify-between'
           }
+          onClick={(e) => e.stopPropagation()}
           onPointerDown={(e) => e.stopPropagation()}
         >
           {!showOnlyTitle && (
@@ -545,70 +565,78 @@ function TodoItem({
               )}
             </small>
           )}
-          <ButtonGroup>
-            <Tooltip content={dict.todolist.listitem.detail} placement="top">
-              <Button
-                className="md:px-4 md:py-2 md:text-base"
-                isDisabled={
-                  todo.description === '' ||
-                  todo.description === null ||
-                  !!showDescriptions
-                }
-                size="sm"
-                variant={showInlineDetail ? 'secondary' : 'primary'}
-                onPress={() => setShowInlineDetail((prev) => !prev)}
+          {!showOnlyTitle && (
+            <ButtonGroup>
+              <Tooltip
+                content={dict.todolist.listitem.description}
+                placement="top"
               >
-                <BiSolidDetail className="h-3 w-3 md:h-5 md:w-5" />
-              </Button>
-            </Tooltip>
-            <Tooltip content={dict.todolist.subtasks.title} placement="top">
-              <Button
-                className="md:px-4 md:py-2 md:text-base"
-                isDisabled={!!showSubtasks || todo.completed}
-                size="sm"
-                variant={showSubtasksLocal ? 'secondary' : 'primary'}
-                onPress={() => setShowSubtasksLocal((prev) => !prev)}
-              >
-                <HiListBullet className="h-3 w-3 md:h-5 md:w-5" />
-              </Button>
-            </Tooltip>
-            {onCommentPress && (
-              <Tooltip content={dict.todolist.comments.title} placement="top">
+                <Button
+                  className="md:px-4 md:py-2 md:text-base"
+                  isDisabled={
+                    todo.description === '' ||
+                    todo.description === null ||
+                    !!showDescriptions
+                  }
+                  size="sm"
+                  variant={showInlineDetail ? 'secondary' : 'primary'}
+                  onPress={() => setShowInlineDetail((prev) => !prev)}
+                >
+                  <BiSolidDetail className="h-3 w-3 md:h-5 md:w-5" />
+                </Button>
+              </Tooltip>
+              <Tooltip content={dict.todolist.subtasks.title} placement="top">
+                <Button
+                  className="md:px-4 md:py-2 md:text-base"
+                  isDisabled={!!showSubtasks || todo.completed}
+                  size="sm"
+                  variant={showSubtasksLocal ? 'secondary' : 'primary'}
+                  onPress={() => setShowSubtasksLocal((prev) => !prev)}
+                >
+                  <HiListBullet className="h-3 w-3 md:h-5 md:w-5" />
+                </Button>
+              </Tooltip>
+              {onCommentPress && (
+                <Tooltip content={dict.todolist.comments.title} placement="top">
+                  <Button
+                    className="md:px-4 md:py-2 md:text-base"
+                    size="sm"
+                    variant={isCommentOpen ? 'secondary' : 'primary'}
+                    onPress={onCommentPress}
+                  >
+                    <HiChatBubbleLeftEllipsis className="h-3 w-3 md:h-5 md:w-5" />
+                  </Button>
+                </Tooltip>
+              )}
+              <Tooltip content={dict.todolist.listitem.edit} placement="top">
+                <Button
+                  className="md:px-4 md:py-2 md:text-base"
+                  isDisabled={todo.completed || todo.status === 'archived'}
+                  size="sm"
+                  variant="primary"
+                  onPress={() => setIsEditing(true)}
+                >
+                  <HiOutlinePencilSquare className="h-3 w-3 md:h-5 md:w-5" />
+                </Button>
+              </Tooltip>
+              <Tooltip content={dict.todolist.listitem.delete} placement="top">
                 <Button
                   className="md:px-4 md:py-2 md:text-base"
                   size="sm"
-                  variant={isCommentOpen ? 'secondary' : 'primary'}
-                  onPress={onCommentPress}
+                  variant="primary"
+                  onPress={removeTodo}
                 >
-                  <HiChatBubbleLeftEllipsis className="h-3 w-3 md:h-5 md:w-5" />
+                  <HiMiniTrash className="h-3 w-3 md:h-5 md:w-5" />
                 </Button>
               </Tooltip>
-            )}
-            <Tooltip content={dict.todolist.listitem.edit} placement="top">
-              <Button
-                className="md:px-4 md:py-2 md:text-base"
-                isDisabled={todo.completed || todo.status === 'archived'}
-                size="sm"
-                variant="primary"
-                onPress={() => setIsEditing(true)}
-              >
-                <HiOutlinePencilSquare className="h-3 w-3 md:h-5 md:w-5" />
-              </Button>
-            </Tooltip>
-            <Tooltip content={dict.todolist.listitem.delete} placement="top">
-              <Button
-                className="md:px-4 md:py-2 md:text-base"
-                size="sm"
-                variant="primary"
-                onPress={removeTodo}
-              >
-                <HiMiniTrash className="h-3 w-3 md:h-5 md:w-5" />
-              </Button>
-            </Tooltip>
-          </ButtonGroup>
+            </ButtonGroup>
+          )}
         </div>
         {!showOnlyTitle && (
-          <div className="flex w-full items-center justify-between gap-2">
+          <div
+            className="flex w-full items-center justify-between gap-2"
+            onClick={(e) => e.stopPropagation()}
+          >
             <div ref={statusDropdownRef} className="relative">
               <div className="flex items-center gap-1">
                 <Chip

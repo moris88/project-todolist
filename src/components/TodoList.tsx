@@ -9,7 +9,7 @@ import {
 } from 'react-icons/hi2'
 
 import { commentsAtom, dictAtom, tagsAtom, todoListAtom } from '@/atoms'
-import { Comments } from '@/components'
+import { Comments, TaskDetailModal } from '@/components'
 import { Switch, Tooltip } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import { Status } from '@/types'
@@ -79,6 +79,7 @@ function TodoList() {
   const [selectedTodoId, setSelectedTodoId] = React.useState<string | null>(
     null
   )
+  const [detailTodoId, setDetailTodoId] = React.useState<string | null>(null)
   const { notifyUser } = useNotificationRequest()
 
   React.useEffect(() => {
@@ -436,9 +437,9 @@ function TodoList() {
             key={todo.id}
             className={`rounded-lg ${
               todo.priority !== 'urgent'
-                ? 'bg-gray-200 hover:shadow-slate-500 dark:bg-slate-600 dark:text-white'
-                : 'bg-red-100 text-black hover:shadow-red-500 dark:bg-red-900/40 dark:text-red-100'
-            } p-2 hover:shadow-lg md:p-5`}
+                ? 'bg-gray-200 dark:bg-slate-600 dark:text-white'
+                : 'bg-red-100 text-black dark:bg-red-900/40 dark:text-red-100'
+            } p-2 md:p-5`}
           >
             <TodoItem
               isCommentOpen={selectedTodoId === todo.id}
@@ -449,11 +450,18 @@ function TodoList() {
               onCommentPress={() =>
                 setSelectedTodoId((prev) => (prev === todo.id ? null : todo.id))
               }
+              onDetailPress={() => setDetailTodoId(todo.id)}
             />
             {selectedTodoId === todo.id && <Comments todoId={todo.id} />}
           </div>
         ))
       )}
+
+      <TaskDetailModal
+        isOpen={detailTodoId !== null}
+        todoId={detailTodoId}
+        onClose={() => setDetailTodoId(null)}
+      />
 
       <DangerZone
         comments={comments}
