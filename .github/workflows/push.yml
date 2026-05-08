@@ -38,8 +38,6 @@ jobs:
         run: pnpm lint
       - name: Build
         run: pnpm build
-      - name: Testing
-        run: pnpm test
-      - name: Coverage (min 80%)
+      - name: Test & Coverage (min 80%)
         run: pnpm coverage
   
