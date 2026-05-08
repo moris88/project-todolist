@@ -49,6 +49,7 @@ function TodoInput() {
       priority: pendingValues.priority,
       status: 'todo',
       subtasks: pendingValues.subtasks,
+      tags: pendingValues.tags,
     }
     setTodos(addTodoStorage(newTodo, todos))
     setPendingValues(null)

@@ -1,4 +1,4 @@
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import moment from 'moment'
 import React from 'react'
 import { HiFlag, HiMiniPlus } from 'react-icons/hi2'
@@ -16,7 +16,7 @@ import {
   LuX,
 } from 'react-icons/lu'
 
-import { dictAtom } from '@/atoms'
+import { dictAtom, tagsAtom } from '@/atoms'
 import { MarkdownContent } from '@/components'
 import {
   Button,
@@ -32,7 +32,7 @@ import {
   Textarea,
 } from '@/components/UI'
 import { Priority, Status, SubTask, Todo } from '@/types'
-import { generateUniqueId, priorityItems } from '@/utils'
+import { generateUniqueId, priorityItems, tagColor } from '@/utils'
 
 export interface TaskFormValues {
   title: string
@@ -41,6 +41,7 @@ export interface TaskFormValues {
   dueDate: string | null
   status: Status
   subtasks: SubTask[]
+  tags: string[]
 }
 
 export interface SubtaskTransfer {
@@ -70,6 +71,7 @@ function TaskFormBody({
   onSubmit,
 }: TaskFormBodyProps) {
   const dict = useAtomValue(dictAtom)
+  const [globalTags, setGlobalTags] = useAtom(tagsAtom)
   const [title, setTitle] = React.useState(initialValues.title ?? '')
   const [description, setDescription] = React.useState(
     initialValues.description ?? ''
@@ -99,8 +101,26 @@ function TaskFormBody({
   const [subtaskTransfers, setSubtaskTransfers] = React.useState<
     SubtaskTransfer[]
   >([])
+  const [tags, setTags] = React.useState<string[]>(initialValues.tags ?? [])
+  const [newTagInput, setNewTagInput] = React.useState('')
 
   const minValue = new Date().toISOString().slice(0, 16)
+
+  const addTag = (tag: string) => {
+    const trimmed = tag.trim()
+    if (!trimmed) return
+    if (!tags.includes(trimmed)) {
+      setTags((prev) => [...prev, trimmed])
+    }
+    if (!globalTags.includes(trimmed)) {
+      setGlobalTags((prev) => [...prev, trimmed])
+    }
+    setNewTagInput('')
+  }
+
+  const removeTag = (tag: string) => {
+    setTags((prev) => prev.filter((t) => t !== tag))
+  }
 
   const applyFormat = (
     format: 'bold' | 'italic' | 'h1' | 'h2' | 'h3' | 'ul' | 'ol'
@@ -338,6 +358,75 @@ function TaskFormBody({
               {dict.todolist.listitem.status.items.archived}
             </SelectItem>
           </Select>
+          {/* Tags section */}
+          <div className="flex flex-col gap-2">
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              {dict.todolist.tags.title}
+            </p>
+            {tags.length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${tagColor(tag)}`}
+                  >
+                    {tag}
+                    <button
+                      className="ml-0.5 opacity-70 hover:opacity-100"
+                      title="Rimuovi"
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                    >
+                      <LuX size={10} />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            )}
+            {globalTags.filter((t) => !tags.includes(t)).length > 0 && (
+              <div className="flex flex-wrap gap-1">
+                <span className="self-center text-xs text-gray-400">
+                  {dict.todolist.tags.suggestions}:
+                </span>
+                {globalTags
+                  .filter((t) => !tags.includes(t))
+                  .map((tag) => (
+                    <button
+                      key={tag}
+                      className={`inline-flex items-center gap-0.5 rounded-full border border-current px-2 py-0.5 text-xs font-medium opacity-60 transition-opacity hover:opacity-100 ${tagColor(tag)}`}
+                      title="Aggiungi al task"
+                      type="button"
+                      onClick={() => addTag(tag)}
+                    >
+                      + {tag}
+                    </button>
+                  ))}
+              </div>
+            )}
+            <div className="flex gap-2">
+              <input
+                className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+                placeholder={dict.todolist.tags.placeholder}
+                type="text"
+                value={newTagInput}
+                onChange={(e) => setNewTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault()
+                    addTag(newTagInput)
+                  }
+                }}
+              />
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => addTag(newTagInput)}
+              >
+                <HiMiniPlus className="h-4 w-4" />
+                {dict.todolist.tags.add}
+              </Button>
+            </div>
+          </div>
           <div className="flex flex-col gap-2">
             <div className="flex gap-2">
               <button
@@ -570,7 +659,7 @@ function TaskFormBody({
           variant="primary"
           onPress={() =>
             onSubmit(
-              { title, description, priority, dueDate, status, subtasks },
+              { title, description, priority, dueDate, status, subtasks, tags },
               subtaskTransfers
             )
           }

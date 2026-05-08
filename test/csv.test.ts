@@ -4,7 +4,7 @@ import { exportCommentsToCSV, exportToCSV, parseCommentsCSV, parseCSV } from '..
 import { Comment, Todo } from '../src/types'
 
 const TODO_HEADER =
-  'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status,subtasks'
+  'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status,subtasks,tags'
 
 const COMMENT_HEADER = 'id,todoId,text,createdAt'
 
@@ -22,6 +22,7 @@ function todoRow(overrides: Record<string, string> = {}): string {
     priority: 'medium',
     status: 'todo',
     subtasks: '[]',
+    tags: '[]',
   }
   const row = { ...defaults, ...overrides }
   return [
@@ -37,6 +38,7 @@ function todoRow(overrides: Record<string, string> = {}): string {
     row.priority,
     row.status,
     row.subtasks,
+    row.tags,
   ].join(',')
 }
 
@@ -175,6 +177,26 @@ describe('parseCSV', () => {
     const csv = [TODO_HEADER, todoRow({ subtasks: 'not-json' })].join('\n')
     expect(parseCSV(csv)[0].subtasks).toEqual([])
   })
+
+  it('parses tags from JSON column', () => {
+    const tags = JSON.stringify(['frontend', 'bug'])
+    const csv = [TODO_HEADER, todoRow({ tags: `"${tags.replace(/"/g, '""')}"` })].join('\n')
+    const result = parseCSV(csv)
+    expect(result[0].tags).toEqual(['frontend', 'bug'])
+  })
+
+  it('defaults tags to empty array when column is missing', () => {
+    const headerNoTags =
+      'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status,subtasks'
+    const row = 'abc,My task,,false,2024-01-01T00:00:00.000Z,,,,,medium,todo,[]'
+    const result = parseCSV([headerNoTags, row].join('\n'))
+    expect(result[0].tags).toEqual([])
+  })
+
+  it('defaults tags to empty array on invalid JSON', () => {
+    const csv = [TODO_HEADER, todoRow({ tags: 'not-json' })].join('\n')
+    expect(parseCSV(csv)[0].tags).toEqual([])
+  })
 })
 
 describe('parseCommentsCSV', () => {
@@ -231,6 +253,7 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
     priority: 'medium',
     status: 'todo',
     subtasks: [],
+    tags: [],
     ...overrides,
   }
 }
@@ -319,6 +342,22 @@ describe('exportToCSV', () => {
   it('quotes fields that contain a newline', () => {
     exportToCSV([makeTodo({ title: 'line1\nline2' })])
     expect(mocks.getContent()).toContain('"line1\nline2"')
+  })
+
+  it('includes tags column in the header', () => {
+    exportToCSV([makeTodo()])
+    expect(mocks.getContent()).toContain('tags')
+  })
+
+  it('exports tags as a JSON array', () => {
+    exportToCSV([makeTodo({ tags: ['frontend', 'bug'] })])
+    expect(mocks.getContent()).toContain('frontend')
+    expect(mocks.getContent()).toContain('bug')
+  })
+
+  it('exports empty tags as []', () => {
+    exportToCSV([makeTodo({ tags: [] })])
+    expect(mocks.getContent()).toContain('[]')
   })
 })
 

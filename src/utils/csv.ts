@@ -15,6 +15,7 @@ const TODO_HEADERS = [
   'priority',
   'status',
   'subtasks',
+  'tags',
 ]
 
 const COMMENT_HEADERS = ['id', 'todoId', 'text', 'createdAt']
@@ -117,6 +118,7 @@ export function exportToCSV(todos: Todo[]) {
       TODO_HEADERS.map((h) => {
         if (h === 'subtasks')
           return escapeCSV(JSON.stringify(todo.subtasks ?? []))
+        if (h === 'tags') return escapeCSV(JSON.stringify(todo.tags ?? []))
         return escapeCSV((todo as any)[h])
       }).join(',')
     )
@@ -156,7 +158,7 @@ export function parseCSV(csvText: string): Todo[] {
         todo[header] = val.toLowerCase() === 'true'
       } else if (['updatedAt', 'completedAt', 'dueDate'].includes(header)) {
         todo[header] = val.trim() === '' ? null : val.trim()
-      } else if (header === 'subtasks') {
+      } else if (header === 'subtasks' || header === 'tags') {
         try {
           todo[header] = val.trim() ? JSON.parse(val) : []
         } catch {
@@ -174,6 +176,7 @@ export function parseCSV(csvText: string): Todo[] {
     if (todo.completed === undefined) todo.completed = false
     if (!todo.createdAt) todo.createdAt = new Date().toISOString()
     if (!Array.isArray(todo.subtasks)) todo.subtasks = []
+    if (!Array.isArray(todo.tags)) todo.tags = []
     // Migrate subtasks exported before completedAt was added
     todo.subtasks = todo.subtasks.map((s: any) => ({
       ...s,

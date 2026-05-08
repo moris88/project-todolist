@@ -1,8 +1,15 @@
 import { describe, expect, it } from 'vitest'
 
 import { isTaskOverdue } from '../src/utils/todo'
-import { filterTodoByStatus, generateUniqueId, orderTodos } from '../src/utils/utils'
-import { Todo } from '../src/types'
+import {
+  FilterState,
+  applyFilters,
+  filterTodoByStatus,
+  generateUniqueId,
+  orderTodos,
+  tagColor,
+} from '../src/utils/utils'
+import { Comment, Todo } from '../src/types'
 
 describe('generateUniqueId', () => {
   it('returns a non-empty string', () => {
@@ -49,6 +56,20 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
     priority: 'medium',
     status: 'todo',
     subtasks: [],
+    tags: [],
+    ...overrides,
+  }
+}
+
+function makeFilters(overrides: Partial<FilterState> = {}): FilterState {
+  return {
+    status: '',
+    completion: 'all',
+    overdue: 'all',
+    tags: [],
+    search: '',
+    dueDateFrom: '',
+    dueDateTo: '',
     ...overrides,
   }
 }
@@ -163,5 +184,258 @@ describe('filterTodoByStatus', () => {
 
   it("default unknown filter returns false", () => {
     expect(filterTodoByStatus(makeTodo(), 'unknown')).toBe(false)
+  })
+})
+
+// ─── tagColor ─────────────────────────────────────────────────────────────────
+
+describe('tagColor', () => {
+  it('returns a non-empty string', () => {
+    expect(typeof tagColor('frontend')).toBe('string')
+    expect(tagColor('frontend').length).toBeGreaterThan(0)
+  })
+
+  it('is deterministic — same input always returns the same color', () => {
+    expect(tagColor('bug')).toBe(tagColor('bug'))
+    expect(tagColor('urgent')).toBe(tagColor('urgent'))
+  })
+
+  it('contains bg- and text- Tailwind classes', () => {
+    const color = tagColor('feature')
+    expect(color).toMatch(/bg-/)
+    expect(color).toMatch(/text-/)
+  })
+
+  it('handles empty string without throwing', () => {
+    expect(() => tagColor('')).not.toThrow()
+    expect(typeof tagColor('')).toBe('string')
+  })
+
+  it('returns different colors for different inputs', () => {
+    const tags = ['a', 'bb', 'ccc', 'dddd', 'eeeee', 'ffffff', 'ggggggg', 'hhhhhhhh', 'iiiiiiiii']
+    const colors = tags.map(tagColor)
+    expect(new Set(colors).size).toBeGreaterThan(1)
+  })
+})
+
+// ─── applyFilters ─────────────────────────────────────────────────────────────
+
+describe('applyFilters', () => {
+  it('shows all todos when no filter is active', () => {
+    expect(applyFilters(makeTodo(), makeFilters())).toBe(true)
+  })
+
+  // — status —
+  it('hides todo with wrong status when status filter is set', () => {
+    expect(applyFilters(makeTodo({ status: 'todo' }), makeFilters({ status: 'progress' }))).toBe(false)
+  })
+
+  it('shows todo with matching status', () => {
+    expect(applyFilters(makeTodo({ status: 'progress' }), makeFilters({ status: 'progress' }))).toBe(true)
+  })
+
+  it('shows any status when status filter is empty string', () => {
+    expect(applyFilters(makeTodo({ status: 'archived' }), makeFilters({ status: '' }))).toBe(true)
+  })
+
+  it('deselecting a status (click same pill) resets to show all', () => {
+    const filters = makeFilters({ status: 'done' })
+    expect(applyFilters(makeTodo({ status: 'todo' }), filters)).toBe(false)
+    expect(applyFilters(makeTodo({ status: 'todo' }), makeFilters({ status: '' }))).toBe(true)
+  })
+
+  // — completion —
+  it('hides uncompleted when completion=completed', () => {
+    expect(applyFilters(makeTodo({ completed: false }), makeFilters({ completion: 'completed' }))).toBe(false)
+  })
+
+  it('shows completed when completion=completed', () => {
+    expect(applyFilters(makeTodo({ completed: true }), makeFilters({ completion: 'completed' }))).toBe(true)
+  })
+
+  it('hides completed when completion=uncompleted', () => {
+    expect(applyFilters(makeTodo({ completed: true }), makeFilters({ completion: 'uncompleted' }))).toBe(false)
+  })
+
+  it('shows uncompleted when completion=uncompleted', () => {
+    expect(applyFilters(makeTodo({ completed: false }), makeFilters({ completion: 'uncompleted' }))).toBe(true)
+  })
+
+  it('shows both when completion=all', () => {
+    expect(applyFilters(makeTodo({ completed: true }), makeFilters({ completion: 'all' }))).toBe(true)
+    expect(applyFilters(makeTodo({ completed: false }), makeFilters({ completion: 'all' }))).toBe(true)
+  })
+
+  // — overdue —
+  it('hides non-overdue when overdue=overdue', () => {
+    const future = new Date(Date.now() + 1000 * 60 * 60).toISOString()
+    expect(applyFilters(makeTodo({ dueDate: future }), makeFilters({ overdue: 'overdue' }))).toBe(false)
+  })
+
+  it('shows overdue todo when overdue=overdue', () => {
+    const past = new Date(Date.now() - 1000 * 60 * 60).toISOString()
+    expect(applyFilters(makeTodo({ dueDate: past }), makeFilters({ overdue: 'overdue' }))).toBe(true)
+  })
+
+  it('hides overdue todo when overdue=not_overdue', () => {
+    const past = new Date(Date.now() - 1000 * 60 * 60).toISOString()
+    expect(applyFilters(makeTodo({ dueDate: past }), makeFilters({ overdue: 'not_overdue' }))).toBe(false)
+  })
+
+  it('shows non-overdue todo when overdue=not_overdue', () => {
+    const future = new Date(Date.now() + 1000 * 60 * 60).toISOString()
+    expect(applyFilters(makeTodo({ dueDate: future }), makeFilters({ overdue: 'not_overdue' }))).toBe(true)
+  })
+
+  it('shows null-dueDate todo when overdue=not_overdue', () => {
+    expect(applyFilters(makeTodo({ dueDate: null }), makeFilters({ overdue: 'not_overdue' }))).toBe(true)
+  })
+
+  // — tags —
+  it('shows all todos when tags filter is empty', () => {
+    expect(applyFilters(makeTodo({ tags: ['frontend'] }), makeFilters({ tags: [] }))).toBe(true)
+  })
+
+  it('shows todo that has at least one matching tag (OR logic)', () => {
+    expect(applyFilters(makeTodo({ tags: ['frontend', 'bug'] }), makeFilters({ tags: ['bug'] }))).toBe(true)
+  })
+
+  it('hides todo that has none of the selected tags', () => {
+    expect(applyFilters(makeTodo({ tags: ['frontend'] }), makeFilters({ tags: ['backend'] }))).toBe(false)
+  })
+
+  it('hides todo with no tags when tag filter is active', () => {
+    expect(applyFilters(makeTodo({ tags: [] }), makeFilters({ tags: ['frontend'] }))).toBe(false)
+  })
+
+  it('handles undefined tags on todo gracefully', () => {
+    const todo = { ...makeTodo(), tags: undefined as unknown as string[] }
+    expect(applyFilters(todo, makeFilters({ tags: ['bug'] }))).toBe(false)
+    expect(applyFilters(todo, makeFilters({ tags: [] }))).toBe(true)
+  })
+
+  // — search —
+  it('shows todo whose title matches search string (case-insensitive)', () => {
+    expect(applyFilters(makeTodo({ title: 'Fix Bug #42' }), makeFilters({ search: 'bug' }))).toBe(true)
+  })
+
+  it('hides todo whose title does not match search', () => {
+    expect(applyFilters(makeTodo({ title: 'Fix Bug' }), makeFilters({ search: 'feature' }))).toBe(false)
+  })
+
+  it('shows all todos when search is empty', () => {
+    expect(applyFilters(makeTodo({ title: 'Anything' }), makeFilters({ search: '' }))).toBe(true)
+  })
+
+  it('search is case-insensitive', () => {
+    expect(applyFilters(makeTodo({ title: 'Deploy API' }), makeFilters({ search: 'deploy api' }))).toBe(true)
+    expect(applyFilters(makeTodo({ title: 'deploy api' }), makeFilters({ search: 'DEPLOY' }))).toBe(true)
+  })
+
+  it('shows todo whose subtask title matches search', () => {
+    const todo = makeTodo({
+      title: 'Parent',
+      subtasks: [{ id: 's1', title: 'Fix login bug', completed: false, completedAt: null }],
+    })
+    expect(applyFilters(todo, makeFilters({ search: 'login' }))).toBe(true)
+  })
+
+  it('hides todo when title and subtasks do not match but search is set', () => {
+    const todo = makeTodo({
+      title: 'Parent',
+      subtasks: [{ id: 's1', title: 'Other task', completed: false, completedAt: null }],
+    })
+    expect(applyFilters(todo, makeFilters({ search: 'login' }))).toBe(false)
+  })
+
+  it('subtask search is case-insensitive', () => {
+    const todo = makeTodo({
+      title: 'Parent',
+      subtasks: [{ id: 's1', title: 'Fix Login Bug', completed: false, completedAt: null }],
+    })
+    expect(applyFilters(todo, makeFilters({ search: 'LOGIN' }))).toBe(true)
+  })
+
+  it('shows todo whose comment text matches search', () => {
+    const todo = makeTodo({ id: 'todo-1', title: 'Parent' })
+    const comments: Comment[] = [{ id: 'c1', todoId: 'todo-1', text: 'Reviewed the PR', createdAt: '' }]
+    expect(applyFilters(todo, makeFilters({ search: 'reviewed' }), comments)).toBe(true)
+  })
+
+  it('ignores comments belonging to other todos', () => {
+    const todo = makeTodo({ id: 'todo-1', title: 'Parent' })
+    const comments: Comment[] = [{ id: 'c1', todoId: 'other-id', text: 'Reviewed the PR', createdAt: '' }]
+    expect(applyFilters(todo, makeFilters({ search: 'reviewed' }), comments)).toBe(false)
+  })
+
+  it('comment search is case-insensitive', () => {
+    const todo = makeTodo({ id: 'todo-1', title: 'Parent' })
+    const comments: Comment[] = [{ id: 'c1', todoId: 'todo-1', text: 'LGTM', createdAt: '' }]
+    expect(applyFilters(todo, makeFilters({ search: 'lgtm' }), comments)).toBe(true)
+  })
+
+  it('matches via title even when no comments provided', () => {
+    expect(applyFilters(makeTodo({ title: 'Fix Bug' }), makeFilters({ search: 'fix' }))).toBe(true)
+  })
+
+  // — date range —
+  it('hides todo without dueDate when dueDateFrom is set', () => {
+    expect(applyFilters(makeTodo({ dueDate: null }), makeFilters({ dueDateFrom: '2024-01-01' }))).toBe(false)
+  })
+
+  it('hides todo without dueDate when dueDateTo is set', () => {
+    expect(applyFilters(makeTodo({ dueDate: null }), makeFilters({ dueDateTo: '2024-12-31' }))).toBe(false)
+  })
+
+  it('shows todo with dueDate within range [from, to]', () => {
+    const todo = makeTodo({ dueDate: '2024-06-15T12:00:00.000Z' })
+    expect(applyFilters(todo, makeFilters({ dueDateFrom: '2024-06-01', dueDateTo: '2024-06-30' }))).toBe(true)
+  })
+
+  it('hides todo with dueDate before the from date', () => {
+    const todo = makeTodo({ dueDate: '2024-05-01T12:00:00.000Z' })
+    expect(applyFilters(todo, makeFilters({ dueDateFrom: '2024-06-01' }))).toBe(false)
+  })
+
+  it('hides todo with dueDate after the to date', () => {
+    const todo = makeTodo({ dueDate: '2024-07-01T00:00:00.000Z' })
+    expect(applyFilters(todo, makeFilters({ dueDateTo: '2024-06-30' }))).toBe(false)
+  })
+
+  it('includes todo with dueDate on the same day as the to date', () => {
+    const todo = makeTodo({ dueDate: '2024-06-30T10:00:00.000Z' })
+    expect(applyFilters(todo, makeFilters({ dueDateTo: '2024-06-30' }))).toBe(true)
+  })
+
+  it('shows todo with dueDate when no range filter is set', () => {
+    const todo = makeTodo({ dueDate: '2024-06-01T12:00:00.000Z' })
+    expect(applyFilters(todo, makeFilters())).toBe(true)
+  })
+
+  // — combined filters (AND logic) —
+  it('all filters pass simultaneously', () => {
+    const past = new Date(Date.now() - 1000 * 60 * 60).toISOString()
+    const todo = makeTodo({
+      status: 'progress',
+      completed: false,
+      dueDate: past,
+      tags: ['bug'],
+      title: 'Fix it',
+    })
+    expect(applyFilters(todo, makeFilters({
+      status: 'progress',
+      completion: 'uncompleted',
+      overdue: 'overdue',
+      tags: ['bug'],
+      search: 'fix',
+    }))).toBe(true)
+  })
+
+  it('one failing filter rejects the todo', () => {
+    const todo = makeTodo({ status: 'progress', completed: false, tags: ['bug'] })
+    expect(applyFilters(todo, makeFilters({
+      status: 'progress',
+      completion: 'completed',
+    }))).toBe(false)
   })
 })

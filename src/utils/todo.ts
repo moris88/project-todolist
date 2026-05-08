@@ -29,7 +29,8 @@ export function getTodosStorage(): Todo[] {
       .map((todoString) => {
         const todo = localStorage.getItem(todoString)
         if (todo) {
-          return JSON.parse(todo) satisfies Todo
+          const parsed = JSON.parse(todo)
+          return { ...parsed, tags: parsed.tags ?? [] } satisfies Todo
         }
         return null
       })
