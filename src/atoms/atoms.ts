@@ -1,8 +1,8 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
-import { Comment, Todo } from '@/types'
-import { Dict, dicts, Language } from '@/utils/constants'
+import type { Comment, Todo } from '@/types'
+import { type Dict, dicts, type Language } from '@/utils/constants'
 
 export const todoListAtom = atom<Todo[]>([])
 export const commentsAtom = atom<Comment[]>([])

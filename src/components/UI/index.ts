@@ -5,11 +5,11 @@ export { default as Chip } from './Chip'
 export { default as DatePicker } from './DatePicker'
 export { default as Input } from './Input'
 export {
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
+	Modal,
+	ModalBody,
+	ModalContent,
+	ModalFooter,
+	ModalHeader,
 } from './Modal'
 export { default as Select } from './Select'
 export { default as SelectItem } from './SelectItem'
