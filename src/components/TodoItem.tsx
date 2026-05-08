@@ -12,6 +12,7 @@ import {
   HiMiniTrash,
   HiOutlinePencilSquare,
 } from 'react-icons/hi2'
+
 import { commentsAtom, dictAtom, todoListAtom } from '@/atoms/atoms'
 import {
   ConfirmModal,
@@ -477,25 +478,27 @@ function TodoItem({
                 )}
             </div>
           )}
-          {!showOnlyTitle && (showDescriptions || showInlineDetail) && todo.description && (
-            <div
-              className="w-full px-1"
-              onPointerDown={(e) => e.stopPropagation()}
-            >
-              <div className={isExpanded ? '' : 'line-clamp-3'}>
-                <MarkdownContent content={todo.description} />
-              </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onPress={() => setIsExpanded((prev) => !prev)}
+          {!showOnlyTitle &&
+            (showDescriptions || showInlineDetail) &&
+            todo.description && (
+              <div
+                className="w-full px-1"
+                onPointerDown={(e) => e.stopPropagation()}
               >
-                {isExpanded
-                  ? dict.todolist.listitem.show_less
-                  : dict.todolist.listitem.show_more}
-              </Button>
-            </div>
-          )}
+                <div className={isExpanded ? '' : 'line-clamp-3'}>
+                  <MarkdownContent content={todo.description} />
+                </div>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onPress={() => setIsExpanded((prev) => !prev)}
+                >
+                  {isExpanded
+                    ? dict.todolist.listitem.show_less
+                    : dict.todolist.listitem.show_more}
+                </Button>
+              </div>
+            )}
         </div>
 
         <div
