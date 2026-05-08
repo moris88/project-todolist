@@ -3,7 +3,7 @@ import '@testing-library/jest-dom'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { useAtom, Provider } from 'jotai'
 import { useHydrateAtoms } from 'jotai/utils'
-import React from 'react'
+import type React from 'react'
 import { createRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -42,7 +42,7 @@ import SelectItem from '../src/components/UI/SelectItem'
 import Switch from '../src/components/UI/Switch'
 import Textarea from '../src/components/UI/Textarea'
 import Tooltip from '../src/components/UI/Tooltip'
-import { Comment, Project, Sprint, Todo } from '../src/types'
+import type { Comment, Project, Sprint, Todo } from '../src/types'
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -1066,6 +1066,70 @@ describe('DangerZone', () => {
     fireEvent.click(clearBtn)
     expect(screen.getAllByText('Pulisci completati').length).toBeGreaterThan(1)
   })
+
+  it('handles CSV import for todos', async () => {
+    const mockAlert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    let capturedOnload: any = null
+    const readerMock = {
+      readAsText: vi.fn(),
+      set onload(fn: any) { capturedOnload = fn },
+      get onload() { return capturedOnload }
+    }
+    vi.stubGlobal('FileReader', vi.fn(function(this: any) {
+      return readerMock
+    }))
+
+    const { container } = render(
+      <TestProvider>
+        <DangerZone />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getAllByRole('checkbox')[0]) // Enable Import/Export
+
+    const inputs = container.querySelectorAll('input[type="file"]')
+    const input = inputs[0] as HTMLInputElement
+    fireEvent.change(input, { target: { files: [new File(['id,title\nt1,Task'], 'tasks.csv', { type: 'text/csv' })] } })
+
+    // Wait for the handler to instantiate FileReader and set onload
+    await waitFor(() => expect(typeof capturedOnload).toBe('function'))
+    capturedOnload({ target: { result: 'id,title\nt1,Task' } })
+
+    await waitFor(() => expect(mockAlert).toHaveBeenCalledWith(expect.stringContaining('Importazione completata con successo')))
+    vi.unstubAllGlobals()
+    mockAlert.mockRestore()
+  })
+
+  it('handles CSV import for comments', async () => {
+    const mockAlert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+    let capturedOnload: any = null
+    const readerMock = {
+      readAsText: vi.fn(),
+      set onload(fn: any) { capturedOnload = fn },
+      get onload() { return capturedOnload }
+    }
+    vi.stubGlobal('FileReader', vi.fn(function(this: any) {
+      return readerMock
+    }))
+
+    const { container } = render(
+      <TestProvider>
+        <DangerZone />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getAllByRole('checkbox')[0]) // Enable Import/Export
+
+    const inputs = container.querySelectorAll('input[type="file"]')
+    const input = inputs[1] as HTMLInputElement
+    fireEvent.change(input, { target: { files: [new File(['id,todoId,text,createdAt\nc1,t1,Comm,2024-01-01'], 'comments.csv', { type: 'text/csv' })] } })
+
+    // Wait for the handler to instantiate FileReader and set onload
+    await waitFor(() => expect(typeof capturedOnload).toBe('function'))
+    capturedOnload({ target: { result: 'id,todoId,text,createdAt\nc1,t1,Comm,2024-01-01' } })
+
+    await waitFor(() => expect(mockAlert).toHaveBeenCalledWith(expect.stringContaining('Importazione commenti completata con successo')))
+    vi.unstubAllGlobals()
+    mockAlert.mockRestore()
+  })
 })
 
 // ─── TodoInput ────────────────────────────────────────────────────────────────
@@ -1712,6 +1776,36 @@ describe('TaskFormModal', () => {
     expect(values.title).toBe('New title')
   })
 
+  it('selects project and sprint in TaskFormModal', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider initialValues={[[projectsAtom, [baseProject]], [sprintsAtom, [baseSprint]]]}>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    // Project select
+    const projectSelectTrigger = screen.getByRole('button', { name: 'Progetto' })
+    fireEvent.click(projectSelectTrigger)
+    fireEvent.click(screen.getByText('Test Project'))
+
+    // Sprint select
+    const sprintSelectTrigger = screen.getByRole('button', { name: 'Sprint' })
+    fireEvent.click(sprintSelectTrigger)
+    fireEvent.click(screen.getByText('Test Sprint'))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    const [values] = onSubmit.mock.calls[0] as [{ projectId: string; sprintId: string }, any]
+    expect(values.projectId).toBe('project-1')
+    expect(values.sprintId).toBe('sprint-1')
+  })
+
   it('adds a subtask via the add button', () => {
     render(
       <TestProvider>
@@ -2120,6 +2214,50 @@ describe('TodoItem extra', () => {
     fireEvent.click(screen.getByRole('button', { name: /Mostra meno/i }))
     expect(screen.getByRole('button', { name: /Mostra tutto/i })).toBeInTheDocument()
   })
+
+  it('shows project and sprint badges in TodoItem', () => {
+    render(
+      <TestProvider initialValues={[
+        [todoListAtom, [{ ...baseTodo, projectId: 'project-1', sprintId: 'sprint-1' }]],
+        [projectsAtom, [baseProject]],
+        [sprintsAtom, [baseSprint]]
+      ]}>
+        <AtomTodoItem todoId="todo-1" />
+      </TestProvider>
+    )
+    expect(screen.getByText('Test Project')).toBeInTheDocument()
+    expect(screen.getByText('Test Sprint')).toBeInTheDocument()
+  })
+
+  it('toggles subtask via keyboard', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks]]]}>
+        <AtomTodoItem todoId="todo-2" showSubtasks />
+      </TestProvider>
+    )
+    const subtaskItem = screen.getByText('Subtask One').closest('li')
+    if (subtaskItem) {
+      fireEvent.keyDown(subtaskItem, { key: 'Enter' })
+      const checkbox = subtaskItem.querySelector('input[type="checkbox"]') as HTMLInputElement
+      expect(checkbox.checked).toBe(true)
+    }
+  })
+
+  it('toggles inline detail via button', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [{ ...baseTodo, description: 'Some description' }]]]}>
+        <AtomTodoItem todoId="todo-1" />
+      </TestProvider>
+    )
+    // Find detail button (the one with BiSolidDetail)
+    const detailBtn = document.querySelector('button svg.h-3.w-3.md\\:h-5.md\\:w-5')?.closest('button')
+    if (detailBtn) {
+      fireEvent.click(detailBtn)
+      expect(screen.getByText('Some description')).toBeInTheDocument()
+      fireEvent.click(detailBtn)
+      expect(screen.queryByText('Some description')).toBeNull()
+    }
+  })
 })
 
 // ─── DangerZone extra (confirm delete handlers) ───────────────────────────────
@@ -2290,6 +2428,37 @@ describe('TaskDetailModal edit flow', () => {
       fireEvent.click(screen.getByText('In corso'))
     }
     expect(screen.queryByText('In corso')).toBeNull()
+  })
+
+  it('shows subtask priority and status badges in detail modal', () => {
+    const todoWithComplexSubtasks: Todo = {
+      ...baseTodo,
+      id: 'todo-complex',
+      subtasks: [
+        { id: 'cs-1', title: 'Complex Subtask', completed: false, completedAt: null, priority: 'urgent', status: 'progress' }
+      ]
+    }
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithComplexSubtasks]]]}>
+        <TaskDetailModal todoId="todo-complex" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(screen.getByText('Urgente')).toBeInTheDocument()
+    expect(screen.getByText('In corso')).toBeInTheDocument()
+  })
+
+  it('toggles subtask via keyboard in detail modal', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks]]]}>
+        <TaskDetailModal todoId="todo-2" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    const subtaskItem = screen.getByText('Subtask One').closest('li')
+    if (subtaskItem) {
+      fireEvent.keyDown(subtaskItem, { key: ' ' }) // Space key
+      const checkbox = subtaskItem.querySelector('input[type="checkbox"]') as HTMLInputElement
+      expect(checkbox.checked).toBe(true)
+    }
   })
 })
 
@@ -2676,7 +2845,7 @@ describe('TodoItem move subtask', () => {
     expect(modalHeaders.length).toBeGreaterThan(0)
   })
 
-  it('confirms move subtask removes subtask from source todo', () => {
+  it('confirms move subtask removes subtask from source todo', async () => {
     render(
       <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks, baseTodo]]]}>
         <AtomTodoItem todoId="todo-2" showSubtasks />
@@ -2684,10 +2853,24 @@ describe('TodoItem move subtask', () => {
     )
     const moveBtns = screen.getAllByTitle('Sposta sottocompito')
     fireEvent.click(moveBtns[0])
+    
+    // Select target todo (custom Select component)
+    const selectTrigger = screen.getByRole('button', { name: 'Seleziona compito di destinazione' })
+    fireEvent.click(selectTrigger)
+    
+    // Find the option in the dropdown (which is in a portal)
+    // We look for 'Test Task' that is NOT inside the trigger button
+    const options = screen.getAllByText('Test Task')
+    const option = options.find(el => el.closest('button') !== selectTrigger)
+    if (option) fireEvent.click(option)
+    
     const confirmMoveBtn = screen.getByRole('button', { name: 'Sposta' })
     fireEvent.click(confirmMoveBtn)
+    
     // Modal should close after move
-    expect(screen.queryByRole('button', { name: 'Sposta' })).toBeNull()
+    await waitFor(() => {
+      expect(screen.queryByRole('button', { name: 'Sposta' })).toBeNull()
+    })
   })
 
   it('cancels move subtask modal via Annulla button', () => {
@@ -3604,6 +3787,28 @@ describe('ProjectsManager', () => {
       })
     }
   })
+
+  it('creates a new project', async () => {
+    render(<TestProvider><ProjectsManager /></TestProvider>)
+    fireEvent.click(screen.getByText('Nuovo Progetto'))
+    const nameInput = screen.getByPlaceholderText(/Sito web aziendale/i)
+    fireEvent.change(nameInput, { target: { value: 'New Project X' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Crea' }))
+    expect(screen.getByText('New Project X')).toBeInTheDocument()
+  })
+
+  it('saves changes when editing a project', async () => {
+    render(
+      <TestProvider initialValues={[[projectsAtom, [baseProject]]]}>
+        <ProjectsManager />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Modifica Progetto'))
+    const nameInput = screen.getByDisplayValue('Test Project')
+    fireEvent.change(nameInput, { target: { value: 'Updated Project Name' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    expect(screen.getByText('Updated Project Name')).toBeInTheDocument()
+  })
 })
 
 // ─── SprintsManager ───────────────────────────────────────────────────────────
@@ -3796,5 +4001,34 @@ describe('SprintsManager', () => {
         expect(screen.getAllByText('Test Task').length).toBeGreaterThan(1)
       })
     }
+  })
+
+  it('creates a new sprint', async () => {
+    render(
+      <TestProvider initialValues={[[projectsAtom, [baseProject]]]}>
+        <SprintsManager />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByText('Nuovo Sprint'))
+    const nameInput = screen.getByPlaceholderText(/Sprint 1 - Maggio 2026/i)
+    fireEvent.change(nameInput, { target: { value: 'New Sprint X' } })
+    // Select project
+    const projectSelect = screen.getByRole('combobox')
+    fireEvent.change(projectSelect, { target: { value: 'project-1' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Crea' }))
+    expect(screen.getByText('New Sprint X')).toBeInTheDocument()
+  })
+
+  it('saves changes when editing a sprint', async () => {
+    render(
+      <TestProvider initialValues={[[projectsAtom, [baseProject]], [sprintsAtom, [baseSprint]]]}>
+        <SprintsManager />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Modifica Sprint'))
+    const nameInput = screen.getByDisplayValue('Test Sprint')
+    fireEvent.change(nameInput, { target: { value: 'Updated Sprint Name' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    expect(screen.getByText('Updated Sprint Name')).toBeInTheDocument()
   })
 })

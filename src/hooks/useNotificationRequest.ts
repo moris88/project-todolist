@@ -19,7 +19,7 @@ const useNotificationRequest = () => {
 		if (Notification.permission === 'granted') {
 			new Notification(title, {
 				body: body,
-				icon: '/bell.png',
+				icon: '/bell.webp',
 			})
 		}
 	}
