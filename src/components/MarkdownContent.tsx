@@ -2,16 +2,16 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 
 interface MarkdownContentProps {
-  content: string
-  className?: string
+	content: string
+	className?: string
 }
 
 function MarkdownContent({ content, className = '' }: MarkdownContentProps) {
-  return (
-    <div className={`markdown-content ${className}`}>
-      <ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
-    </div>
-  )
+	return (
+		<div className={`markdown-content ${className}`}>
+			<ReactMarkdown remarkPlugins={[remarkGfm]}>{content}</ReactMarkdown>
+		</div>
+	)
 }
 
 export default MarkdownContent

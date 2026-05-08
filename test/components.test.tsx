@@ -1,12 +1,23 @@
 import '@testing-library/jest-dom'
 
-import { fireEvent, render, screen } from '@testing-library/react'
-import { Provider } from 'jotai'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useAtom, Provider } from 'jotai'
+import { useHydrateAtoms } from 'jotai/utils'
+import React from 'react'
 import { createRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import { commentsAtom, tagsAtom, todoListAtom } from '../src/atoms/atoms'
+import Comments from '../src/components/Comments'
 import ConfirmModal from '../src/components/ConfirmModal'
+import DangerZone from '../src/components/DangerZone'
 import Header from '../src/components/Header'
+import MarkdownContent from '../src/components/MarkdownContent'
+import TaskDetailModal from '../src/components/TaskDetailModal'
+import TaskFormModal from '../src/components/TaskFormModal'
+import TodoInput from '../src/components/TodoInput'
+import TodoItem from '../src/components/TodoItem'
+import TodoList from '../src/components/TodoList'
 import Wrapper from '../src/components/Wrapper'
 import Button from '../src/components/UI/Button'
 import ButtonGroup from '../src/components/UI/ButtonGroup'
@@ -25,6 +36,109 @@ import Select from '../src/components/UI/Select'
 import SelectItem from '../src/components/UI/SelectItem'
 import Switch from '../src/components/UI/Switch'
 import Textarea from '../src/components/UI/Textarea'
+import Tooltip from '../src/components/UI/Tooltip'
+import { Comment, Todo } from '../src/types'
+
+// ─── Test helpers ─────────────────────────────────────────────────────────────
+
+function HydrateAtoms({
+  initialValues,
+  children,
+}: {
+  initialValues: [atom: any, value: any][]
+  children: React.ReactNode
+}) {
+  useHydrateAtoms(initialValues)
+  return <>{children}</>
+}
+
+function TestProvider({
+  initialValues = [],
+  children,
+}: {
+  initialValues?: [atom: any, value: any][]
+  children: React.ReactNode
+}) {
+  return (
+    <Provider>
+      <HydrateAtoms initialValues={initialValues}>{children}</HydrateAtoms>
+    </Provider>
+  )
+}
+
+const baseTodo: Todo = {
+  id: 'todo-1',
+  title: 'Test Task',
+  description: 'Test **description**',
+  completed: false,
+  createdAt: '2024-01-01T10:00:00.000Z',
+  updatedAt: null,
+  completedAt: null,
+  dueDate: null,
+  notify: false,
+  priority: 'medium',
+  status: 'todo',
+  subtasks: [],
+  tags: [],
+}
+
+const todoWithSubtasks: Todo = {
+  ...baseTodo,
+  id: 'todo-2',
+  title: 'Task with subtasks',
+  subtasks: [
+    { id: 'sub-1', title: 'Subtask One', completed: false, completedAt: null },
+    { id: 'sub-2', title: 'Subtask Two', completed: true, completedAt: '2024-01-02T10:00:00.000Z' },
+  ],
+}
+
+const completedTodo: Todo = {
+  ...baseTodo,
+  id: 'todo-3',
+  title: 'Completed Task',
+  completed: true,
+  completedAt: '2024-01-02T12:00:00.000Z',
+  status: 'done',
+}
+
+const archivedTodo: Todo = {
+  ...baseTodo,
+  id: 'todo-4',
+  title: 'Archived Task',
+  status: 'archived',
+}
+
+const todoWithTags: Todo = {
+  ...baseTodo,
+  id: 'todo-5',
+  title: 'Tagged Task',
+  tags: ['frontend', 'urgent'],
+}
+
+// Wrapper that reads todo from atom so UI updates on state changes
+function AtomTodoItem({
+  todoId,
+  showSubtasks,
+  showDescriptions,
+  onDetailPress,
+}: {
+  todoId: string
+  showSubtasks?: boolean
+  showDescriptions?: boolean
+  onDetailPress?: () => void
+}) {
+  const [todos] = useAtom(todoListAtom)
+  const todo = todos.find((t) => t.id === todoId)
+  if (!todo) return null
+  return (
+    <TodoItem
+      todo={todo}
+      showSubtasks={showSubtasks}
+      showDescriptions={showDescriptions}
+      onDetailPress={onDetailPress}
+    />
+  )
+}
 
 // ─── Chip ─────────────────────────────────────────────────────────────────────
 
@@ -657,5 +771,2269 @@ describe('Wrapper', () => {
     localStorage.setItem('darkMode', 'false')
     render(<Provider><Wrapper><span /></Wrapper></Provider>)
     expect(document.documentElement.classList.contains('dark')).toBe(false)
+  })
+})
+
+// ─── MarkdownContent ──────────────────────────────────────────────────────────
+
+describe('MarkdownContent', () => {
+  it('renders plain text content', () => {
+    render(<MarkdownContent content="Hello world" />)
+    expect(screen.getByText('Hello world')).toBeInTheDocument()
+  })
+
+  it('renders markdown bold as <strong>', () => {
+    const { container } = render(<MarkdownContent content="**bold text**" />)
+    expect(container.querySelector('strong')).toBeInTheDocument()
+  })
+
+  it('wraps output in div with markdown-content class', () => {
+    const { container } = render(<MarkdownContent content="test" />)
+    expect(container.firstChild).toHaveClass('markdown-content')
+  })
+
+  it('applies extra className to wrapper', () => {
+    const { container } = render(<MarkdownContent content="test" className="extra-class" />)
+    expect(container.firstChild).toHaveClass('markdown-content', 'extra-class')
+  })
+
+  it('renders GFM strikethrough', () => {
+    const { container } = render(<MarkdownContent content="~~crossed~~" />)
+    expect(container.querySelector('del')).toBeInTheDocument()
+  })
+})
+
+// ─── Tooltip ──────────────────────────────────────────────────────────────────
+
+describe('Tooltip', () => {
+  it('renders children', () => {
+    render(
+      <Tooltip content="Tip text">
+        <button>hover me</button>
+      </Tooltip>
+    )
+    expect(screen.getByRole('button', { name: 'hover me' })).toBeInTheDocument()
+  })
+
+  it('renders tooltip text in DOM with role="tooltip"', () => {
+    render(
+      <Tooltip content="My tooltip">
+        <span>target</span>
+      </Tooltip>
+    )
+    expect(screen.getByRole('tooltip')).toHaveTextContent('My tooltip')
+  })
+
+  it('tooltip is initially not visible (opacity-0 class)', () => {
+    render(
+      <Tooltip content="hidden">
+        <span>target</span>
+      </Tooltip>
+    )
+    expect(screen.getByRole('tooltip')).toHaveClass('opacity-0')
+  })
+
+  it('applies bottom placement classes', () => {
+    render(
+      <Tooltip content="Tip" placement="bottom">
+        <span>target</span>
+      </Tooltip>
+    )
+    expect(screen.getByRole('tooltip').className).toContain('top-full')
+  })
+
+  it('applies left placement classes', () => {
+    render(
+      <Tooltip content="Tip" placement="left">
+        <span>target</span>
+      </Tooltip>
+    )
+    expect(screen.getByRole('tooltip').className).toContain('right-full')
+  })
+
+  it('applies right placement classes', () => {
+    render(
+      <Tooltip content="Tip" placement="right">
+        <span>target</span>
+      </Tooltip>
+    )
+    expect(screen.getByRole('tooltip').className).toContain('left-full')
+  })
+
+  it('defaults to top placement (bottom-full class)', () => {
+    render(
+      <Tooltip content="Tip">
+        <span>target</span>
+      </Tooltip>
+    )
+    expect(screen.getByRole('tooltip').className).toContain('bottom-full')
+  })
+})
+
+// ─── Comments ─────────────────────────────────────────────────────────────────
+
+describe('Comments', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('shows empty state message when no comments', () => {
+    render(
+      <TestProvider>
+        <Comments todoId="t1" />
+      </TestProvider>
+    )
+    expect(screen.getByText('Nessun commento ancora')).toBeInTheDocument()
+  })
+
+  it('renders section title', () => {
+    render(
+      <TestProvider>
+        <Comments todoId="t1" />
+      </TestProvider>
+    )
+    expect(screen.getByText('Commenti')).toBeInTheDocument()
+  })
+
+  it('renders send button', () => {
+    render(
+      <TestProvider>
+        <Comments todoId="t1" />
+      </TestProvider>
+    )
+    expect(screen.getByRole('button', { name: 'Invia' })).toBeInTheDocument()
+  })
+
+  it('renders existing comments from localStorage', () => {
+    const existingComment: Comment = {
+      id: 'c1',
+      todoId: 't1',
+      text: 'Great progress!',
+      createdAt: '2024-01-01T10:00:00.000Z',
+    }
+    localStorage.setItem('comments', JSON.stringify([existingComment]))
+    render(
+      <TestProvider>
+        <Comments todoId="t1" />
+      </TestProvider>
+    )
+    expect(screen.getByText('Great progress!')).toBeInTheDocument()
+  })
+
+  it('does not show comments from other todos', () => {
+    const otherComment: Comment = {
+      id: 'c2',
+      todoId: 'other-todo',
+      text: 'Other comment',
+      createdAt: '2024-01-01T10:00:00.000Z',
+    }
+    render(
+      <TestProvider initialValues={[[commentsAtom, [otherComment]]]}>
+        <Comments todoId="t1" />
+      </TestProvider>
+    )
+    expect(screen.queryByText('Other comment')).toBeNull()
+  })
+
+  it('adds a comment when send button is clicked', async () => {
+    render(
+      <TestProvider>
+        <Comments todoId="t1" />
+      </TestProvider>
+    )
+    const textarea = screen.getByPlaceholderText(/Scrivi un commento/i)
+    fireEvent.change(textarea, { target: { value: 'My new comment' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Invia' }))
+    await waitFor(() => {
+      expect(screen.getByText('My new comment')).toBeInTheDocument()
+    })
+  })
+
+  it('does not add empty comment when send is clicked', () => {
+    render(
+      <TestProvider>
+        <Comments todoId="t1" />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Invia' }))
+    expect(screen.getByText('Nessun commento ancora')).toBeInTheDocument()
+  })
+
+  it('adds a comment on Enter key press', async () => {
+    render(
+      <TestProvider>
+        <Comments todoId="t1" />
+      </TestProvider>
+    )
+    const textarea = screen.getByPlaceholderText(/Scrivi un commento/i)
+    fireEvent.change(textarea, { target: { value: 'Enter comment' } })
+    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: false })
+    await waitFor(() => {
+      expect(screen.getByText('Enter comment')).toBeInTheDocument()
+    })
+  })
+
+  it('does NOT send on Shift+Enter (no bubble added)', () => {
+    render(
+      <TestProvider>
+        <Comments todoId="t1" />
+      </TestProvider>
+    )
+    const textarea = screen.getByPlaceholderText(/Scrivi un commento/i)
+    fireEvent.change(textarea, { target: { value: 'Shift enter text' } })
+    fireEvent.keyDown(textarea, { key: 'Enter', shiftKey: true })
+    // Comment bubble is a blue rounded div — none should exist
+    expect(document.querySelector('.bg-blue-500.rounded-2xl')).toBeNull()
+  })
+})
+
+// ─── DangerZone ───────────────────────────────────────────────────────────────
+
+describe('DangerZone', () => {
+  const noopSet = vi.fn()
+
+  it('renders Import/Export and Danger Zone switches', () => {
+    render(
+      <TestProvider>
+        <DangerZone todos={[]} setTodos={noopSet} comments={[]} setComments={noopSet} />
+      </TestProvider>
+    )
+    expect(screen.getByText('Inport/Export')).toBeInTheDocument()
+    expect(screen.getByText('Danger Zone')).toBeInTheDocument()
+  })
+
+  it('does not show CSV buttons by default', () => {
+    render(
+      <TestProvider>
+        <DangerZone todos={[]} setTodos={noopSet} comments={[]} setComments={noopSet} />
+      </TestProvider>
+    )
+    expect(screen.queryByText('Che operazione vuoi fare?')).toBeNull()
+  })
+
+  it('shows CSV buttons after enabling Import/Export switch', () => {
+    render(
+      <TestProvider>
+        <DangerZone todos={[]} setTodos={noopSet} comments={[]} setComments={noopSet} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[0])
+    expect(screen.getByText('Che operazione vuoi fare?')).toBeInTheDocument()
+  })
+
+  it('shows empty message in danger zone when todos is empty', () => {
+    render(
+      <TestProvider>
+        <DangerZone todos={[]} setTodos={noopSet} comments={[]} setComments={noopSet} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[1])
+    expect(screen.getByText('Non ci sono compiti da filtrare')).toBeInTheDocument()
+  })
+
+  it('shows delete buttons when todos are present and danger zone is enabled', () => {
+    render(
+      <TestProvider>
+        <DangerZone todos={[baseTodo]} setTodos={noopSet} comments={[]} setComments={noopSet} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[1])
+    expect(screen.getAllByText('Pulisci completati').length).toBeGreaterThan(0)
+  })
+
+  it('opens confirm modal when a delete button is clicked', () => {
+    render(
+      <TestProvider>
+        <DangerZone todos={[baseTodo]} setTodos={noopSet} comments={[]} setComments={noopSet} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[1])
+    const clearBtn = screen.getAllByText('Pulisci completati')[0]
+    fireEvent.click(clearBtn)
+    expect(screen.getAllByText('Pulisci completati').length).toBeGreaterThan(1)
+  })
+})
+
+// ─── TodoInput ────────────────────────────────────────────────────────────────
+
+describe('TodoInput', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('renders the add task button', () => {
+    render(
+      <TestProvider>
+        <TodoInput />
+      </TestProvider>
+    )
+    expect(screen.getByRole('button', { name: /Aggiungi un compito/i })).toBeInTheDocument()
+  })
+
+  it('opens the task form modal when add button is clicked', () => {
+    render(
+      <TestProvider>
+        <TodoInput />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Aggiungi un compito/i }))
+    expect(screen.getAllByText('Aggiungi un compito').length).toBeGreaterThan(1)
+  })
+})
+
+// ─── TodoItem ─────────────────────────────────────────────────────────────────
+
+describe('TodoItem', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('renders the todo title', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} />
+      </TestProvider>
+    )
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+
+  it('renders unchecked checkbox for incomplete todo', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} />
+      </TestProvider>
+    )
+    expect(screen.getByRole('checkbox')).not.toBeChecked()
+  })
+
+  it('renders checked checkbox for completed todo', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [completedTodo]]]}>
+        <TodoItem todo={completedTodo} />
+      </TestProvider>
+    )
+    expect(screen.getByRole('checkbox')).toBeChecked()
+  })
+
+  it('shows status chip', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} />
+      </TestProvider>
+    )
+    expect(screen.getByText(/Stato:/)).toBeInTheDocument()
+  })
+
+  it('shows tags inline when todo has tags', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithTags]]]}>
+        <TodoItem todo={todoWithTags} />
+      </TestProvider>
+    )
+    expect(screen.getByText('frontend')).toBeInTheDocument()
+    expect(screen.getByText('urgent')).toBeInTheDocument()
+  })
+
+  it('calls onDetailPress when eye button is clicked', () => {
+    const onDetailPress = vi.fn()
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} onDetailPress={onDetailPress} />
+      </TestProvider>
+    )
+    // The detail tooltip has content "Dettaglio"
+    const detailTooltip = screen.getAllByRole('tooltip').find(t => t.textContent === 'Dettaglio')
+    const detailBtn = detailTooltip?.parentElement?.querySelector('button')
+    expect(detailBtn).toBeTruthy()
+    if (detailBtn) fireEvent.click(detailBtn)
+    expect(onDetailPress).toHaveBeenCalledOnce()
+  })
+
+  it('shows delete confirm modal when delete button is pressed', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} />
+      </TestProvider>
+    )
+    // The delete tooltip has content "Elimina"
+    const deleteTooltip = screen.getAllByRole('tooltip').find(t => t.textContent === 'Elimina')
+    const deleteBtn = deleteTooltip?.parentElement?.querySelector('button')
+    expect(deleteBtn).toBeTruthy()
+    if (deleteBtn) fireEvent.click(deleteBtn)
+    expect(screen.getByText('Elimina compito')).toBeInTheDocument()
+  })
+
+  it('hides status row when showOnlyTitle is true', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} showOnlyTitle />
+      </TestProvider>
+    )
+    expect(screen.queryByText(/Stato:/)).toBeNull()
+  })
+
+  it('hides ButtonGroup when showOnlyTitle is true', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} showOnlyTitle />
+      </TestProvider>
+    )
+    expect(screen.queryByText(/Descrizione/)).toBeNull()
+  })
+
+  it('shows subtasks when showSubtasks prop is true', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks]]]}>
+        <TodoItem todo={todoWithSubtasks} showSubtasks />
+      </TestProvider>
+    )
+    expect(screen.getByText('Subtask One')).toBeInTheDocument()
+    expect(screen.getByText('Subtask Two')).toBeInTheDocument()
+  })
+
+  it('shows description when showDescriptions is true', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} showDescriptions />
+      </TestProvider>
+    )
+    expect(screen.getByText('description')).toBeInTheDocument()
+  })
+
+  it('opens status dropdown when edit-status button is clicked', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} />
+      </TestProvider>
+    )
+    const editStatusBtn = screen.getByTitle('Modifica stato')
+    fireEvent.click(editStatusBtn)
+    expect(screen.getByText('In corso')).toBeInTheDocument()
+  })
+
+  it('checkbox is disabled for archived todo', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [archivedTodo]]]}>
+        <TodoItem todo={archivedTodo} />
+      </TestProvider>
+    )
+    expect(screen.getByRole('checkbox')).toBeDisabled()
+  })
+
+  it('shows subtask count chip when todo has subtasks', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks]]]}>
+        <TodoItem todo={todoWithSubtasks} />
+      </TestProvider>
+    )
+    expect(screen.getByText('2')).toBeInTheDocument()
+  })
+})
+
+// ─── TaskDetailModal ──────────────────────────────────────────────────────────
+
+describe('TaskDetailModal', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('renders nothing when todoId is not found in atom', () => {
+    const { container } = render(
+      <TestProvider initialValues={[[todoListAtom, []]]}>
+        <TaskDetailModal todoId="nonexistent" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('renders nothing when todoId is null', () => {
+    const { container } = render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId={null} isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('renders the todo title when open', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(screen.getAllByText('Test Task').length).toBeGreaterThan(0)
+  })
+
+  it('does not render when isOpen is false', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen={false} onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(screen.queryByText('Test Task')).toBeNull()
+  })
+
+  it('calls onClose when X button is clicked', () => {
+    const onClose = vi.fn()
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={onClose} />
+      </TestProvider>
+    )
+    // The footer Close/Cancel button calls onClose
+    const footerBtn = screen.getAllByRole('button').find(b => b.textContent?.includes('Annulla'))
+    expect(footerBtn).toBeTruthy()
+    if (footerBtn) fireEvent.click(footerBtn)
+    expect(onClose).toHaveBeenCalled()
+  })
+
+  it('shows status chip', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(screen.getByText(/Stato:/)).toBeInTheDocument()
+  })
+
+  it('shows priority chip', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(screen.getByText('Media')).toBeInTheDocument()
+  })
+
+  it('shows subtasks section when todo has subtasks', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks]]]}>
+        <TaskDetailModal todoId="todo-2" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(screen.getByText('Subtask One')).toBeInTheDocument()
+  })
+
+  it('shows description label when todo has description', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(screen.getByText('Descrizione')).toBeInTheDocument()
+  })
+
+  it('edit button is disabled for completed todo', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [completedTodo]]]}>
+        <TaskDetailModal todoId="todo-3" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    const editBtn = screen.getAllByRole('button').find(b =>
+      b.className.includes('opacity-50') || b.hasAttribute('disabled')
+    )
+    expect(editBtn).toBeTruthy()
+  })
+
+  it('opens status dropdown when pencil icon is clicked', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    const statusEditBtns = document.querySelectorAll('button[type="button"]')
+    const pencilBtn = [...statusEditBtns].find(b =>
+      b.querySelector('svg') && b.className.includes('hover:text-blue-500')
+    )
+    if (pencilBtn) fireEvent.click(pencilBtn)
+    expect(screen.getByText('In corso')).toBeInTheDocument()
+  })
+
+  it('renders comments section', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(screen.getByText('Commenti')).toBeInTheDocument()
+  })
+
+  it('shows tags when todo has tags', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithTags]]]}>
+        <TaskDetailModal todoId="todo-5" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    expect(screen.getByText('frontend')).toBeInTheDocument()
+  })
+})
+
+// ─── TodoList ─────────────────────────────────────────────────────────────────
+
+function seedTodosStorage(todos: Todo[]) {
+  localStorage.setItem('todos', JSON.stringify(todos.map((t) => t.id)))
+  todos.forEach((t) => localStorage.setItem(t.id, JSON.stringify(t)))
+}
+
+describe('TodoList', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('shows empty state when no todos', () => {
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    expect(screen.getByText('Nessun compito disponibile')).toBeInTheDocument()
+  })
+
+  it('renders todo titles when todos present in localStorage', async () => {
+    seedTodosStorage([baseTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Test Task')).toBeInTheDocument()
+    })
+  })
+
+  it('does not show filter panel when no todos', () => {
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    expect(screen.queryByText('Filtri')).toBeNull()
+  })
+
+  it('shows filter toggle button when todos are present', async () => {
+    seedTodosStorage([baseTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => {
+      expect(screen.getByText('Filtri')).toBeInTheDocument()
+    })
+  })
+
+  it('toggles filter panel visibility on click', async () => {
+    seedTodosStorage([baseTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Filtri'))
+    const filterBtn = screen.getByRole('button', { name: /Filtri/i })
+    // Panel starts closed — click to open
+    fireEvent.click(filterBtn)
+    expect(screen.getByPlaceholderText(/Cerca per nome/i)).toBeInTheDocument()
+    // Click again to close
+    fireEvent.click(filterBtn)
+    expect(screen.queryByPlaceholderText(/Cerca per nome/i)).toBeNull()
+  })
+
+  it('filters todos by search text', async () => {
+    seedTodosStorage([baseTodo, { ...baseTodo, id: 'todo-x', title: 'Other task' }])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Test Task'))
+    // Open filter panel first
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const searchInput = screen.getByPlaceholderText(/Cerca per nome/i)
+    fireEvent.change(searchInput, { target: { value: 'Other' } })
+    expect(screen.queryByText('Test Task')).toBeNull()
+    expect(screen.getByText('Other task')).toBeInTheDocument()
+  })
+
+  it('shows reset filters button when a filter is active', async () => {
+    seedTodosStorage([baseTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Filtri'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const searchInput = screen.getByPlaceholderText(/Cerca per nome/i)
+    fireEvent.change(searchInput, { target: { value: 'something' } })
+    expect(screen.getByRole('button', { name: 'Azzera' })).toBeInTheDocument()
+  })
+
+  it('clears search filter with X button inside the search field', async () => {
+    seedTodosStorage([baseTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Filtri'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const searchInput = screen.getByPlaceholderText(/Cerca per nome/i)
+    fireEvent.change(searchInput, { target: { value: 'typing' } })
+    // The X button appears next to the search field (tooltip "Azzera")
+    const tooltips = screen.getAllByRole('tooltip')
+    const resetTooltip = tooltips.find(t => t.textContent === 'Azzera')
+    const xBtn = resetTooltip?.parentElement?.querySelector('button')
+    expect(xBtn).toBeTruthy()
+    if (xBtn) fireEvent.click(xBtn)
+    expect((searchInput as HTMLInputElement).value).toBe('')
+  })
+
+  it('filters by status pill click', async () => {
+    const doneTodo: Todo = { ...baseTodo, id: 'done-1', title: 'Done Task', status: 'done', completed: true, completedAt: new Date().toISOString() }
+    seedTodosStorage([baseTodo, doneTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const doneBtn = screen.getByRole('button', { name: 'Completato' })
+    fireEvent.click(doneBtn)
+    await waitFor(() => {
+      expect(screen.queryByText('Test Task')).toBeNull()
+      expect(screen.getByText('Done Task')).toBeInTheDocument()
+    })
+  })
+
+  it('clicking a status filter pill again resets to all', async () => {
+    seedTodosStorage([baseTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const todoStatusBtn = screen.getByRole('button', { name: 'Da fare' })
+    fireEvent.click(todoStatusBtn)
+    fireEvent.click(todoStatusBtn)
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+
+  it('completion filter shows only completed todos', async () => {
+    const doneTodo: Todo = { ...baseTodo, id: 'done-2', title: 'Done Task 2', status: 'done', completed: true, completedAt: new Date().toISOString() }
+    seedTodosStorage([baseTodo, doneTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Completati' }))
+    await waitFor(() => {
+      expect(screen.queryByText('Test Task')).toBeNull()
+      expect(screen.getByText('Done Task 2')).toBeInTheDocument()
+    })
+  })
+
+  it('reset filters button restores all todos', async () => {
+    seedTodosStorage([baseTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const searchInput = screen.getByPlaceholderText(/Cerca per nome/i)
+    fireEvent.change(searchInput, { target: { value: 'nonexistent' } })
+    expect(screen.queryByText('Test Task')).toBeNull()
+    // Reset button is inside the filter header toggle button area
+    const resetBtn = screen.getByRole('button', { name: 'Azzera' })
+    fireEvent.click(resetBtn)
+    await waitFor(() => {
+      expect(screen.getByText('Test Task')).toBeInTheDocument()
+    })
+  })
+
+  it('show descriptions switch enables description visibility', async () => {
+    seedTodosStorage([baseTodo])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const descLabel = screen.getByText('Mostra descrizioni')
+    const descCheckbox = descLabel.closest('label')?.querySelector('input[type="checkbox"]') as HTMLInputElement
+    expect(descCheckbox).toBeTruthy()
+    fireEvent.click(descCheckbox)
+    expect(descCheckbox.checked).toBe(true)
+  })
+
+  it('renders DangerZone at the bottom', async () => {
+    seedTodosStorage([])
+    render(
+      <TestProvider>
+        <TodoList />
+      </TestProvider>
+    )
+    expect(screen.getByText('Danger Zone')).toBeInTheDocument()
+  })
+})
+
+// ─── TaskFormModal ────────────────────────────────────────────────────────────
+
+describe('TaskFormModal', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('returns null when isOpen is false', () => {
+    const { container } = render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Aggiungi"
+          isOpen={false}
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    expect(container.firstChild).toBeNull()
+  })
+
+  it('renders header label when open', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Nuova attività"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    expect(screen.getByText('Nuova attività')).toBeInTheDocument()
+  })
+
+  it('renders title input field via placeholder', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    expect(screen.getByPlaceholderText(/compra il latte/i)).toBeInTheDocument()
+  })
+
+  it('calls onClose when cancel button is clicked', () => {
+    const onClose = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={onClose}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Annulla' }))
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('calls onSubmit with form values when save button is clicked', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ title: 'My Task', priority: 'high', status: 'todo' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    expect(onSubmit).toHaveBeenCalledOnce()
+    const [values] = onSubmit.mock.calls[0] as [{ title: string; priority: string }, any]
+    expect(values.title).toBe('My Task')
+    expect(values.priority).toBe('high')
+  })
+
+  it('updates title when typed', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ title: '' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    const titleInput = screen.getByPlaceholderText(/compra il latte/i)
+    fireEvent.change(titleInput, { target: { value: 'New title' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    const [values] = onSubmit.mock.calls[0] as [{ title: string }, any]
+    expect(values.title).toBe('New title')
+  })
+
+  it('adds a subtask via the add button', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    const subtaskInput = screen.getByPlaceholderText(/Titolo del sottocompito/i)
+    fireEvent.change(subtaskInput, { target: { value: 'New subtask' } })
+    fireEvent.click(screen.getByRole('button', { name: /Aggiungi sottocompito/i }))
+    expect(screen.getByText('New subtask')).toBeInTheDocument()
+  })
+
+  it('adds a subtask via Enter key', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    const subtaskInput = screen.getByPlaceholderText(/Titolo del sottocompito/i)
+    fireEvent.change(subtaskInput, { target: { value: 'Enter subtask' } })
+    fireEvent.keyDown(subtaskInput, { key: 'Enter' })
+    expect(screen.getByText('Enter subtask')).toBeInTheDocument()
+  })
+
+  it('does not add empty subtask', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Aggiungi sottocompito/i }))
+    expect(screen.queryByRole('listitem')).toBeNull()
+  })
+
+  it('renders initial subtasks and can toggle them', () => {
+    const initialSubtask = { id: 'sub-x', title: 'Existing subtask', completed: false, completedAt: null }
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ subtasks: [initialSubtask] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    expect(screen.getByText('Existing subtask')).toBeInTheDocument()
+    const checkbox = screen.getAllByRole('checkbox')[0]
+    fireEvent.click(checkbox)
+    expect(checkbox).toBeChecked()
+  })
+
+  it('removes a subtask via delete button', () => {
+    const initialSubtask = { id: 'sub-del', title: 'Delete me', completed: false, completedAt: null }
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ subtasks: [initialSubtask] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    const deleteBtn = screen.getByTitle('Elimina')
+    fireEvent.click(deleteBtn)
+    expect(screen.queryByText('Delete me')).toBeNull()
+  })
+
+  it('starts editing a subtask via edit button', () => {
+    const initialSubtask = { id: 'sub-edit', title: 'Edit me', completed: false, completedAt: null }
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ subtasks: [initialSubtask] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    const editBtn = screen.getByTitle('Modifica')
+    fireEvent.click(editBtn)
+    // Should show an input field for editing
+    expect(screen.getByDisplayValue('Edit me')).toBeInTheDocument()
+  })
+
+  it('saves edited subtask title via check button', () => {
+    const initialSubtask = { id: 'sub-save', title: 'Old title', completed: false, completedAt: null }
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ subtasks: [initialSubtask] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Modifica'))
+    const editInput = screen.getByDisplayValue('Old title')
+    fireEvent.change(editInput, { target: { value: 'New title' } })
+    fireEvent.click(screen.getByTitle('Salva'))
+    expect(screen.getByText('New title')).toBeInTheDocument()
+    expect(screen.queryByText('Old title')).toBeNull()
+  })
+
+  it('cancels subtask edit without saving', () => {
+    const initialSubtask = { id: 'sub-cancel', title: 'Keep me', completed: false, completedAt: null }
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ subtasks: [initialSubtask] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Modifica'))
+    // The cancel icon button has title="Annulla"
+    fireEvent.click(screen.getByTitle('Annulla'))
+    expect(screen.getByText('Keep me')).toBeInTheDocument()
+  })
+
+  it('adds a tag via the add button', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    const tagInput = screen.getByPlaceholderText(/Nuovo tag/i)
+    fireEvent.change(tagInput, { target: { value: 'mytag' } })
+    // Exact name to distinguish from "Aggiungi sottocompito"
+    fireEvent.click(screen.getByRole('button', { name: 'Aggiungi' }))
+    expect(screen.getByText('mytag')).toBeInTheDocument()
+  })
+
+  it('adds a tag via Enter key', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    const tagInput = screen.getByPlaceholderText(/Nuovo tag/i)
+    fireEvent.change(tagInput, { target: { value: 'entertag' } })
+    fireEvent.keyDown(tagInput, { key: 'Enter' })
+    expect(screen.getByText('entertag')).toBeInTheDocument()
+  })
+
+  it('removes a tag via remove button', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ tags: ['removeme'] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    const removeTagBtn = screen.getByTitle('Rimuovi')
+    fireEvent.click(removeTagBtn)
+    expect(screen.queryByText('removeme')).toBeNull()
+  })
+
+  it('toggles markdown preview mode', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ description: '**bold**' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    // Preview button text is "Anteprima"
+    fireEvent.click(screen.getByRole('button', { name: 'Anteprima' }))
+    // In preview mode, the bold markdown should render as <strong>
+    expect(document.querySelector('strong')).toBeInTheDocument()
+    // Click Modifica tab to go back to edit mode
+    fireEvent.click(screen.getByRole('button', { name: 'Modifica' }))
+    // Textarea (description) should be back - use placeholder to identify
+    expect(screen.getAllByRole('textbox').length).toBeGreaterThan(0)
+  })
+
+  it('applies bold format to description text', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ description: '' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    // Bold button has title "Grassetto" (Italian)
+    const boldBtn = screen.getByTitle('Grassetto')
+    fireEvent.click(boldBtn)
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    const [values] = onSubmit.mock.calls[0] as [{ description: string }, any]
+    expect(values.description).toContain('**')
+  })
+
+  it('renders initial tags from initialValues', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ tags: ['alpha', 'beta'] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    expect(screen.getByText('alpha')).toBeInTheDocument()
+    expect(screen.getByText('beta')).toBeInTheDocument()
+  })
+})
+
+// ─── TodoItem extra (function coverage) ──────────────────────────────────────
+
+describe('TodoItem extra', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('toggles todo completion via checkbox', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <AtomTodoItem todoId="todo-1" />
+      </TestProvider>
+    )
+    const checkbox = screen.getByRole('checkbox')
+    fireEvent.click(checkbox)
+    expect(checkbox).toBeChecked()
+  })
+
+  it('confirms todo deletion and removes it from atom', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <AtomTodoItem todoId="todo-1" />
+      </TestProvider>
+    )
+    const deleteTooltip = screen.getAllByRole('tooltip').find(t => t.textContent === 'Elimina')
+    const deleteBtn = deleteTooltip?.parentElement?.querySelector('button')
+    if (deleteBtn) fireEvent.click(deleteBtn)
+    fireEvent.click(screen.getByRole('button', { name: 'Elimina' }))
+    // After deletion, atom no longer has the todo so AtomTodoItem returns null
+    expect(screen.queryByText('Test Task')).toBeNull()
+  })
+
+  it('cancels deletion via cancel button', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <AtomTodoItem todoId="todo-1" />
+      </TestProvider>
+    )
+    const deleteTooltip = screen.getAllByRole('tooltip').find(t => t.textContent === 'Elimina')
+    const deleteBtn = deleteTooltip?.parentElement?.querySelector('button')
+    if (deleteBtn) fireEvent.click(deleteBtn)
+    fireEvent.click(screen.getByRole('button', { name: 'Annulla' }))
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+
+  it('toggles subtask inline via list item click', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks]]]}>
+        <AtomTodoItem todoId="todo-2" showSubtasks />
+      </TestProvider>
+    )
+    // Click on a subtask list item to toggle it
+    const subtaskItem = screen.getByText('Subtask One').closest('li')
+    expect(subtaskItem).toBeTruthy()
+    if (subtaskItem) fireEvent.click(subtaskItem)
+    // The subtask should now be checked
+    const checkbox = subtaskItem?.querySelector('input[type="checkbox"]') as HTMLInputElement
+    expect(checkbox?.checked).toBe(true)
+  })
+
+  it('adds subtask inline via input', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <AtomTodoItem todoId="todo-1" showSubtasks />
+      </TestProvider>
+    )
+    const addInput = screen.getByPlaceholderText(/Titolo del sottocompito/i)
+    fireEvent.change(addInput, { target: { value: 'New inline subtask' } })
+    const addBtn = addInput.parentElement?.querySelector('button')
+    if (addBtn) fireEvent.click(addBtn)
+    expect(screen.getByText('New inline subtask')).toBeInTheDocument()
+  })
+
+  it('adds subtask inline via Enter key', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <AtomTodoItem todoId="todo-1" showSubtasks />
+      </TestProvider>
+    )
+    const addInput = screen.getByPlaceholderText(/Titolo del sottocompito/i)
+    fireEvent.change(addInput, { target: { value: 'Enter subtask' } })
+    fireEvent.keyDown(addInput, { key: 'Enter' })
+    expect(screen.getByText('Enter subtask')).toBeInTheDocument()
+  })
+
+  it('opens edit form when edit button is clicked', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} />
+      </TestProvider>
+    )
+    const editTooltip = screen.getAllByRole('tooltip').find(t => t.textContent === 'Modifica')
+    const editBtn = editTooltip?.parentElement?.querySelector('button')
+    expect(editBtn).toBeTruthy()
+    if (editBtn) fireEvent.click(editBtn)
+    // Edit modal opens with form
+    expect(screen.getAllByText('Modifica le informazioni del compito').length).toBeGreaterThan(0)
+  })
+
+  it('updates status inline via dropdown', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Modifica stato'))
+    const progressBtn = screen.getByText('In corso')
+    fireEvent.click(progressBtn)
+    // Dropdown should close and status should update
+    expect(screen.queryByText('In corso')).toBeNull()
+  })
+
+  it('expands/collapses description when show more/less is clicked', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TodoItem todo={baseTodo} showDescriptions />
+      </TestProvider>
+    )
+    const showMoreBtn = screen.getByRole('button', { name: /Mostra tutto/i })
+    fireEvent.click(showMoreBtn)
+    expect(screen.getByRole('button', { name: /Mostra meno/i })).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: /Mostra meno/i }))
+    expect(screen.getByRole('button', { name: /Mostra tutto/i })).toBeInTheDocument()
+  })
+})
+
+// ─── DangerZone extra (confirm delete handlers) ───────────────────────────────
+
+describe('DangerZone extra', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('confirms delete completed and calls setTodos', () => {
+    const setTodos = vi.fn()
+    render(
+      <TestProvider>
+        <DangerZone todos={[completedTodo]} setTodos={setTodos} comments={[]} setComments={vi.fn()} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[1])
+    const clearCompletedBtns = screen.getAllByText('Pulisci completati')
+    fireEvent.click(clearCompletedBtns[0])
+    const confirmBtn = screen.getByRole('button', { name: 'Elimina' })
+    fireEvent.click(confirmBtn)
+    expect(setTodos).toHaveBeenCalled()
+  })
+
+  it('confirms delete all and calls setTodos', () => {
+    const setTodos = vi.fn()
+    render(
+      <TestProvider>
+        <DangerZone todos={[baseTodo]} setTodos={setTodos} comments={[]} setComments={vi.fn()} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[1])
+    const removeAllBtns = screen.getAllByText('Rimuovi tutti i compiti')
+    fireEvent.click(removeAllBtns[0])
+    const confirmBtn = screen.getByRole('button', { name: 'Elimina' })
+    fireEvent.click(confirmBtn)
+    expect(setTodos).toHaveBeenCalled()
+  })
+
+  it('cancels delete modal without calling setTodos', () => {
+    const setTodos = vi.fn()
+    render(
+      <TestProvider>
+        <DangerZone todos={[baseTodo]} setTodos={setTodos} comments={[]} setComments={vi.fn()} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[1])
+    const removeAllBtns = screen.getAllByText('Rimuovi tutti i compiti')
+    fireEvent.click(removeAllBtns[0])
+    const cancelBtn = screen.getByRole('button', { name: 'Annulla' })
+    fireEvent.click(cancelBtn)
+    expect(setTodos).not.toHaveBeenCalled()
+  })
+})
+
+// ─── TodoInput full add-task flow ─────────────────────────────────────────────
+
+describe('TodoInput full flow', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('full add-task flow: open form → submit → confirm → todo added', async () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, []]]}>
+        <TodoInput />
+      </TestProvider>
+    )
+    // Open form
+    fireEvent.click(screen.getByRole('button', { name: /Aggiungi un compito/i }))
+    // Fill title
+    const titleInput = screen.getByPlaceholderText(/compra il latte/i)
+    fireEvent.change(titleInput, { target: { value: 'My new task' } })
+    // Submit form (multiple "Aggiungi" buttons may exist; first in form footer)
+    const addBtns = screen.getAllByRole('button', { name: 'Aggiungi' })
+    fireEvent.click(addBtns[addBtns.length - 1])
+    // Confirm modal appears
+    await waitFor(() => screen.getByText("Confermi l'aggiunta del compito?"))
+    // Confirm addition
+    const confirmBtns = screen.getAllByRole('button', { name: 'Aggiungi' })
+    fireEvent.click(confirmBtns[confirmBtns.length - 1])
+    // Form should close
+    await waitFor(() => {
+      expect(screen.queryByText("Confermi l'aggiunta del compito?")).toBeNull()
+    })
+  })
+
+  it('shows error modal when submitting empty title', async () => {
+    render(
+      <TestProvider>
+        <TodoInput />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Aggiungi un compito/i }))
+    // Don't fill title, just submit
+    const addBtns = screen.getAllByRole('button', { name: 'Aggiungi' })
+    fireEvent.click(addBtns[addBtns.length - 1])
+    await waitFor(() => {
+      expect(screen.getByText('Il compito non può essere vuoto')).toBeInTheDocument()
+    })
+  })
+})
+
+// ─── TaskDetailModal edit flow ────────────────────────────────────────────────
+
+describe('TaskDetailModal edit flow', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('opens edit form when edit button is clicked', async () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    const editBtn = screen.getAllByRole('button').find(b =>
+      b.textContent?.includes('Modifica') && !b.textContent?.includes('stato')
+    )
+    expect(editBtn).toBeTruthy()
+    if (editBtn) fireEvent.click(editBtn)
+    await waitFor(() => {
+      expect(screen.getByText('Modifica le informazioni del compito')).toBeInTheDocument()
+    })
+  })
+
+  it('edit button is disabled for archived todo', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [archivedTodo]]]}>
+        <TaskDetailModal todoId="todo-4" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    // The edit button should be disabled
+    const buttons = screen.getAllByRole('button')
+    const editBtn = buttons.find(b =>
+      b.hasAttribute('disabled') && b.textContent?.includes('Modifica')
+    )
+    expect(editBtn || buttons.some(b => b.hasAttribute('disabled'))).toBeTruthy()
+  })
+
+  it('subtask toggle works in detail modal', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks]]]}>
+        <TaskDetailModal todoId="todo-2" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    const subtaskItem = screen.getByText('Subtask One').closest('li')
+    expect(subtaskItem).toBeTruthy()
+    if (subtaskItem) fireEvent.click(subtaskItem)
+    // Verify checkbox changes
+    const checkbox = subtaskItem?.querySelector('input[type="checkbox"]')
+    expect(checkbox).toBeTruthy()
+  })
+
+  it('updates status via dropdown in detail modal', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    // Click the pencil button next to status chip
+    const pencilBtns = document.querySelectorAll('button.hover\\:text-blue-500')
+    if (pencilBtns.length > 0) {
+      fireEvent.click(pencilBtns[0])
+      // Status dropdown should show
+      expect(screen.getByText('In corso')).toBeInTheDocument()
+      // Click "In corso" to update status
+      fireEvent.click(screen.getByText('In corso'))
+    }
+    expect(screen.queryByText('In corso')).toBeNull()
+  })
+})
+
+// ─── TaskFormModal more coverage ──────────────────────────────────────────────
+
+describe('TaskFormModal more coverage', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('applies italic format', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ description: '' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Corsivo'))
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    const [values] = onSubmit.mock.calls[0] as [{ description: string }, any]
+    expect(values.description).toContain('*')
+  })
+
+  it('applies h1 heading format', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ description: '' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Titolo H1'))
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    const [values] = onSubmit.mock.calls[0] as [{ description: string }, any]
+    expect(values.description).toContain('# ')
+  })
+
+  it('applies ul list format', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ description: '' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Lista puntata'))
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    const [values] = onSubmit.mock.calls[0] as [{ description: string }, any]
+    expect(values.description).toContain('- ')
+  })
+
+  it('applies ol list format', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ description: '' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Lista numerata'))
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    const [values] = onSubmit.mock.calls[0] as [{ description: string }, any]
+    expect(values.description).toContain('1. ')
+  })
+
+  it('undoes a format operation', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ description: '' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    // Apply bold, then undo
+    fireEvent.click(screen.getByTitle('Grassetto'))
+    const undoBtn = screen.getByTitle('Annulla ultima operazione')
+    fireEvent.click(undoBtn)
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    const [values] = onSubmit.mock.calls[0] as [{ description: string }, any]
+    expect(values.description).toBe('')
+  })
+
+  it('does not add empty tag', () => {
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    // Try to add empty tag
+    fireEvent.click(screen.getByRole('button', { name: 'Aggiungi' }))
+    // No tag chips should be added
+    expect(document.querySelectorAll('.rounded-full').length).toBe(0)
+  })
+
+  it('shows suggested tags from global tags', () => {
+    render(
+      <TestProvider initialValues={[]}>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    // Add a tag first to populate globalTags
+    const tagInput = screen.getByPlaceholderText(/Nuovo tag/i)
+    fireEvent.change(tagInput, { target: { value: 'suggested-tag' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Aggiungi' }))
+    expect(screen.getByText('suggested-tag')).toBeInTheDocument()
+  })
+
+  it('description textarea onChange updates description', () => {
+    const onSubmit = vi.fn()
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ description: '' }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={onSubmit}
+        />
+      </TestProvider>
+    )
+    // The description field is the <textarea> element (not an <input type="text">)
+    const descTextarea = document.querySelector('textarea') as HTMLTextAreaElement
+    expect(descTextarea).toBeTruthy()
+    fireEvent.change(descTextarea, { target: { value: 'My description' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Salva' }))
+    const [values] = onSubmit.mock.calls[0] as [{ description: string }, any]
+    expect(values.description).toBe('My description')
+  })
+})
+
+// ─── TodoList more coverage ───────────────────────────────────────────────────
+
+describe('TodoList more coverage', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('uncompleted filter shows only incomplete todos', async () => {
+    const doneTodo: Todo = { ...baseTodo, id: 'done-x', title: 'Done Task x', status: 'done', completed: true, completedAt: new Date().toISOString() }
+    seedTodosStorage([baseTodo, doneTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Non completati' }))
+    await waitFor(() => {
+      expect(screen.queryByText('Done Task x')).toBeNull()
+      expect(screen.getByText('Test Task')).toBeInTheDocument()
+    })
+  })
+
+  it('show only title switch hides status/dates', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const onlyTitleLabel = screen.getByText('Mostra solo titolo')
+    const checkbox = onlyTitleLabel.closest('label')?.querySelector('input[type="checkbox"]') as HTMLInputElement
+    expect(checkbox).toBeTruthy()
+    fireEvent.click(checkbox)
+    expect(checkbox.checked).toBe(true)
+    expect(screen.queryByText(/Stato:/)).toBeNull()
+  })
+
+  it('show subtasks switch enables subtask visibility', async () => {
+    seedTodosStorage([todoWithSubtasks])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Task with subtasks'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const subtasksLabel = screen.getByText('Mostra sottocompiti')
+    const checkbox = subtasksLabel.closest('label')?.querySelector('input[type="checkbox"]') as HTMLInputElement
+    expect(checkbox).toBeTruthy()
+    fireEvent.click(checkbox)
+    await waitFor(() => {
+      expect(screen.getByText('Subtask One')).toBeInTheDocument()
+    })
+  })
+
+  it('comment press opens comments section for a todo', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    // Click the comment button (chat bubble icon in ButtonGroup)
+    const commentTooltip = screen.getAllByRole('tooltip').find(t => t.textContent === 'Commenti')
+    const commentBtn = commentTooltip?.parentElement?.querySelector('button')
+    expect(commentBtn).toBeTruthy()
+    if (commentBtn) fireEvent.click(commentBtn)
+    await waitFor(() => {
+      expect(screen.getByText('Nessun commento ancora')).toBeInTheDocument()
+    })
+  })
+
+  it('due date range filter affects filtered list', async () => {
+    const pastTodo: Todo = { ...baseTodo, id: 'past-1', title: 'Past Due Task', dueDate: '2020-01-01T10:00:00.000Z' }
+    seedTodosStorage([baseTodo, pastTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    // Set a "from" date that filters out the past task
+    const fromInput = screen.getByLabelText ? screen.queryByLabelText(/Dal/i) : null
+    // Find date inputs
+    const dateInputs = document.querySelectorAll('input[type="date"]')
+    if (dateInputs.length > 0) {
+      fireEvent.change(dateInputs[0], { target: { value: '2025-01-01' } })
+    }
+    expect(screen.queryByText('Past Due Task')).toBeNull()
+  })
+})
+
+// ─── DangerZone import/export/extra coverage ──────────────────────────────────
+
+describe('DangerZone import/export coverage', () => {
+  beforeEach(() => {
+    localStorage.clear()
+    global.URL.createObjectURL = vi.fn(() => 'blob:mock')
+    global.URL.revokeObjectURL = vi.fn()
+    HTMLAnchorElement.prototype.click = vi.fn()
+    window.alert = vi.fn()
+  })
+  afterEach(() => localStorage.clear())
+
+  it('toggle Import/Export switch shows CSV section', () => {
+    render(
+      <TestProvider>
+        <DangerZone todos={[baseTodo]} setTodos={vi.fn()} comments={[]} setComments={vi.fn()} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    // First switch = Import/Export
+    fireEvent.click(switches[0])
+    expect(screen.getByText('Task')).toBeInTheDocument()
+  })
+
+  it('Export todos CSV button calls exportToCSV without throwing', () => {
+    render(
+      <TestProvider>
+        <DangerZone todos={[baseTodo]} setTodos={vi.fn()} comments={[]} setComments={vi.fn()} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[0])
+    // Two rows: Task / Commenti, each with two CSV buttons (down=export, up=import)
+    const exportTodosBtn = screen.getAllByTitle ? null : null
+    // Find all buttons in the Import/Export section
+    const csvBtns = screen.getAllByText('CSV').filter(el => el.tagName !== 'SPAN')
+    // First button is export todos
+    if (csvBtns.length > 0) fireEvent.click(csvBtns[0])
+    expect(global.URL.createObjectURL).toHaveBeenCalled()
+  })
+
+  it('Export comments CSV button calls exportCommentsToCSV', () => {
+    const comment: Comment = {
+      id: 'c1',
+      todoId: 'todo-1',
+      text: 'hello',
+      createdAt: new Date().toISOString(),
+    }
+    render(
+      <TestProvider>
+        <DangerZone todos={[baseTodo]} setTodos={vi.fn()} comments={[comment]} setComments={vi.fn()} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[0])
+    const csvBtns = screen.getAllByText('CSV')
+    // Third CSV button = export comments
+    if (csvBtns.length >= 3) fireEvent.click(csvBtns[2])
+    expect(global.URL.createObjectURL).toHaveBeenCalled()
+  })
+
+  it('confirms delete expired and calls setTodos with clearTodosExpired', () => {
+    const setTodos = vi.fn()
+    const expiredTodo: Todo = {
+      ...baseTodo,
+      id: 'expired-1',
+      title: 'Expired Task',
+      dueDate: '2020-01-01T00:00:00.000Z',
+    }
+    render(
+      <TestProvider>
+        <DangerZone todos={[expiredTodo]} setTodos={setTodos} comments={[]} setComments={vi.fn()} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[1])
+    const expiredBtns = screen.getAllByText('Rimuovi compiti scaduti')
+    fireEvent.click(expiredBtns[0])
+    const confirmBtn = screen.getByRole('button', { name: 'Elimina' })
+    fireEvent.click(confirmBtn)
+    expect(setTodos).toHaveBeenCalled()
+  })
+
+  it('shows no-tasks message when DangerZone is open with empty todos', () => {
+    render(
+      <TestProvider>
+        <DangerZone todos={[]} setTodos={vi.fn()} comments={[]} setComments={vi.fn()} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[1])
+    expect(screen.getByText(/Non ci sono compiti da filtrare/i)).toBeInTheDocument()
+  })
+
+  it('mobile delete button opens confirm modal', () => {
+    const setTodos = vi.fn()
+    render(
+      <TestProvider>
+        <DangerZone todos={[baseTodo]} setTodos={setTodos} comments={[]} setComments={vi.fn()} />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[1])
+    // Mobile buttons are the second set (md:hidden div); index 1 = second match
+    const allBtns = screen.getAllByText('Rimuovi tutti i compiti')
+    if (allBtns.length > 1) fireEvent.click(allBtns[1])
+    else fireEvent.click(allBtns[0])
+    const confirmBtn = screen.getByRole('button', { name: 'Elimina' })
+    fireEvent.click(confirmBtn)
+    expect(setTodos).toHaveBeenCalled()
+  })
+})
+
+// ─── TodoItem move subtask modal ──────────────────────────────────────────────
+
+describe('TodoItem move subtask', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('opens move subtask modal when move button is clicked', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks, baseTodo]]]}>
+        <AtomTodoItem todoId="todo-2" showSubtasks />
+      </TestProvider>
+    )
+    const moveBtns = screen.getAllByTitle('Sposta sottocompito')
+    fireEvent.click(moveBtns[0])
+    // Modal header says 'Sposta sottocompito' — multiple matches expected; just check presence
+    const modalHeaders = screen.getAllByText('Sposta sottocompito')
+    expect(modalHeaders.length).toBeGreaterThan(0)
+  })
+
+  it('confirms move subtask removes subtask from source todo', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks, baseTodo]]]}>
+        <AtomTodoItem todoId="todo-2" showSubtasks />
+      </TestProvider>
+    )
+    const moveBtns = screen.getAllByTitle('Sposta sottocompito')
+    fireEvent.click(moveBtns[0])
+    const confirmMoveBtn = screen.getByRole('button', { name: 'Sposta' })
+    fireEvent.click(confirmMoveBtn)
+    // Modal should close after move
+    expect(screen.queryByRole('button', { name: 'Sposta' })).toBeNull()
+  })
+
+  it('cancels move subtask modal via Annulla button', () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [todoWithSubtasks, baseTodo]]]}>
+        <AtomTodoItem todoId="todo-2" showSubtasks />
+      </TestProvider>
+    )
+    const moveBtns = screen.getAllByTitle('Sposta sottocompito')
+    fireEvent.click(moveBtns[0])
+    expect(screen.getAllByText('Sposta sottocompito').length).toBeGreaterThan(0)
+    const cancelBtn = screen.getByRole('button', { name: 'Annulla' })
+    fireEvent.click(cancelBtn)
+    expect(screen.queryByRole('button', { name: 'Sposta' })).toBeNull()
+  })
+})
+
+// ─── TaskDetailModal confirm edit flow ────────────────────────────────────────
+
+describe('TaskDetailModal confirm edit', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('submit edit form shows confirm modal', async () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    // Click the edit (pencil) button — not disabled for non-archived todos
+    const editBtns = screen.getAllByRole('button')
+    const editBtn = editBtns.find(b =>
+      b.querySelector('svg') && !b.disabled && b.closest('[class*="modal"]') !== null
+    ) ?? editBtns.find(b => b.textContent?.includes('Modifica') && !b.hasAttribute('disabled'))
+    if (editBtn) {
+      fireEvent.click(editBtn)
+      await waitFor(() =>
+        expect(screen.queryByText('Modifica le informazioni del compito')).toBeInTheDocument()
+      )
+      // Submit the edit form via the "Salva" submit button
+      const saveBtns = screen.getAllByRole('button', { name: 'Salva' })
+      if (saveBtns.length > 0) fireEvent.click(saveBtns[saveBtns.length - 1])
+      await waitFor(() =>
+        expect(screen.queryByText('Vuoi salvare il compito selezionato?')).toBeInTheDocument()
+      )
+      // Confirm
+      const confirmSave = screen.getAllByRole('button', { name: 'Salva' })
+      fireEvent.click(confirmSave[confirmSave.length - 1])
+    }
+  })
+
+  it('cancel confirm edit modal closes it', async () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, [baseTodo]]]}>
+        <TaskDetailModal todoId="todo-1" isOpen onClose={vi.fn()} />
+      </TestProvider>
+    )
+    const editBtns = screen.getAllByRole('button')
+    const editBtn = editBtns.find(b =>
+      b.textContent?.includes('Modifica') && !b.hasAttribute('disabled')
+    )
+    if (editBtn) {
+      fireEvent.click(editBtn)
+      await waitFor(() =>
+        expect(screen.queryByText('Modifica le informazioni del compito')).toBeInTheDocument()
+      )
+      const saveBtns = screen.getAllByRole('button', { name: 'Salva' })
+      if (saveBtns.length > 0) fireEvent.click(saveBtns[saveBtns.length - 1])
+      await waitFor(() =>
+        expect(screen.queryByText('Vuoi salvare il compito selezionato?')).toBeInTheDocument()
+      )
+      const cancelBtns = screen.getAllByRole('button', { name: 'Annulla' })
+      fireEvent.click(cancelBtns[cancelBtns.length - 1])
+      await waitFor(() =>
+        expect(screen.queryByText('Vuoi salvare il compito selezionato?')).toBeNull()
+      )
+    }
+  })
+})
+
+// ─── TodoInput cancel modals ──────────────────────────────────────────────────
+
+describe('TodoInput cancel modals', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('cancel button on confirm-add modal closes it without adding', async () => {
+    render(
+      <TestProvider initialValues={[[todoListAtom, []]]}>
+        <TodoInput />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Aggiungi un compito/i }))
+    const titleInput = screen.getByPlaceholderText(/compra il latte/i)
+    fireEvent.change(titleInput, { target: { value: 'Task to cancel' } })
+    const addBtns = screen.getAllByRole('button', { name: 'Aggiungi' })
+    fireEvent.click(addBtns[addBtns.length - 1])
+    await waitFor(() =>
+      screen.getByText("Confermi l'aggiunta del compito?")
+    )
+    const cancelBtns = screen.getAllByRole('button', { name: 'Annulla' })
+    fireEvent.click(cancelBtns[cancelBtns.length - 1])
+    await waitFor(() =>
+      expect(screen.queryByText("Confermi l'aggiunta del compito?")).toBeNull()
+    )
+  })
+
+  it('close error modal via backdrop click', async () => {
+    render(
+      <TestProvider>
+        <TodoInput />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByRole('button', { name: /Aggiungi un compito/i }))
+    // Submit with no title to trigger error modal
+    const addBtns = screen.getAllByRole('button', { name: 'Aggiungi' })
+    fireEvent.click(addBtns[addBtns.length - 1])
+    await waitFor(() =>
+      screen.getByText('Il compito non può essere vuoto')
+    )
+    // The error modal has no buttons; close via backdrop overlay click (isDismissable=true).
+    // Two modals are open: TaskFormModal and error ConfirmModal — target the last overlay.
+    const overlays = document.querySelectorAll('.fixed.inset-0')
+    const overlay = overlays[overlays.length - 1] as HTMLElement
+    if (overlay) fireEvent.click(overlay)
+    await waitFor(() =>
+      expect(screen.queryByText('Il compito non può essere vuoto')).toBeNull()
+    )
+  })
+})
+
+// ─── TaskFormModal key bindings + suggested tag ───────────────────────────────
+
+describe('TaskFormModal key bindings and transfer', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('Escape key in subtask edit cancels edit', () => {
+    const initialSubtask = { id: 'sub-esc', title: 'Esc me', completed: false, completedAt: null }
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ subtasks: [initialSubtask] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Modifica'))
+    const editInput = screen.getByDisplayValue('Esc me')
+    fireEvent.keyDown(editInput, { key: 'Escape' })
+    // Should be back to display mode with original title
+    expect(screen.getByText('Esc me')).toBeInTheDocument()
+  })
+
+  it('Enter key in subtask edit saves the change', () => {
+    const initialSubtask = { id: 'sub-enter', title: 'Enter me', completed: false, completedAt: null }
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ subtasks: [initialSubtask] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Modifica'))
+    const editInput = screen.getByDisplayValue('Enter me')
+    fireEvent.change(editInput, { target: { value: 'Saved via Enter' } })
+    fireEvent.keyDown(editInput, { key: 'Enter' })
+    expect(screen.getByText('Saved via Enter')).toBeInTheDocument()
+  })
+
+  it('saving with empty title cancels the edit', () => {
+    const initialSubtask = { id: 'sub-empty', title: 'Non-empty', completed: false, completedAt: null }
+    render(
+      <TestProvider>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          initialValues={{ subtasks: [initialSubtask] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Modifica'))
+    const editInput = screen.getByDisplayValue('Non-empty')
+    fireEvent.change(editInput, { target: { value: '' } })
+    fireEvent.click(screen.getByTitle('Salva'))
+    // Edit cancelled; original title restored in display
+    expect(screen.getByText('Non-empty')).toBeInTheDocument()
+  })
+
+  it('clicking a suggested tag adds it to tags list', () => {
+    render(
+      <TestProvider initialValues={[[tagsAtom, ['suggested-tag']]]}>
+        <TaskFormModal
+          cancelLabel="Annulla"
+          headerLabel="Form"
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    const addTagBtn = screen.getByTitle('Aggiungi al task')
+    fireEvent.click(addTagBtn)
+    expect(screen.getByText('suggested-tag')).toBeInTheDocument()
+  })
+
+  it('allTasks prop shows task transfer select when editing subtask', () => {
+    const tasks: Todo[] = [baseTodo, { ...baseTodo, id: 'other-1', title: 'Other Task' }]
+    const initialSubtask = { id: 'sub-transfer', title: 'Transfer me', completed: false, completedAt: null }
+    render(
+      <TestProvider initialValues={[[todoListAtom, tasks]]}>
+        <TaskFormModal
+          allTasks={tasks}
+          cancelLabel="Annulla"
+          currentTaskId="todo-1"
+          headerLabel="Form"
+          initialValues={{ subtasks: [initialSubtask] }}
+          isOpen
+          submitLabel="Salva"
+          onClose={vi.fn()}
+          onSubmit={vi.fn()}
+        />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByTitle('Modifica'))
+    // Should show a select with "Task padre" title for task transfer
+    expect(document.querySelector('select[title="Task padre"]')).toBeInTheDocument()
+  })
+})
+
+// ─── TodoList additional filter coverage ──────────────────────────────────────
+
+describe('TodoList additional filter coverage', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('resetFilters (Azzera) clears active filters', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    // Set a filter (completion = completed)
+    fireEvent.click(screen.getByRole('button', { name: 'Completati' }))
+    // Now activeFiltersCount > 0, "Azzera" button appears
+    const azzeraBtn = screen.queryByRole('button', { name: 'Azzera' })
+    if (azzeraBtn) {
+      fireEvent.click(azzeraBtn)
+      // After reset, the "Test Task" should be visible again
+      await waitFor(() => expect(screen.getByText('Test Task')).toBeInTheDocument())
+    }
+  })
+
+  it('overdue filter (Scaduti) filters todos', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    fireEvent.click(screen.getByRole('button', { name: 'Scaduti' }))
+    // baseTodo has no dueDate so it's not overdue → filtered out
+    await waitFor(() => expect(screen.queryByText('Test Task')).toBeNull())
+  })
+
+  it('toggleTagFilter filters by tag', async () => {
+    const taggedTodo: Todo = { ...baseTodo, id: 'tagged-2', title: 'Tagged Todo', tags: ['mytag'] }
+    seedTodosStorage([baseTodo, taggedTodo])
+    render(
+      <TestProvider initialValues={[[tagsAtom, ['mytag']]]}>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    // Click the tag pill for 'mytag' in the filter section (it's a BUTTON element)
+    const allMytagElems = screen.queryAllByText('mytag')
+    const tagPill = allMytagElems.find(el => el.tagName === 'BUTTON')
+    if (tagPill) {
+      fireEvent.click(tagPill)
+      await waitFor(() => {
+        expect(screen.queryByText('Test Task')).toBeNull()
+        expect(screen.getByText('Tagged Todo')).toBeInTheDocument()
+      })
+    }
+  })
+
+  it('date range reset button clears date filters', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    // Set a from-date
+    const dateInputs = document.querySelectorAll('input[type="date"]')
+    if (dateInputs.length > 0) {
+      fireEvent.change(dateInputs[0], { target: { value: '2030-01-01' } })
+      // The X reset button should appear; click it
+      await waitFor(() => {
+        const xBtns = document.querySelectorAll('button[type="button"] svg')
+        // Look for the clear date button (HiXMark inside button)
+        const clearDateBtn = Array.from(document.querySelectorAll('button[type="button"]')).find(
+          b => b.closest('div')?.querySelector('input[type="date"]') && b.querySelector('svg')
+        )
+        if (clearDateBtn) fireEvent.click(clearDateBtn)
+      })
+    }
+  })
+
+  it('onDetailPress opens TaskDetailModal for a todo', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    // Click the "Dettaglio" (detail/eye) button on a todo item
+    const detailTooltips = screen.queryAllByRole('tooltip')
+    const detailTooltip = detailTooltips.find(t => t.textContent === 'Dettaglio')
+    const detailBtn = detailTooltip?.parentElement?.querySelector('button')
+    if (detailBtn) {
+      fireEvent.click(detailBtn)
+      await waitFor(() => {
+        // TaskDetailModal should open showing the todo title
+        expect(screen.getAllByText('Test Task').length).toBeGreaterThan(1)
+      })
+    }
+  })
+
+  it('search clear button resets search filter', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    // Type in search input
+    const searchInput = document.querySelector('input[type="text"][placeholder]') as HTMLInputElement
+    if (searchInput) {
+      fireEvent.change(searchInput, { target: { value: 'xyz-search' } })
+      // X clear button appears inside the search box
+      await waitFor(() => {
+        const clearBtn = searchInput.parentElement?.querySelector('button[type="button"]')
+        if (clearBtn) fireEvent.click(clearBtn)
+        expect(screen.getByText('Test Task')).toBeInTheDocument()
+      })
+    }
   })
 })

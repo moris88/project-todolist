@@ -1,18 +1,18 @@
-import React from 'react'
+import type React from 'react'
 
 interface ButtonGroupProps {
-  children: React.ReactNode
-  className?: string
+	children: React.ReactNode
+	className?: string
 }
 
 function ButtonGroup({ children, className = '' }: ButtonGroupProps) {
-  return (
-    <div
-      className={`inline-flex [&>button:first-child]:rounded-l-lg [&>button:last-child]:rounded-r-lg [&>button]:rounded-none [&>div:first-child>button]:rounded-l-lg [&>div:last-child>button]:rounded-r-lg [&>div>button]:rounded-none ${className}`}
-    >
-      {children}
-    </div>
-  )
+	return (
+		<div
+			className={`inline-flex [&>button:first-child]:rounded-l-lg [&>button:last-child]:rounded-r-lg [&>button]:rounded-none [&>div:first-child>button]:rounded-l-lg [&>div:last-child>button]:rounded-r-lg [&>div>button]:rounded-none ${className}`}
+		>
+			{children}
+		</div>
+	)
 }
 
 export default ButtonGroup
