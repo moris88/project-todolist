@@ -9,7 +9,7 @@ import {
   orderTodos,
   tagColor,
 } from '../src/utils/utils'
-import { Todo } from '../src/types'
+import { Comment, Todo } from '../src/types'
 
 describe('generateUniqueId', () => {
   it('returns a non-empty string', () => {
@@ -330,6 +330,52 @@ describe('applyFilters', () => {
   it('search is case-insensitive', () => {
     expect(applyFilters(makeTodo({ title: 'Deploy API' }), makeFilters({ search: 'deploy api' }))).toBe(true)
     expect(applyFilters(makeTodo({ title: 'deploy api' }), makeFilters({ search: 'DEPLOY' }))).toBe(true)
+  })
+
+  it('shows todo whose subtask title matches search', () => {
+    const todo = makeTodo({
+      title: 'Parent',
+      subtasks: [{ id: 's1', title: 'Fix login bug', completed: false, completedAt: null }],
+    })
+    expect(applyFilters(todo, makeFilters({ search: 'login' }))).toBe(true)
+  })
+
+  it('hides todo when title and subtasks do not match but search is set', () => {
+    const todo = makeTodo({
+      title: 'Parent',
+      subtasks: [{ id: 's1', title: 'Other task', completed: false, completedAt: null }],
+    })
+    expect(applyFilters(todo, makeFilters({ search: 'login' }))).toBe(false)
+  })
+
+  it('subtask search is case-insensitive', () => {
+    const todo = makeTodo({
+      title: 'Parent',
+      subtasks: [{ id: 's1', title: 'Fix Login Bug', completed: false, completedAt: null }],
+    })
+    expect(applyFilters(todo, makeFilters({ search: 'LOGIN' }))).toBe(true)
+  })
+
+  it('shows todo whose comment text matches search', () => {
+    const todo = makeTodo({ id: 'todo-1', title: 'Parent' })
+    const comments: Comment[] = [{ id: 'c1', todoId: 'todo-1', text: 'Reviewed the PR', createdAt: '' }]
+    expect(applyFilters(todo, makeFilters({ search: 'reviewed' }), comments)).toBe(true)
+  })
+
+  it('ignores comments belonging to other todos', () => {
+    const todo = makeTodo({ id: 'todo-1', title: 'Parent' })
+    const comments: Comment[] = [{ id: 'c1', todoId: 'other-id', text: 'Reviewed the PR', createdAt: '' }]
+    expect(applyFilters(todo, makeFilters({ search: 'reviewed' }), comments)).toBe(false)
+  })
+
+  it('comment search is case-insensitive', () => {
+    const todo = makeTodo({ id: 'todo-1', title: 'Parent' })
+    const comments: Comment[] = [{ id: 'c1', todoId: 'todo-1', text: 'LGTM', createdAt: '' }]
+    expect(applyFilters(todo, makeFilters({ search: 'lgtm' }), comments)).toBe(true)
+  })
+
+  it('matches via title even when no comments provided', () => {
+    expect(applyFilters(makeTodo({ title: 'Fix Bug' }), makeFilters({ search: 'fix' }))).toBe(true)
   })
 
   // — date range —

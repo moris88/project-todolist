@@ -60,7 +60,8 @@ const itDict = {
         filters_title: 'Filtri',
         active_filters: 'attivi',
         reset: 'Azzera',
-        search_placeholder: 'Cerca per nome...',
+        search_placeholder:
+          'Cerca per nome compito, nome sottocompito o commento...',
         by_status: 'Stato',
         by_completion: 'Completamento',
         by_overdue: 'Scadenza',
@@ -218,7 +219,7 @@ const enDict = {
         filters_title: 'Filters',
         active_filters: 'active',
         reset: 'Reset',
-        search_placeholder: 'Search by name...',
+        search_placeholder: 'Search by task name, subtask name, or comment...',
         by_status: 'Status',
         by_completion: 'Completion',
         by_overdue: 'Due status',

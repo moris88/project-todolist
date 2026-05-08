@@ -141,7 +141,9 @@ function TodoList() {
     dueDateTo: filterDueDateTo,
   }
 
-  const filteredTodos = todos.filter((todo) => applyFilters(todo, filters))
+  const filteredTodos = todos.filter((todo) =>
+    applyFilters(todo, filters, comments)
+  )
 
   const allStatuses: { value: Status; label: string }[] = [
     { value: 'todo', label: dict.todolist.listitem.status.items.todo },

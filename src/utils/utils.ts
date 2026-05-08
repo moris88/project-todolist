@@ -1,4 +1,4 @@
-import { Status, Todo } from '@/types'
+import { Comment, Status, Todo } from '@/types'
 
 import { isTaskOverdue } from './todo'
 
@@ -54,7 +54,11 @@ export interface FilterState {
   dueDateTo: string
 }
 
-export function applyFilters(todo: Todo, filters: FilterState): boolean {
+export function applyFilters(
+  todo: Todo,
+  filters: FilterState,
+  comments: Comment[] = []
+): boolean {
   if (filters.status && todo.status !== filters.status) return false
   if (filters.completion === 'completed' && !todo.completed) return false
   if (filters.completion === 'uncompleted' && todo.completed) return false
@@ -67,8 +71,14 @@ export function applyFilters(todo: Todo, filters: FilterState): boolean {
     if (!filters.tags.some((t) => todoTags.includes(t))) return false
   }
   if (filters.search) {
-    if (!todo.title.toLowerCase().includes(filters.search.toLowerCase()))
-      return false
+    const q = filters.search.toLowerCase()
+    const matchesTitle = todo.title.toLowerCase().includes(q)
+    const matchesSubtask =
+      todo.subtasks?.some((s) => s.title.toLowerCase().includes(q)) ?? false
+    const matchesComment = comments
+      .filter((c) => c.todoId === todo.id)
+      .some((c) => c.text.toLowerCase().includes(q))
+    if (!matchesTitle && !matchesSubtask && !matchesComment) return false
   }
   if (filters.dueDateFrom || filters.dueDateTo) {
     if (!todo.dueDate) return false
