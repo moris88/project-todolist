@@ -116,7 +116,8 @@ export function exportToCSV(todos: Todo[]) {
   for (const todo of todos) {
     rows.push(
       TODO_HEADERS.map((h) => {
-        if (h === 'subtasks') return escapeCSV(JSON.stringify(todo.subtasks ?? []))
+        if (h === 'subtasks')
+          return escapeCSV(JSON.stringify(todo.subtasks ?? []))
         if (h === 'tags') return escapeCSV(JSON.stringify(todo.tags ?? []))
         return escapeCSV((todo as any)[h])
       }).join(',')

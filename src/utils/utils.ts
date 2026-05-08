@@ -1,4 +1,4 @@
-import { Todo } from '@/types'
+import { Status, Todo } from '@/types'
 
 import { isTaskOverdue } from './todo'
 
@@ -42,6 +42,45 @@ export function orderTodos(a: Todo, b: Todo): number {
   if (a.priority === 'low' && b.priority === 'low') return -1
   if (a.priority !== 'low' && b.priority === 'low') return 1
   return 0
+}
+
+export interface FilterState {
+  status: Status | ''
+  completion: 'all' | 'completed' | 'uncompleted'
+  overdue: 'all' | 'overdue' | 'not_overdue'
+  tags: string[]
+  search: string
+  dueDateFrom: string
+  dueDateTo: string
+}
+
+export function applyFilters(todo: Todo, filters: FilterState): boolean {
+  if (filters.status && todo.status !== filters.status) return false
+  if (filters.completion === 'completed' && !todo.completed) return false
+  if (filters.completion === 'uncompleted' && todo.completed) return false
+  if (filters.overdue === 'overdue' && !isTaskOverdue(todo.dueDate))
+    return false
+  if (filters.overdue === 'not_overdue' && isTaskOverdue(todo.dueDate))
+    return false
+  if (filters.tags.length > 0) {
+    const todoTags = todo.tags ?? []
+    if (!filters.tags.some((t) => todoTags.includes(t))) return false
+  }
+  if (filters.search) {
+    if (!todo.title.toLowerCase().includes(filters.search.toLowerCase()))
+      return false
+  }
+  if (filters.dueDateFrom || filters.dueDateTo) {
+    if (!todo.dueDate) return false
+    const due = new Date(todo.dueDate)
+    if (filters.dueDateFrom && due < new Date(filters.dueDateFrom)) return false
+    if (filters.dueDateTo) {
+      const toDate = new Date(filters.dueDateTo)
+      toDate.setHours(23, 59, 59, 999)
+      if (due > toDate) return false
+    }
+  }
+  return true
 }
 
 export function filterTodoByStatus(todo: Todo, filter: string): boolean {

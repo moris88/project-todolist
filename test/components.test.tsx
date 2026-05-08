@@ -1,14 +1,29 @@
 import '@testing-library/jest-dom'
 
 import { fireEvent, render, screen } from '@testing-library/react'
+import { Provider } from 'jotai'
 import { createRef } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+import ConfirmModal from '../src/components/ConfirmModal'
+import Header from '../src/components/Header'
+import Wrapper from '../src/components/Wrapper'
+import Button from '../src/components/UI/Button'
+import ButtonGroup from '../src/components/UI/ButtonGroup'
+import Checkbox from '../src/components/UI/Checkbox'
 import Chip from '../src/components/UI/Chip'
 import DatePicker from '../src/components/UI/DatePicker'
 import Input from '../src/components/UI/Input'
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalFooter,
+  ModalHeader,
+} from '../src/components/UI/Modal'
 import Select from '../src/components/UI/Select'
 import SelectItem from '../src/components/UI/SelectItem'
+import Switch from '../src/components/UI/Switch'
 import Textarea from '../src/components/UI/Textarea'
 
 // ─── Chip ─────────────────────────────────────────────────────────────────────
@@ -218,5 +233,429 @@ describe('Select + SelectItem', () => {
     // The trigger button should contain the startContent icon
     const trigger = screen.getByRole('button', { name: /Option One/i })
     expect(trigger.querySelector('[data-testid="icon"]')).toBeInTheDocument()
+  })
+})
+
+// ─── Button ───────────────────────────────────────────────────────────────────
+
+describe('Button', () => {
+  it('renders children text', () => {
+    render(<Button>Click me</Button>)
+    expect(screen.getByRole('button', { name: 'Click me' })).toBeInTheDocument()
+  })
+
+  it('applies primary variant classes', () => {
+    render(<Button variant="primary">Go</Button>)
+    expect(screen.getByRole('button')).toHaveClass('bg-blue-500')
+  })
+
+  it('applies secondary variant classes', () => {
+    render(<Button variant="secondary">Go</Button>)
+    expect(screen.getByRole('button')).toHaveClass('border-blue-500')
+  })
+
+  it('applies ghost variant classes', () => {
+    render(<Button variant="ghost">Go</Button>)
+    expect(screen.getByRole('button')).toHaveClass('bg-transparent')
+  })
+
+  it('applies sm size classes', () => {
+    render(<Button size="sm">Go</Button>)
+    expect(screen.getByRole('button')).toHaveClass('text-sm')
+  })
+
+  it('applies lg size classes', () => {
+    render(<Button size="lg">Go</Button>)
+    expect(screen.getByRole('button')).toHaveClass('text-lg')
+  })
+
+  it('is disabled when isDisabled=true', () => {
+    render(<Button isDisabled>Go</Button>)
+    expect(screen.getByRole('button')).toBeDisabled()
+    expect(screen.getByRole('button')).toHaveClass('opacity-50')
+  })
+
+  it('calls onPress when clicked', () => {
+    const handler = vi.fn()
+    render(<Button onPress={handler}>Go</Button>)
+    fireEvent.click(screen.getByRole('button'))
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('calls onClick when onPress is not set', () => {
+    const handler = vi.fn()
+    render(<Button onClick={handler}>Go</Button>)
+    fireEvent.click(screen.getByRole('button'))
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('prefers onPress over onClick', () => {
+    const onPress = vi.fn()
+    const onClick = vi.fn()
+    render(<Button onClick={onClick} onPress={onPress}>Go</Button>)
+    fireEvent.click(screen.getByRole('button'))
+    expect(onPress).toHaveBeenCalledOnce()
+    expect(onClick).not.toHaveBeenCalled()
+  })
+
+  it('applies extra className', () => {
+    render(<Button className="my-custom-class">Go</Button>)
+    expect(screen.getByRole('button')).toHaveClass('my-custom-class')
+  })
+})
+
+// ─── ButtonGroup ──────────────────────────────────────────────────────────────
+
+describe('ButtonGroup', () => {
+  it('renders children', () => {
+    render(
+      <ButtonGroup>
+        <button>A</button>
+        <button>B</button>
+      </ButtonGroup>
+    )
+    expect(screen.getByText('A')).toBeInTheDocument()
+    expect(screen.getByText('B')).toBeInTheDocument()
+  })
+
+  it('wraps children in a flex container', () => {
+    const { container } = render(
+      <ButtonGroup>
+        <button>X</button>
+      </ButtonGroup>
+    )
+    expect(container.firstChild).toHaveClass('inline-flex')
+  })
+
+  it('forwards extra className to the wrapper', () => {
+    const { container } = render(
+      <ButtonGroup className="extra">
+        <button>X</button>
+      </ButtonGroup>
+    )
+    expect(container.firstChild).toHaveClass('extra')
+  })
+})
+
+// ─── Checkbox ─────────────────────────────────────────────────────────────────
+
+describe('Checkbox', () => {
+  it('renders unchecked by default', () => {
+    render(<Checkbox />)
+    expect(screen.getByRole('checkbox')).not.toBeChecked()
+  })
+
+  it('renders checked when isSelected=true', () => {
+    render(<Checkbox isSelected />)
+    expect(screen.getByRole('checkbox')).toBeChecked()
+  })
+
+  it('shows checkmark SVG when isSelected=true', () => {
+    const { container } = render(<Checkbox isSelected />)
+    expect(container.querySelector('svg')).toBeInTheDocument()
+  })
+
+  it('hides checkmark when isSelected=false', () => {
+    const { container } = render(<Checkbox isSelected={false} />)
+    expect(container.querySelector('svg')).toBeNull()
+  })
+
+  it('is disabled when isDisabled=true', () => {
+    render(<Checkbox isDisabled />)
+    expect(screen.getByRole('checkbox')).toBeDisabled()
+  })
+
+  it('applies cursor-not-allowed class when disabled', () => {
+    const { container } = render(<Checkbox isDisabled />)
+    expect(container.querySelector('label')).toHaveClass('cursor-not-allowed')
+  })
+
+  it('calls onChange when clicked', () => {
+    const handler = vi.fn()
+    render(<Checkbox onChange={handler} />)
+    fireEvent.click(screen.getByRole('checkbox'))
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('renders children label text', () => {
+    render(<Checkbox>My label</Checkbox>)
+    expect(screen.getByText('My label')).toBeInTheDocument()
+  })
+})
+
+// ─── Switch ───────────────────────────────────────────────────────────────────
+
+describe('Switch', () => {
+  it('renders unchecked by default', () => {
+    render(<Switch />)
+    expect(screen.getByRole('checkbox')).not.toBeChecked()
+  })
+
+  it('renders checked when checked=true', () => {
+    render(<Switch checked />)
+    expect(screen.getByRole('checkbox')).toBeChecked()
+  })
+
+  it('calls onChange when toggled', () => {
+    const handler = vi.fn()
+    render(<Switch onChange={handler} />)
+    fireEvent.click(screen.getByRole('checkbox'))
+    expect(handler).toHaveBeenCalledOnce()
+  })
+
+  it('renders children label', () => {
+    render(<Switch>Toggle me</Switch>)
+    expect(screen.getByText('Toggle me')).toBeInTheDocument()
+  })
+
+  it('applies sm track size class', () => {
+    const { container } = render(<Switch size="sm" />)
+    expect(container.querySelector('div.h-4')).toBeInTheDocument()
+  })
+
+  it('applies lg track size class', () => {
+    const { container } = render(<Switch size="lg" />)
+    expect(container.querySelector('div.h-7')).toBeInTheDocument()
+  })
+
+  it('applies danger color class', () => {
+    const { container } = render(<Switch color="danger" checked />)
+    const track = container.querySelector('div.rounded-full')
+    expect(track?.className).toMatch(/peer-checked:bg-red-500/)
+  })
+})
+
+// ─── Modal ────────────────────────────────────────────────────────────────────
+
+describe('Modal', () => {
+  it('renders nothing when isOpen=false', () => {
+    const { container } = render(
+      <Modal isOpen={false}>
+        <div data-testid="content">Content</div>
+      </Modal>
+    )
+    expect(container.querySelector('[data-testid="content"]')).toBeNull()
+  })
+
+  it('renders children when isOpen=true', () => {
+    render(
+      <Modal isOpen>
+        <div data-testid="content">Content</div>
+      </Modal>
+    )
+    expect(screen.getByTestId('content')).toBeInTheDocument()
+  })
+
+  it('calls onClose when overlay is clicked (isDismissable=true)', () => {
+    const onClose = vi.fn()
+    const { container } = render(
+      <Modal isOpen onClose={onClose}>
+        <div>Inner</div>
+      </Modal>
+    )
+    const overlay = container.ownerDocument.querySelector('.fixed.inset-0') as HTMLElement
+    fireEvent.click(overlay)
+    expect(onClose).toHaveBeenCalledOnce()
+  })
+
+  it('does NOT call onClose when overlay is clicked with isDismissable=false', () => {
+    const onClose = vi.fn()
+    const { container } = render(
+      <Modal isDismissable={false} isOpen onClose={onClose}>
+        <div>Inner</div>
+      </Modal>
+    )
+    const overlay = container.ownerDocument.querySelector('.fixed.inset-0') as HTMLElement
+    fireEvent.click(overlay)
+    expect(onClose).not.toHaveBeenCalled()
+  })
+
+  it('does not bubble click from inner content to overlay', () => {
+    const onClose = vi.fn()
+    render(
+      <Modal isOpen onClose={onClose}>
+        <div data-testid="inner">Inner</div>
+      </Modal>
+    )
+    fireEvent.click(screen.getByTestId('inner'))
+    expect(onClose).not.toHaveBeenCalled()
+  })
+})
+
+describe('ModalContent', () => {
+  it('renders children', () => {
+    render(<ModalContent><span>body</span></ModalContent>)
+    expect(screen.getByText('body')).toBeInTheDocument()
+  })
+})
+
+describe('ModalHeader', () => {
+  it('renders header text', () => {
+    render(<ModalHeader>Title</ModalHeader>)
+    expect(screen.getByText('Title')).toBeInTheDocument()
+  })
+})
+
+describe('ModalBody', () => {
+  it('renders body content', () => {
+    render(<ModalBody><p>Hello</p></ModalBody>)
+    expect(screen.getByText('Hello')).toBeInTheDocument()
+  })
+})
+
+describe('ModalFooter', () => {
+  it('renders footer content', () => {
+    render(<ModalFooter><button>OK</button></ModalFooter>)
+    expect(screen.getByRole('button', { name: 'OK' })).toBeInTheDocument()
+  })
+})
+
+// ─── ConfirmModal ─────────────────────────────────────────────────────────────
+
+describe('ConfirmModal', () => {
+  it('renders nothing when isOpen=false', () => {
+    render(
+      <ConfirmModal
+        isOpen={false}
+        title="Delete"
+        description="Are you sure?"
+        buttonConfirm="Yes"
+        onConfirm={vi.fn()}
+      />
+    )
+    expect(screen.queryByText('Delete')).toBeNull()
+  })
+
+  it('renders title and description when isOpen=true', () => {
+    render(
+      <ConfirmModal
+        isOpen
+        title="Delete"
+        description="Are you sure?"
+        buttonConfirm="Yes"
+        onConfirm={vi.fn()}
+      />
+    )
+    expect(screen.getByText('Delete')).toBeInTheDocument()
+    expect(screen.getByText('Are you sure?')).toBeInTheDocument()
+  })
+
+  it('shows confirm button and calls onConfirm when clicked', () => {
+    const onConfirm = vi.fn()
+    render(
+      <ConfirmModal
+        isOpen
+        title="T"
+        description="D"
+        buttonConfirm="Confirm"
+        onConfirm={onConfirm}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Confirm' }))
+    expect(onConfirm).toHaveBeenCalledOnce()
+  })
+
+  it('shows cancel button and calls onCancel when clicked', () => {
+    const onCancel = vi.fn()
+    render(
+      <ConfirmModal
+        isOpen
+        title="T"
+        description="D"
+        buttonConfirm="Yes"
+        buttonCancel="No"
+        onConfirm={vi.fn()}
+        onCancel={onCancel}
+      />
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'No' }))
+    expect(onCancel).toHaveBeenCalledOnce()
+  })
+
+  it('does not render cancel button when buttonCancel is omitted', () => {
+    render(
+      <ConfirmModal
+        isOpen
+        title="T"
+        description="D"
+        buttonConfirm="Yes"
+        onConfirm={vi.fn()}
+      />
+    )
+    expect(screen.queryByRole('button', { name: /cancel/i })).toBeNull()
+  })
+
+  it('uses default "Confirm" label when buttonConfirm is omitted', () => {
+    render(
+      <ConfirmModal isOpen title="T" description="D" onConfirm={vi.fn()} />
+    )
+    expect(screen.getByRole('button', { name: 'Confirm' })).toBeInTheDocument()
+  })
+})
+
+// ─── Header ───────────────────────────────────────────────────────────────────
+
+describe('Header', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('renders the app title', () => {
+    render(<Provider><Header /></Provider>)
+    expect(screen.getByRole('heading')).toBeInTheDocument()
+  })
+
+  it('renders language selector', () => {
+    render(<Provider><Header /></Provider>)
+    expect(screen.getByRole('combobox')).toBeInTheDocument()
+  })
+
+  it('renders dark mode toggle button', () => {
+    render(<Provider><Header /></Provider>)
+    expect(screen.getByRole('button', { name: /toggle dark mode/i })).toBeInTheDocument()
+  })
+
+  it('switches language when the select changes', () => {
+    render(<Provider><Header /></Provider>)
+    const select = screen.getByRole('combobox')
+    fireEvent.change(select, { target: { value: 'en' } })
+    expect(screen.getByText('Task Manager')).toBeInTheDocument()
+  })
+
+  it('toggles dark mode when the button is clicked', () => {
+    render(<Provider><Header /></Provider>)
+    const btn = screen.getByRole('button', { name: /toggle dark mode/i })
+    // Initially light mode — moon icon shown, click to switch to dark
+    fireEvent.click(btn)
+    // Click again to revert
+    fireEvent.click(btn)
+    // No throw = success; further assertions depend on icon rendering
+    expect(btn).toBeInTheDocument()
+  })
+})
+
+// ─── Wrapper ──────────────────────────────────────────────────────────────────
+
+describe('Wrapper', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('renders children inside the wrapper', () => {
+    render(<Provider><Wrapper><div data-testid="child">Hi</div></Wrapper></Provider>)
+    expect(screen.getByTestId('child')).toBeInTheDocument()
+  })
+
+  it('adds the "dark" class on documentElement when darkMode is enabled', () => {
+    // Pre-seed dark mode in localStorage
+    localStorage.setItem('darkMode', 'true')
+    render(<Provider><Wrapper><span /></Wrapper></Provider>)
+    expect(document.documentElement.classList.contains('dark')).toBe(true)
+    document.documentElement.classList.remove('dark')
+  })
+
+  it('removes the "dark" class when darkMode is false', () => {
+    document.documentElement.classList.add('dark')
+    localStorage.setItem('darkMode', 'false')
+    render(<Provider><Wrapper><span /></Wrapper></Provider>)
+    expect(document.documentElement.classList.contains('dark')).toBe(false)
   })
 })

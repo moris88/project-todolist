@@ -25,6 +25,7 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
     priority: 'medium',
     status: 'todo',
     subtasks: [],
+    tags: [],
     ...overrides,
   }
 }
@@ -154,5 +155,41 @@ describe('removeAllTodos', () => {
     addTodoStorage(makeTodo({ id: 'x' }), [])
     removeAllTodos()
     expect(JSON.parse(localStorage.getItem('todos')!)).toEqual([])
+  })
+})
+
+describe('getTodosStorage backward compat', () => {
+  it('migrates a todo stored without tags to tags: []', () => {
+    const id = 'legacy-id'
+    const legacy = {
+      id,
+      title: 'Old task',
+      description: '',
+      completed: false,
+      createdAt: new Date().toISOString(),
+      updatedAt: null,
+      completedAt: null,
+      dueDate: null,
+      notify: false,
+      priority: 'medium',
+      status: 'todo',
+      subtasks: [],
+      // no tags field
+    }
+    localStorage.setItem('todos', JSON.stringify([id]))
+    localStorage.setItem(id, JSON.stringify(legacy))
+
+    const result = getTodosStorage()
+    expect(result).toHaveLength(1)
+    expect(result[0].tags).toEqual([])
+  })
+
+  it('preserves existing tags when loading', () => {
+    const id = 'tagged-id'
+    const todo = makeTodo({ id, tags: ['bug', 'frontend'] })
+    addTodoStorage(todo, [])
+
+    const result = getTodosStorage()
+    expect(result[0].tags).toEqual(['bug', 'frontend'])
   })
 })

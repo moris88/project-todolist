@@ -417,7 +417,11 @@ function TaskFormBody({
                   }
                 }}
               />
-              <Button size="sm" variant="secondary" onPress={() => addTag(newTagInput)}>
+              <Button
+                size="sm"
+                variant="secondary"
+                onPress={() => addTag(newTagInput)}
+              >
                 <HiMiniPlus className="h-4 w-4" />
                 {dict.todolist.tags.add}
               </Button>
