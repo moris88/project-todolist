@@ -98,22 +98,23 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 	}
 
 	const allStatuses: Status[] = [
+		'backlog',
 		'todo',
 		'progress',
 		'review',
 		'testing',
-		'blocked',
 		'paused',
 		'done',
+		'blocked',
 		'archived',
 	]
 
 	const statusColor = (s: Status) =>
 		s === 'done'
 			? 'bg-green-500'
-			: s === 'todo'
+			: s === 'todo' || s === 'backlog'
 				? 'bg-gray-400'
-				: s === 'archived'
+				: s === 'archived' || s === 'blocked'
 					? 'bg-red-500'
 					: 'bg-yellow-500'
 
@@ -261,7 +262,7 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 										</button>
 									</div>
 									{isEditingStatus && (
-										<div className="absolute top-full left-0 z-50 mt-1 min-w-[160px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+										<div className="absolute top-full left-0 z-50 mt-1 min-w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
 											{allStatuses.map((s) => (
 												<button
 													key={s}
@@ -393,6 +394,45 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 														<span className="ml-1 text-gray-400 text-xs">
 															—{' '}
 															{moment(s.completedAt).format('DD/MM/YYYY HH:mm')}
+														</span>
+													)}
+													{!s.completed && (s.priority || s.status) && (
+														<span className="mt-0.5 flex flex-wrap gap-1">
+															{s.priority && s.priority !== 'medium' && (
+																<span
+																	className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-medium text-xs ${
+																		s.priority === 'urgent'
+																			? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+																			: s.priority === 'high'
+																				? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
+																				: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+																	}`}
+																>
+																	{
+																		dict.todolist.listitem.priority.items[
+																			s.priority
+																		]
+																	}
+																</span>
+															)}
+															{s.status && s.status !== 'backlog' && (
+																<span
+																	className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-medium text-xs ${
+																		s.status === 'done'
+																			? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+																			: s.status === 'blocked' ||
+																					s.status === 'archived'
+																				? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+																				: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+																	}`}
+																>
+																	{
+																		dict.todolist.listitem.status.items[
+																			s.status
+																		]
+																	}
+																</span>
+															)}
 														</span>
 													)}
 												</span>

@@ -47,9 +47,12 @@ function TodoInput() {
 			dueDate: pendingValues.dueDate,
 			notify: false,
 			priority: pendingValues.priority,
-			status: 'todo',
+			status: pendingValues.status ?? 'todo',
 			subtasks: pendingValues.subtasks,
 			tags: pendingValues.tags,
+			projectId: pendingValues.projectId ?? null,
+			sprintId: pendingValues.sprintId ?? null,
+			deletedAt: null,
 		}
 		setTodos(addTodoStorage(newTodo, todos))
 		setPendingValues(null)

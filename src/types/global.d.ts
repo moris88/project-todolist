@@ -3,6 +3,8 @@ export interface SubTask {
 	title: string
 	completed: boolean
 	completedAt: string | null
+	priority?: Priority
+	status?: Status
 }
 
 export interface Todo {
@@ -19,6 +21,39 @@ export interface Todo {
 	status: Status
 	subtasks: SubTask[]
 	tags: string[]
+	projectId?: string | null
+	sprintId?: string | null
+	deletedAt?: string | null
+}
+
+export interface Project {
+	id: string
+	name: string
+	description: string
+	color: string
+	priority: Priority
+	status: ProjectStatus
+	createdAt: string
+	updatedAt: string | null
+}
+
+export interface Sprint {
+	id: string
+	name: string
+	description: string
+	startDate: string | null
+	dueDate: string | null
+	status: SprintStatus
+	projectId: string | null
+	createdAt: string
+	updatedAt: string | null
+}
+
+export interface Comment {
+	id: string
+	todoId: string
+	text: string
+	createdAt: string
 }
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
@@ -33,9 +68,5 @@ export type Status =
 	| 'done'
 	| 'archived'
 
-export interface Comment {
-	id: string
-	todoId: string
-	text: string
-	createdAt: string
-}
+export type ProjectStatus = 'active' | 'completed' | 'archived' | 'paused'
+export type SprintStatus = 'planning' | 'active' | 'completed' | 'cancelled'

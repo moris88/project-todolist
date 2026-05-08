@@ -61,7 +61,7 @@ describe('useNotificationRequest', () => {
 
     expect(NotificationMock).toHaveBeenCalledWith('T', {
       body: 'B',
-      icon: '/bell.png',
+      icon: '/bell.webp',
     })
   })
 

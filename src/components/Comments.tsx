@@ -88,7 +88,11 @@ function Comments({ todoId }: CommentsProps) {
 			<div className="flex items-end gap-2">
 				<textarea
 					className="flex-1 resize-none rounded-xl border border-gray-300 bg-white px-3 py-2 text-gray-900 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400 dark:border-gray-600 dark:bg-gray-800 dark:text-white dark:placeholder-gray-500"
-					placeholder={dict.todolist.comments.placeholder}
+					placeholder={
+						typeof window !== 'undefined' && window.innerWidth < 640
+							? dict.todolist.comments.placeholder
+							: dict.todolist.comments.placeholder_full
+					}
 					rows={2}
 					value={text}
 					onChange={(e) => setText(e.target.value)}

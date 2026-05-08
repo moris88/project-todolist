@@ -1,4 +1,4 @@
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import moment from 'moment'
 import React from 'react'
 import { BiSolidDetail } from 'react-icons/bi'
@@ -14,7 +14,14 @@ import {
 	HiOutlinePencilSquare,
 } from 'react-icons/hi2'
 
-import { commentsAtom, dictAtom, todoListAtom } from '@/atoms/atoms'
+import {
+	commentsAtom,
+	dictAtom,
+	projectsAtom,
+	sprintsAtom,
+	todoListAtom,
+	trashAtom,
+} from '@/atoms/atoms'
 import {
 	ConfirmModal,
 	MarkdownContent,
@@ -40,7 +47,6 @@ import type { Status, Todo } from '@/types'
 import {
 	generateUniqueId,
 	isTaskOverdue,
-	removeCommentsByTodoId,
 	removeTodoStorage,
 	tagColor,
 	updateTodoStorage,
@@ -66,8 +72,11 @@ function TodoItem({
 	isCommentOpen,
 }: TodoItemProps) {
 	const [todos, setTodos] = useAtom(todoListAtom)
-	const [comments, setComments] = useAtom(commentsAtom)
+	const comments = useAtomValue(commentsAtom)
+	const setTrash = useSetAtom(trashAtom)
 	const dict = useAtomValue(dictAtom)
+	const projects = useAtomValue(projectsAtom)
+	const sprints = useAtomValue(sprintsAtom)
 	const [isEditing, setIsEditing] = React.useState(false)
 	const [isExpanded, setIsExpanded] = React.useState(false)
 	const [showDeleteModal, setShowDeleteModal] = React.useState(false)
@@ -126,8 +135,9 @@ function TodoItem({
 	}
 
 	const confirmRemoveTodo = () => {
+		const deletedTodo = { ...todo, deletedAt: new Date().toISOString() }
+		setTrash((prev) => [...prev, deletedTodo])
 		setTodos(removeTodoStorage(todos, todo.id))
-		setComments(removeCommentsByTodoId(todo.id, comments))
 		setShowDeleteModal(false)
 	}
 
@@ -153,6 +163,8 @@ function TodoItem({
 					status: pendingEditValues.status,
 					subtasks: pendingEditValues.subtasks,
 					tags: pendingEditValues.tags,
+					projectId: pendingEditValues.projectId,
+					sprintId: pendingEditValues.sprintId,
 					completed: pendingEditValues.status === 'done' ? true : t.completed,
 					completedAt:
 						pendingEditValues.status === 'done' && !t.completed
@@ -325,6 +337,8 @@ function TodoItem({
 					status: todo.status,
 					subtasks: todo.subtasks,
 					tags: todo.tags ?? [],
+					projectId: todo.projectId ?? null,
+					sprintId: todo.sprintId ?? null,
 				}}
 				isDismissable={false}
 				isOpen={isEditing}
@@ -372,6 +386,28 @@ function TodoItem({
 									))}
 								</div>
 							)}
+							{todo.projectId &&
+								(() => {
+									const project = projects.find((p) => p.id === todo.projectId)
+									return project ? (
+										<span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600 text-xs dark:bg-gray-700 dark:text-gray-300">
+											<span
+												className="h-2 w-2 shrink-0 rounded-full"
+												style={{ backgroundColor: project.color }}
+											/>
+											{project.name}
+										</span>
+									) : null
+								})()}
+							{todo.sprintId &&
+								(() => {
+									const sprint = sprints.find((s) => s.id === todo.sprintId)
+									return sprint ? (
+										<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-600 text-xs dark:bg-blue-900/30 dark:text-blue-400">
+											{sprint.name}
+										</span>
+									) : null
+								})()}
 						</div>
 						{onDetailPress && (
 							<Tooltip content={dict.todolist.listitem.detail} placement="left">
@@ -443,23 +479,67 @@ function TodoItem({
 															{moment(s.completedAt).format('DD/MM/YYYY HH:mm')}
 														</span>
 													)}
+													{!s.completed && (s.priority || s.status) && (
+														<span className="mt-0.5 flex flex-wrap gap-1">
+															{s.priority && s.priority !== 'medium' && (
+																<span
+																	className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-medium text-xs ${
+																		s.priority === 'urgent'
+																			? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+																			: s.priority === 'high'
+																				? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/40 dark:text-yellow-300'
+																				: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+																	}`}
+																>
+																	{
+																		dict.todolist.listitem.priority.items[
+																			s.priority
+																		]
+																	}
+																</span>
+															)}
+															{s.status && s.status !== 'backlog' && (
+																<span
+																	className={`inline-flex items-center rounded-full px-1.5 py-0.5 font-medium text-xs ${
+																		s.status === 'done'
+																			? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300'
+																			: s.status === 'blocked' ||
+																					s.status === 'archived'
+																				? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+																				: 'bg-blue-50 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+																	}`}
+																>
+																	{
+																		dict.todolist.listitem.status.items[
+																			s.status
+																		]
+																	}
+																</span>
+															)}
+														</span>
+													)}
 												</span>
 												{todos.filter((t) => t.id !== todo.id).length > 0 && (
-													<button
-														className="shrink-0 rounded p-0.5 text-gray-300 opacity-0 transition-all hover:text-blue-500 group-hover:opacity-100 dark:text-white"
-														title={dict.todolist.subtasks.move}
-														type="button"
-														onClick={(e) => {
-															e.stopPropagation()
-															setMoveSubtaskId(s.id)
-															setMoveTargetTodoId(
-																todos.filter((t) => t.id !== todo.id)[0]?.id ??
-																	'',
-															)
-														}}
+													<Tooltip
+														content={dict.todolist.subtasks.move}
+														placement="top"
 													>
-														<HiArrowRight className="h-3.5 w-3.5" />
-													</button>
+														<button
+															className="shrink-0 cursor-pointer rounded p-0.5 text-gray-300 opacity-0 transition-all hover:text-blue-500 group-hover:opacity-100 dark:text-white"
+															title={dict.todolist.subtasks.move}
+															type="button"
+															onClick={(e) => {
+																e.stopPropagation()
+																setMoveSubtaskId(s.id)
+																setMoveTargetTodoId(
+																	todos.filter((t) => t.id !== todo.id)[0]
+																		?.id ?? '',
+																)
+															}}
+														>
+															<HiArrowRight className="h-3.5 w-3.5" />
+														</button>
+													</Tooltip>
 												)}
 											</li>
 										))}
@@ -656,7 +736,7 @@ function TodoItem({
 								</button>
 							</div>
 							{isEditingStatus && (
-								<div className="absolute top-full left-0 z-50 mt-1 min-w-[160px] rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
+								<div className="absolute top-full left-0 z-50 mt-1 min-w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
 									{allStatuses.map((s) => (
 										<button
 											key={s}
@@ -729,7 +809,7 @@ function TodoItem({
 					<ModalContent>
 						<ModalHeader>{dict.todolist.subtasks.move_title}</ModalHeader>
 						<ModalBody>
-							<div className="min-h-52">
+							<div className="flex flex-col gap-4">
 								<Select
 									defaultSelectedKeys={moveTargetTodoId}
 									label={dict.todolist.subtasks.move_to}

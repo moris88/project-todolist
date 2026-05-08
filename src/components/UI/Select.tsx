@@ -1,5 +1,6 @@
 import { AnimatePresence, motion } from 'framer-motion'
 import React from 'react'
+import { createPortal } from 'react-dom'
 import { HiChevronDown } from 'react-icons/hi2'
 
 interface SelectProps {
@@ -9,6 +10,15 @@ interface SelectProps {
 	children?: React.ReactNode
 	className?: string
 }
+
+interface DropdownPos {
+	top?: number
+	bottom?: number
+	left: number
+	width: number
+}
+
+const MAX_DROPDOWN_H = 240
 
 function Select({
 	label,
@@ -21,12 +31,14 @@ function Select({
 	const [internalValue, setInternalValue] = React.useState(
 		defaultSelectedKeys || '',
 	)
-	const containerRef = React.useRef<HTMLDivElement>(null)
+	const [dropdownPos, setDropdownPos] = React.useState<DropdownPos | null>(null)
 
-	// Use prop if provided, otherwise internal state
+	const containerRef = React.useRef<HTMLDivElement>(null)
+	const buttonRef = React.useRef<HTMLButtonElement>(null)
+	const dropdownRef = React.useRef<HTMLDivElement>(null)
+
 	const currentValue = defaultSelectedKeys ?? internalValue
 
-	// Derive label and startContent from current value
 	const { selectedLabel, selectedStartContent } = React.useMemo(() => {
 		let foundLabel: React.ReactNode = ''
 		let foundStart: React.ReactNode = null
@@ -42,13 +54,15 @@ function Select({
 		return { selectedLabel: foundLabel, selectedStartContent: foundStart }
 	}, [children, currentValue])
 
-	// Click outside handler
 	React.useEffect(() => {
 		const handleClickOutside = (event: MouseEvent) => {
-			if (
-				containerRef.current &&
-				!containerRef.current.contains(event.target as Node)
-			) {
+			const clickedContainer = containerRef.current?.contains(
+				event.target as Node,
+			)
+			const clickedDropdown = dropdownRef.current?.contains(
+				event.target as Node,
+			)
+			if (!clickedContainer && !clickedDropdown) {
 				setIsOpen(false)
 			}
 		}
@@ -56,11 +70,35 @@ function Select({
 		return () => document.removeEventListener('mousedown', handleClickOutside)
 	}, [])
 
+	const openDropdown = () => {
+		if (!buttonRef.current) {
+			setIsOpen((v) => !v)
+			return
+		}
+		const rect = buttonRef.current.getBoundingClientRect()
+		const spaceBelow = window.innerHeight - rect.bottom
+		const spaceAbove = rect.top
+		const openUp = spaceBelow < MAX_DROPDOWN_H && spaceAbove > spaceBelow
+
+		setDropdownPos(
+			openUp
+				? {
+						bottom: window.innerHeight - rect.top + 4,
+						left: rect.left,
+						width: rect.width,
+					}
+				: {
+						top: rect.bottom + 4,
+						left: rect.left,
+						width: rect.width,
+					},
+		)
+		setIsOpen((v) => !v)
+	}
+
 	const handleSelect = (value: string) => {
 		setInternalValue(value)
 		setIsOpen(false)
-
-		// Simulate ChangeEvent for compatibility
 		const event = {
 			target: { value, name: '' },
 			persist: () => {},
@@ -92,35 +130,49 @@ function Select({
 				</label>
 			)}
 			<button
+				ref={buttonRef}
 				id={label}
 				name={label}
 				className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
 				type="button"
-				onClick={() => setIsOpen(!isOpen)}
+				onClick={openDropdown}
 			>
 				<span className="flex items-center gap-2 truncate text-sm">
 					{selectedStartContent}
 					{selectedLabel || 'Seleziona...'}
 				</span>
 				<HiChevronDown
-					className={`h-5 w-5 text-gray-400 transition-transform dark:text-gray-400 ${isOpen ? 'rotate-180' : ''}`}
+					className={`h-5 w-5 shrink-0 text-gray-400 transition-transform dark:text-gray-400 ${isOpen ? 'rotate-180' : ''}`}
 				/>
 			</button>
 
-			<AnimatePresence>
-				{isOpen && (
-					<motion.div
-						animate={{ opacity: 1, y: 0 }}
-						className="absolute top-full left-0 z-50 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800"
-						exit={{ opacity: 0, y: -10 }}
-						initial={{ opacity: 0, y: -10 }}
-						transition={{ duration: 0.1 }}
-						onPointerDown={(e) => e.stopPropagation()}
-					>
-						{updatedChildren}
-					</motion.div>
-				)}
-			</AnimatePresence>
+			{/* Portal: always mounted, AnimatePresence inside controls mount/unmount of motion.div */}
+			{createPortal(
+				<AnimatePresence>
+					{isOpen && dropdownPos && (
+						<motion.div
+							ref={dropdownRef}
+							animate={{ opacity: 1, y: 0 }}
+							exit={{ opacity: 0, y: -6 }}
+							initial={{ opacity: 0, y: -6 }}
+							transition={{ duration: 0.1 }}
+							style={{
+								position: 'fixed',
+								top: dropdownPos.top,
+								bottom: dropdownPos.bottom,
+								left: dropdownPos.left,
+								width: dropdownPos.width,
+								zIndex: 9999,
+							}}
+							className="max-h-60 overflow-auto rounded-lg border border-gray-200 bg-white py-1 shadow-xl dark:border-gray-600 dark:bg-gray-800"
+							onPointerDown={(e) => e.stopPropagation()}
+						>
+							{updatedChildren}
+						</motion.div>
+					)}
+				</AnimatePresence>,
+				document.body,
+			)}
 		</div>
 	)
 }

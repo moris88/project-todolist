@@ -1,7 +1,7 @@
 import { useAtom, useAtomValue } from 'jotai'
 import moment from 'moment'
 import React from 'react'
-import { HiFlag, HiMiniPlus } from 'react-icons/hi2'
+import { HiFlag, HiMiniPlus, HiMiniTrash } from 'react-icons/hi2'
 import {
 	LuBold,
 	LuCheck,
@@ -15,8 +15,7 @@ import {
 	LuUndo2,
 	LuX,
 } from 'react-icons/lu'
-
-import { dictAtom, tagsAtom } from '@/atoms'
+import { dictAtom, projectsAtom, sprintsAtom, tagsAtom } from '@/atoms'
 import { MarkdownContent } from '@/components'
 import {
 	Button,
@@ -42,6 +41,8 @@ export interface TaskFormValues {
 	status: Status
 	subtasks: SubTask[]
 	tags: string[]
+	projectId: string | null
+	sprintId: string | null
 }
 
 export interface SubtaskTransfer {
@@ -72,6 +73,8 @@ function TaskFormBody({
 }: TaskFormBodyProps) {
 	const dict = useAtomValue(dictAtom)
 	const [globalTags, setGlobalTags] = useAtom(tagsAtom)
+	const projects = useAtomValue(projectsAtom)
+	const sprints = useAtomValue(sprintsAtom)
 	const [title, setTitle] = React.useState(initialValues.title ?? '')
 	const [description, setDescription] = React.useState(
 		initialValues.description ?? '',
@@ -103,6 +106,12 @@ function TaskFormBody({
 	>([])
 	const [tags, setTags] = React.useState<string[]>(initialValues.tags ?? [])
 	const [newTagInput, setNewTagInput] = React.useState('')
+	const [projectId, setProjectId] = React.useState<string | null>(
+		initialValues.projectId ?? null,
+	)
+	const [sprintId, setSprintId] = React.useState<string | null>(
+		initialValues.sprintId ?? null,
+	)
 
 	const minValue = new Date().toISOString().slice(0, 16)
 
@@ -276,6 +285,30 @@ function TaskFormBody({
 		setPriority(map[value])
 	}
 
+	const updateSubtaskPriority = (id: string, p: Priority) => {
+		setSubtasks((prev) =>
+			prev.map((s) => (s.id === id ? { ...s, priority: p } : s)),
+		)
+	}
+
+	const updateSubtaskStatus = (id: string, st: Status) => {
+		setSubtasks((prev) =>
+			prev.map((s) => (s.id === id ? { ...s, status: st } : s)),
+		)
+	}
+
+	const subtaskStatuses: Status[] = [
+		'backlog',
+		'todo',
+		'progress',
+		'review',
+		'testing',
+		'paused',
+		'done',
+		'blocked',
+		'archived',
+	]
+
 	return (
 		<>
 			<ModalHeader>{headerLabel}</ModalHeader>
@@ -345,9 +378,6 @@ function TaskFormBody({
 						<SelectItem value="done">
 							{dict.todolist.listitem.status.items.done}
 						</SelectItem>
-						<SelectItem value="blocked">
-							{dict.todolist.listitem.status.items.blocked}
-						</SelectItem>
 						<SelectItem value="paused">
 							{dict.todolist.listitem.status.items.paused}
 						</SelectItem>
@@ -357,10 +387,52 @@ function TaskFormBody({
 						<SelectItem value="testing">
 							{dict.todolist.listitem.status.items.testing}
 						</SelectItem>
+						<SelectItem value="blocked">
+							{dict.todolist.listitem.status.items.blocked}
+						</SelectItem>
 						<SelectItem value="archived">
 							{dict.todolist.listitem.status.items.archived}
 						</SelectItem>
 					</Select>
+
+					{/* Project selector */}
+					{projects.length > 0 && (
+						<Select
+							className="w-full"
+							defaultSelectedKeys={projectId ?? ''}
+							label={dict.todolist.addTask.project}
+							onChange={(e) => setProjectId(e.target.value || null)}
+						>
+							<SelectItem value="">
+								{dict.todolist.addTask.no_project}
+							</SelectItem>
+							{projects.map((p) => (
+								<SelectItem key={p.id} value={p.id}>
+									{p.name}
+								</SelectItem>
+							))}
+						</Select>
+					)}
+
+					{/* Sprint selector */}
+					{sprints.length > 0 && (
+						<Select
+							className="w-full"
+							defaultSelectedKeys={sprintId ?? ''}
+							label={dict.todolist.addTask.sprint}
+							onChange={(e) => setSprintId(e.target.value || null)}
+						>
+							<SelectItem value="">
+								{dict.todolist.addTask.no_sprint}
+							</SelectItem>
+							{sprints.map((s) => (
+								<SelectItem key={s.id} value={s.id}>
+									{s.name}
+								</SelectItem>
+							))}
+						</Select>
+					)}
+
 					{/* Tags section */}
 					<div className="flex flex-col gap-2">
 						<p className="font-medium text-gray-700 text-sm dark:text-gray-300">
@@ -406,7 +478,7 @@ function TaskFormBody({
 									))}
 							</div>
 						)}
-						<div className="flex gap-2">
+						<div className="flex flex-col gap-2 sm:flex-row">
 							<input
 								className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
 								placeholder={dict.todolist.tags.placeholder}
@@ -487,7 +559,7 @@ function TaskFormBody({
 							</div>
 						)}
 						{markdownPreview ? (
-							<div className="min-h-[120px] w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
+							<div className="min-h-30 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-200">
 								{description ? (
 									<MarkdownContent content={description} />
 								) : (
@@ -526,106 +598,156 @@ function TaskFormBody({
 								{subtasks.map((s) => (
 									<li
 										key={s.id}
-										className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 dark:border-gray-700 dark:bg-gray-700/50"
+										className="flex flex-col gap-1 rounded-lg border border-gray-200 bg-gray-50 px-3 py-1.5 dark:border-gray-700 dark:bg-gray-700/50"
 									>
-										<input
-											checked={s.completed}
-											className="h-4 w-4 shrink-0 cursor-pointer accent-blue-500"
-											type="checkbox"
-											onChange={() => toggleSubtask(s.id)}
-										/>
-										{editingSubtaskId === s.id ? (
-											<div className="flex flex-1 flex-col gap-1">
-												<div className="flex items-center gap-1">
-													<input
-														className="flex-1 rounded border border-blue-400 bg-white px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-														type="text"
-														value={editingSubtaskTitle}
-														onChange={(e) =>
-															setEditingSubtaskTitle(e.target.value)
-														}
-														onKeyDown={(e) => {
-															if (e.key === 'Enter') {
-																e.preventDefault()
-																saveEditSubtask()
-															} else if (e.key === 'Escape') {
-																cancelEditSubtask()
-															}
-														}}
-													/>
-													{allTasks && allTasks.length > 1 && (
-														<select
-															className="rounded border border-gray-300 bg-white px-2 py-0.5 text-gray-700 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
-															title="Task padre"
-															value={editingSubtaskTargetId}
+										<div className="flex items-center gap-2">
+											<input
+												checked={s.completed}
+												className="h-4 w-4 shrink-0 cursor-pointer accent-blue-500"
+												type="checkbox"
+												onChange={() => toggleSubtask(s.id)}
+											/>
+											{editingSubtaskId === s.id ? (
+												<div className="flex flex-1 flex-col gap-1">
+													<div className="flex flex-col items-center gap-1 md:flex-row">
+														<input
+															className="flex-1 rounded border border-blue-400 bg-white px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
+															type="text"
+															value={editingSubtaskTitle}
 															onChange={(e) =>
-																setEditingSubtaskTargetId(e.target.value)
+																setEditingSubtaskTitle(e.target.value)
+															}
+															onKeyDown={(e) => {
+																if (e.key === 'Enter') {
+																	e.preventDefault()
+																	saveEditSubtask()
+																} else if (e.key === 'Escape') {
+																	cancelEditSubtask()
+																}
+															}}
+														/>
+														{allTasks && allTasks.length > 1 && (
+															<select
+																className="rounded border border-gray-300 bg-white px-2 py-0.5 text-gray-700 text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+																title="Task padre"
+																value={editingSubtaskTargetId}
+																onChange={(e) =>
+																	setEditingSubtaskTargetId(e.target.value)
+																}
+															>
+																{allTasks
+																	.filter(
+																		(t) =>
+																			!t.completed || t.id === currentTaskId,
+																	)
+																	.map((t) => (
+																		<option key={t.id} value={t.id}>
+																			{t.title}
+																			{t.id === currentTaskId
+																				? ' (corrente)'
+																				: ''}
+																		</option>
+																	))}
+															</select>
+														)}
+														<div className="flex gap-1">
+															<button
+																className="text-green-500 transition-colors hover:text-green-700"
+																title="Salva"
+																type="button"
+																onClick={saveEditSubtask}
+															>
+																<LuCheck size={15} />
+															</button>
+															<button
+																className="text-gray-400 transition-colors hover:text-gray-600"
+																title="Annulla"
+																type="button"
+																onClick={cancelEditSubtask}
+															>
+																<LuX size={15} />
+															</button>
+														</div>
+													</div>
+													<div className="flex w-full flex-wrap gap-2">
+														<select
+															className="flex-1 rounded border border-gray-200 bg-white px-1.5 py-0.5 text-gray-600 text-xs focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+															title="Priorità sottocompito"
+															value={s.priority ?? 'medium'}
+															onChange={(e) =>
+																updateSubtaskPriority(
+																	s.id,
+																	e.target.value as Priority,
+																)
 															}
 														>
-															{allTasks
-																.filter(
-																	(t) => !t.completed || t.id === currentTaskId,
-																)
-																.map((t) => (
-																	<option key={t.id} value={t.id}>
-																		{t.title}
-																		{t.id === currentTaskId
-																			? ' (corrente)'
-																			: ''}
-																	</option>
-																))}
+															<option value="urgent">
+																{dict.todolist.listitem.priority.items.urgent}
+															</option>
+															<option value="high">
+																{dict.todolist.listitem.priority.items.high}
+															</option>
+															<option value="medium">
+																{dict.todolist.listitem.priority.items.medium}
+															</option>
+															<option value="low">
+																{dict.todolist.listitem.priority.items.low}
+															</option>
 														</select>
-													)}
-													<button
-														className="text-green-500 transition-colors hover:text-green-700"
-														title="Salva"
-														type="button"
-														onClick={saveEditSubtask}
-													>
-														<LuCheck size={15} />
-													</button>
-													<button
-														className="text-gray-400 transition-colors hover:text-gray-600"
-														title="Annulla"
-														type="button"
-														onClick={cancelEditSubtask}
-													>
-														<LuX size={15} />
-													</button>
+														<select
+															className="flex-1 rounded border border-gray-200 bg-white px-1.5 py-0.5 text-gray-600 text-xs focus:outline-none dark:border-gray-600 dark:bg-gray-800 dark:text-gray-300"
+															title="Stato sottocompito"
+															value={s.status ?? 'backlog'}
+															onChange={(e) =>
+																updateSubtaskStatus(
+																	s.id,
+																	e.target.value as Status,
+																)
+															}
+														>
+															{subtaskStatuses.map((st) => (
+																<option key={st} value={st}>
+																	{dict.todolist.listitem.status.items[st]}
+																</option>
+															))}
+														</select>
+													</div>
 												</div>
-											</div>
-										) : (
-											<>
-												<span className="flex-1">
-													<span
-														className={`block text-sm ${s.completed ? 'text-gray-400 line-through' : ''}`}
-													>
-														{s.title}
-													</span>
-													{s.completed && s.completedAt && (
-														<span className="block text-gray-400 text-xs dark:text-gray-500">
-															{moment(s.completedAt).format('DD/MM/YYYY HH:mm')}
+											) : (
+												<>
+													<span className="flex-1">
+														<span
+															className={`block text-sm ${s.completed ? 'text-gray-400 line-through' : ''}`}
+														>
+															{s.title}
 														</span>
-													)}
-												</span>
-												<button
-													className="text-gray-400 transition-colors hover:text-blue-500"
-													title="Modifica"
-													type="button"
-													onClick={() => startEditSubtask(s.id, s.title)}
-												>
-													<LuPencil size={13} />
-												</button>
-												<button
-													className="text-gray-400 transition-colors hover:text-red-500"
-													title="Elimina"
-													type="button"
-													onClick={() => removeSubtask(s.id)}
-												>
-													<LuX size={15} />
-												</button>
-											</>
-										)}
+														{s.completed && s.completedAt && (
+															<span className="block text-gray-400 text-xs dark:text-gray-500">
+																{moment(s.completedAt).format(
+																	'DD/MM/YYYY HH:mm',
+																)}
+															</span>
+														)}
+													</span>
+													<button
+														className="text-gray-400 transition-colors hover:text-blue-500"
+														title="Modifica"
+														type="button"
+														onClick={() => startEditSubtask(s.id, s.title)}
+													>
+														<LuPencil size={13} />
+													</button>
+													<button
+														className="text-gray-400 transition-colors hover:text-red-500"
+														title="Elimina"
+														type="button"
+														onClick={() => removeSubtask(s.id)}
+													>
+														<HiMiniTrash size={15} />
+													</button>
+												</>
+											)}
+										</div>
 									</li>
 								))}
 							</ul>
@@ -653,15 +775,31 @@ function TaskFormBody({
 				</div>
 			</ModalBody>
 			<ModalFooter>
-				<Button size="lg" variant="ghost" onPress={onClose}>
+				<Button
+					className="sm:px-5! sm:py-2.5! sm:text-lg!"
+					size="sm"
+					variant="ghost"
+					onPress={onClose}
+				>
 					{cancelLabel}
 				</Button>
 				<Button
-					size="lg"
+					className="sm:px-5! sm:py-2.5! sm:text-lg!"
+					size="sm"
 					variant="primary"
 					onPress={() =>
 						onSubmit(
-							{ title, description, priority, dueDate, status, subtasks, tags },
+							{
+								title,
+								description,
+								priority,
+								dueDate,
+								status,
+								subtasks,
+								tags,
+								projectId,
+								sprintId,
+							},
 							subtaskTransfers,
 						)
 					}

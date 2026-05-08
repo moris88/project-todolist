@@ -1,66 +1,171 @@
 # Project Context (For AI Assistants)
 
-Questo documento fornisce il contesto tecnico e architetturale necessario per un assistente AI per comprendere, modificare e implementare nuove funzionalità in questo progetto.
+Questo documento fornisce il contesto tecnico e architetturale necessario per comprendere, modificare e implementare nuove funzionalità in questo progetto.
 
-## 🎯 Obiettivo del Progetto
+## Obiettivo del Progetto
 
-Un'applicazione di gestione task (Todo List) avanzata, con supporto per sottotask, commenti, priorità, stati e visualizzazione Kanban/Lista.
+Un'applicazione di gestione task avanzata con supporto per progetti, sprint, sottotask, commenti, priorità, stati, cestino e visualizzazione calendario.
 
-## 🛠️ Stack Tecnologico
+## Stack Tecnologico
 
 - **Framework:** React 19 (Functional Components, Hooks).
-- **Build Tool:** Vite.
-- **Linguaggio:** TypeScript (Strict mode).
-- **State Management:** Jotai (Atomic state). Gli atomi sono definiti in `src/atoms/atoms.ts`.
-- **Styling:** Tailwind CSS.
-- **Animazioni:** Framer Motion.
-- **Testing:** Vitest + React Testing Library.
-- **Linting/Formatting:** Biome.
+- **Build Tool:** Vite 8.
+- **Linguaggio:** TypeScript (strict mode); type-check con `tsc -b` prima della build.
+- **State Management:** Jotai 2. Atomi in `src/atoms/atoms.ts`.
+- **Styling:** Tailwind CSS v4 via plugin `@tailwindcss/vite` — nessun `tailwind.config.js` né `postcss.config.js`. Dark mode configurata con `@custom-variant dark (&:where(.dark, .dark *))` in `src/index.css`.
+- **Date:** moment.js con locale italiano impostato globalmente in `src/main.tsx` (`moment.locale('it')`). Il tipo del modulo locale è dichiarato in `src/vite-env.d.ts`.
+- **Animazioni:** Framer Motion (usato in alcuni componenti UI come Select).
+- **Testing:** Vitest + React Testing Library. Circa 378 test in `test/`.
+- **Linting/Formatting:** Biome. Eseguire sempre `pnpm biome:check` e correggere con `pnpm biome:fix` prima di concludere un task.
 
-## 🏗️ Architettura e Convenzioni
+## Architettura e Convenzioni
 
 ### 1. Gestione dello Stato (Jotai)
 
-Lo stato globale è gestito tramite atomi Jotai.
+Tutti gli atomi sono in `src/atoms/atoms.ts`:
 
-- `todoListAtom`: Array di oggetti `Todo`.
-- `commentsAtom`: Array di commenti associati ai task.
-- `languageAtom`, `darkModeAtom`, `tagsAtom`: Preferenze persistite tramite `localStorage`.
+```ts
+// Stato in memoria (non persistito)
+export const todoListAtom = atom<Todo[]>([])
+export const commentsAtom = atom<Comment[]>([])
 
-### 2. Modelli Dati (`src/types/global.d.ts`)
+// Preferenze persistite in localStorage
+export const languageAtom = atomWithStorage<Language>('language', 'it')
+export const darkModeAtom = atomWithStorage<boolean>('darkMode', false)
+export const tagsAtom = atomWithStorage<string[]>('tags', [])
+export const dictAtom = atom<Dict>((get) => dicts[get(languageAtom)])  // derivato
 
-- **Todo:** L'entità principale. Contiene metadati, priorità, stato, sottotask e tag.
-- **SubTask:** Task annidati all'interno di un Todo.
-- **Comment:** Commenti associati a un `todoId`.
-- **Priority:** `low`, `medium`, `high`, `urgent`.
-- **Status:** `backlog`, `todo`, `progress`, `review`, `testing`, `blocked`, `paused`, `done`, `archived`.
+// Entità applicative persistite in localStorage
+export const projectsAtom = atomWithStorage<Project[]>('projects', [])
+export const sprintsAtom = atomWithStorage<Sprint[]>('sprints', [])
+export const trashAtom = atomWithStorage<Todo[]>('trash', [])
 
-### 3. Logica di Business (`src/utils`)
+// Navigazione persistita
+export type ActiveView = 'tasks' | 'projects' | 'sprints' | 'trash' | 'calendar'
+export const activeViewAtom = atomWithStorage<ActiveView>('activeView', 'tasks')
+```
 
-- `todo.ts`: Funzioni pure per la manipolazione dei task (add, remove, toggle).
-- `csv.ts`: Logica di importazione ed esportazione dei dati.
-- `constants.ts`: Contiene le traduzioni (i18n) e le configurazioni di base.
+**Importante:** `todoListAtom` e `commentsAtom` NON usano `atomWithStorage`. Il caricamento iniziale da localStorage avviene in `src/hooks/useTodos.ts` e `src/hooks/useComments.ts` rispettivamente.
 
-### 4. Componenti UI (`src/components/UI`)
+### 2. Pattern localStorage per i Todo
 
-Esiste una libreria di componenti UI atomici (Button, Input, Select, Modal, ecc.) che devono essere riutilizzati per mantenere la coerenza visiva.
+I todo usano un pattern a **indice separato** per le performance:
 
-## 📝 Come contribuire (AI Workflow)
+- `localStorage.setItem('todos', JSON.stringify([id1, id2, ...]))` — array di ID (indice)
+- `localStorage.setItem(id, JSON.stringify(todo))` — ogni todo serializzato singolarmente
 
-1. **Consulta `TODO.md`**: Questo è il punto di ingresso per i task. L'utente aggiungerà qui le richieste di nuove feature o bug fix.
-2. **Rispetta Biome**: Il progetto usa Biome per il linting. Prima di terminare un task, assicurati che il codice sia formattato correttamente eseguendo `pnpm biome:check`.
-3. **Scrivi Test**: Ogni nuova funzionalità o fix deve essere accompagnata da un test nella cartella `test/`.
-4. **Mantieni l'Atomicità**: Quando aggiungi stati globali, usa nuovi atomi Jotai in `src/atoms`.
+Esistono due funzioni distinte in `src/utils/todo.ts`:
 
-## 📂 Struttura delle Directory
+- **`addTodoStorage(todo, currentTodos)`**: aggiorna ENTRAMBI l'indice e l'entry individuale. Usare quando si aggiunge un nuovo todo (es. restore dal cestino).
+- **`updateTodoStorage(todos)`**: aggiorna SOLO le entry individuali, NON l'indice. Usare per modifiche a todo già presenti nell'indice.
 
-- `src/atoms`: Stato globale.
-- `src/components`: Componenti dell'applicazione.
-- `src/components/UI`: Componenti di base riutilizzabili.
-- `src/hooks`: Hook personalizzati.
-- `src/utils`: Logica pura e utilità.
-- `test`: Test suite.
+**Errore comune:** usare `updateTodoStorage` per aggiungere un todo causa la scomparsa del todo al ricaricamento (l'indice non viene aggiornato).
+
+### 3. Pattern Soft-Delete (Cestino)
+
+I todo non vengono eliminati direttamente ma spostati nel cestino:
+
+1. Il todo viene rimosso da `todoListAtom` e dal localStorage tramite `removeTodoStorage(id)`.
+2. Il todo con `deletedAt: new Date().toISOString()` viene aggiunto a `trashAtom` (persistito in localStorage come array JSON normale).
+3. Dal cestino si può ripristinare con `addTodoStorage(restored, todos)` o eliminare definitivamente.
+
+### 4. Modelli Dati (`src/types/global.d.ts`)
+
+```ts
+interface SubTask {
+  id: string; title: string; completed: boolean; completedAt: string | null
+  priority?: Priority; status?: Status
+}
+
+interface Todo {
+  id: string; title: string; description: string
+  completed: boolean; createdAt: string; updatedAt: string | null; completedAt: string | null
+  dueDate: string | null; notify: boolean
+  priority: Priority; status: Status
+  subtasks: SubTask[]; tags: string[]
+  projectId?: string | null   // associazione progetto (opzionale)
+  sprintId?: string | null    // associazione sprint (opzionale)
+  deletedAt?: string | null   // presenza = nel cestino
+}
+
+interface Project {
+  id: string; name: string; description: string; color: string
+  priority: Priority; status: ProjectStatus
+  createdAt: string; updatedAt: string | null
+}
+
+interface Sprint {
+  id: string; name: string; description: string
+  startDate: string | null; dueDate: string | null
+  status: SprintStatus
+  projectId: string | null   // OBBLIGATORIO: uno sprint deve avere un progetto
+  createdAt: string; updatedAt: string | null
+}
+
+interface Comment { id: string; todoId: string; text: string; createdAt: string }
+
+type Priority = 'low' | 'medium' | 'high' | 'urgent'
+type Status = 'backlog' | 'todo' | 'progress' | 'review' | 'testing' | 'blocked' | 'paused' | 'done' | 'archived'
+type ProjectStatus = 'active' | 'completed' | 'archived' | 'paused'
+type SprintStatus = 'planning' | 'active' | 'completed' | 'cancelled'
+```
+
+### 5. Constraint Sprint → Progetto
+
+Un sprint **deve** avere un `projectId`. Il controllo è applicato a tre livelli:
+
+1. Il form mostra un `<select>` obbligatorio con bordo rosso se non selezionato.
+2. Il pulsante Salva è `isDisabled={!form.projectId}`.
+3. `handleSave` fa `if (!form.projectId) return` come guardia finale.
+
+### 6. Navigazione (Tab)
+
+La navigazione tra le viste è gestita da `activeViewAtom` (persistito). Il componente `Wrapper.tsx` legge questo atomo e renderizza la vista corretta: `tasks` → `TodoList`, `projects` → `ProjectsManager`, `sprints` → `SprintsManager`, `trash` → `TrashView`, `calendar` → `CalendarView`.
+
+### 7. Internazionalizzazione (i18n)
+
+Tutte le stringhe UI sono in `src/utils/constants.ts` all'interno del dizionario `dicts` (chiavi `it` e `en`). Il dizionario corrente è accessibile tramite `dictAtom`. **Non scrivere mai stringhe hardcoded in italiano o inglese nei componenti.**
+
+### 8. Formato CSV
+
+Header: `id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status,subtasks,tags,projectId,sprintId,deletedAt`
+
+I sottotask sono serializzati come JSON nell'apposita colonna. I campi `projectId`, `sprintId`, `deletedAt` sono inclusi dal refactor recente. Il vecchio formato (senza questi campi) è gestito per retrocompatibilità.
+
+## Componenti Principali (`src/components`)
+
+| Componente | Ruolo |
+|---|---|
+| `Wrapper.tsx` | Shell applicazione: tab di navigazione, caricamento dati iniziali |
+| `Header.tsx` | Barra superiore: titolo, counter task/progetti/sprint, toggle tema/lingua |
+| `TodoList.tsx` | Vista "Compiti": lista task con filtri per progetto/sprint |
+| `TodoItem.tsx` | Singola riga task con checkbox, priorità, badge, azioni |
+| `TodoInput.tsx` | Form di creazione rapida task |
+| `TaskFormModal.tsx` | Modal completo per creazione/modifica task (sottotask, tag, date, note Markdown) |
+| `TaskDetailModal.tsx` | Modal di dettaglio/modifica task — riutilizzato da ProjectsManager, SprintsManager e CalendarView |
+| `ProjectsManager.tsx` | Vista "Progetti": lista espandibile con task associati, CRUD progetti |
+| `SprintsManager.tsx` | Vista "Sprint": lista espandibile con task associati, CRUD sprint |
+| `TrashView.tsx` | Vista "Cestino": task eliminati con opzioni ripristino/eliminazione definitiva |
+| `CalendarView.tsx` | Vista "Calendario": task con scadenza su griglia mensile in italiano; click apre TaskDetailModal |
+| `Comments.tsx` | Sezione commenti nel dettaglio task |
+| `DangerZone.tsx` | Sezione impostazioni per reset dati (eliminazione permanente massiva) |
+| `ConfirmModal.tsx` | Modal generico di conferma azione distruttiva |
+| `MarkdownContent.tsx` | Renderer Markdown per le descrizioni task |
+
+## Componenti UI (`src/components/UI`)
+
+Componenti atomici da riutilizzare per consistenza visiva: `Button`, `Input`, `Select`, `SelectItem`, `Modal`, `ModalHeader`, `ModalBody`, `ModalFooter`, `ModalContent`, `DatePicker`, `Badge`.
+
+## Workflow AI
+
+1. **Consulta `TODO.md`**: punto di ingresso per feature e bugfix da implementare.
+2. **Rispetta Biome**: esegui `pnpm biome:check` alla fine; correggi con `pnpm biome:fix`. Biome può riformattare il file — rileggilo prima di applicare edit successivi.
+3. **Scrivi/aggiorna i test**: ogni nuova funzionalità deve avere copertura in `test/`.
+4. **Non scrivere stringhe UI hardcoded**: usa sempre `dictAtom` / `dict.*`.
+5. **Usa i componenti UI esistenti**: Button, Input, Select, Modal ecc. invece di elementi HTML nativi.
+6. **Aggiungi chiavi i18n** in `src/utils/constants.ts` (sia `it` che `en`) prima di usarle nei componenti.
+7. **Aggiorna `CONTEXT.md` e `README.md`** quando aggiungi feature significative.
 
 ---
 
-*Nota: Questo file è mantenuto per aiutare le AI a navigare il progetto in modo efficiente.*
+*Questo file è mantenuto per aiutare le AI a navigare il progetto in modo efficiente.*
