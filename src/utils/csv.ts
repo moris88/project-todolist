@@ -16,6 +16,9 @@ const TODO_HEADERS = [
 	'status',
 	'subtasks',
 	'tags',
+	'projectId',
+	'sprintId',
+	'deletedAt',
 ]
 
 const COMMENT_HEADERS = ['id', 'todoId', 'text', 'createdAt']
@@ -156,7 +159,11 @@ export function parseCSV(csvText: string): Todo[] {
 
 			if (header === 'completed' || header === 'notify') {
 				todo[header] = val.toLowerCase() === 'true'
-			} else if (['updatedAt', 'completedAt', 'dueDate'].includes(header)) {
+			} else if (
+				['updatedAt', 'completedAt', 'dueDate', 'deletedAt'].includes(header)
+			) {
+				todo[header] = val.trim() === '' ? null : val.trim()
+			} else if (['projectId', 'sprintId'].includes(header)) {
 				todo[header] = val.trim() === '' ? null : val.trim()
 			} else if (header === 'subtasks' || header === 'tags') {
 				try {
@@ -177,10 +184,15 @@ export function parseCSV(csvText: string): Todo[] {
 		if (!todo.createdAt) todo.createdAt = new Date().toISOString()
 		if (!Array.isArray(todo.subtasks)) todo.subtasks = []
 		if (!Array.isArray(todo.tags)) todo.tags = []
-		// Migrate subtasks exported before completedAt was added
+		if (todo.projectId === undefined) todo.projectId = null
+		if (todo.sprintId === undefined) todo.sprintId = null
+		if (todo.deletedAt === undefined) todo.deletedAt = null
+		// Migrate subtasks: ensure completedAt, priority, status fields exist
 		todo.subtasks = todo.subtasks.map((s: any) => ({
 			...s,
 			completedAt: s.completedAt !== undefined ? s.completedAt : null,
+			priority: s.priority ?? undefined,
+			status: s.status ?? undefined,
 		}))
 
 		todos.push(todo as Todo)

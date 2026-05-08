@@ -1,11 +1,10 @@
-import { useAtomValue } from 'jotai'
+import { useAtom, useAtomValue } from 'jotai'
 import React from 'react'
 import { HiArrowDownTray, HiArrowUpTray } from 'react-icons/hi2'
 
-import { dictAtom } from '@/atoms'
+import { commentsAtom, dictAtom, todoListAtom } from '@/atoms'
 import { ConfirmModal } from '@/components'
 import { Button, ButtonGroup, Switch } from '@/components/UI'
-import type { Comment, Todo } from '@/types'
 import {
 	clearTodosCompleted,
 	clearTodosExpired,
@@ -18,19 +17,9 @@ import {
 	updateTodoStorage,
 } from '@/utils'
 
-interface DangerZoneProps {
-	todos: Todo[]
-	setTodos: React.Dispatch<React.SetStateAction<Todo[]>>
-	comments: Comment[]
-	setComments: React.Dispatch<React.SetStateAction<Comment[]>>
-}
-
-function DangerZone({
-	todos,
-	setTodos,
-	comments,
-	setComments,
-}: DangerZoneProps) {
+function DangerZone() {
+	const [todos, setTodos] = useAtom(todoListAtom)
+	const [comments, setComments] = useAtom(commentsAtom)
 	const dict = useAtomValue(dictAtom)
 	const [showDangerZone, setShowDangerZone] = React.useState(false)
 	const [showInportExport, setShowImportExport] = React.useState(false)
@@ -118,7 +107,7 @@ function DangerZone({
 					onChange={(e) => setShowImportExport(e.target.checked)}
 				>
 					<span className="font-bold text-black dark:text-blue-500">
-						Inport/Export
+						Import/Export
 					</span>
 				</Switch>
 				<Switch
@@ -269,7 +258,7 @@ function DangerZone({
 				<ConfirmModal
 					key={key}
 					buttonCancel={dict.todolist.deleteTask.cancel}
-					buttonConfirm={dict.todolist.deleteTask.delete}
+					buttonConfirm={dict.todolist.listitem.delete}
 					description={buttons.find((b) => b.key === key)?.message ?? ''}
 					isOpen={showDeleteModal[key as keyof typeof showDeleteModal]}
 					title={buttons.find((b) => b.key === key)?.text ?? ''}

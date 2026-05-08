@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest'
 
 import { isTaskOverdue } from '../src/utils/todo'
 import {
-  FilterState,
+  type FilterState,
   applyFilters,
   filterTodoByStatus,
   generateUniqueId,
   orderTodos,
   tagColor,
 } from '../src/utils/utils'
-import { Comment, Todo } from '../src/types'
+import type { Comment, Todo } from '../src/types'
 
 describe('generateUniqueId', () => {
   it('returns a non-empty string', () => {
@@ -57,6 +57,9 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
     status: 'todo',
     subtasks: [],
     tags: [],
+    projectId: null,
+    sprintId: null,
+    deletedAt: null,
     ...overrides,
   }
 }
@@ -70,6 +73,8 @@ function makeFilters(overrides: Partial<FilterState> = {}): FilterState {
     search: '',
     dueDateFrom: '',
     dueDateTo: '',
+    projectId: '',
+    sprintId: '',
     ...overrides,
   }
 }
@@ -410,6 +415,42 @@ describe('applyFilters', () => {
   it('shows todo with dueDate when no range filter is set', () => {
     const todo = makeTodo({ dueDate: '2024-06-01T12:00:00.000Z' })
     expect(applyFilters(todo, makeFilters())).toBe(true)
+  })
+
+  // — projectId —
+  it('shows todo with matching projectId', () => {
+    expect(applyFilters(makeTodo({ projectId: 'proj-1' }), makeFilters({ projectId: 'proj-1' }))).toBe(true)
+  })
+
+  it('hides todo with non-matching projectId', () => {
+    expect(applyFilters(makeTodo({ projectId: 'proj-2' }), makeFilters({ projectId: 'proj-1' }))).toBe(false)
+  })
+
+  it('shows any todo when projectId filter is empty', () => {
+    expect(applyFilters(makeTodo({ projectId: 'proj-1' }), makeFilters({ projectId: '' }))).toBe(true)
+    expect(applyFilters(makeTodo({ projectId: null }), makeFilters({ projectId: '' }))).toBe(true)
+  })
+
+  it('hides todo with null projectId when projectId filter is set', () => {
+    expect(applyFilters(makeTodo({ projectId: null }), makeFilters({ projectId: 'proj-1' }))).toBe(false)
+  })
+
+  // — sprintId —
+  it('shows todo with matching sprintId', () => {
+    expect(applyFilters(makeTodo({ sprintId: 'sprint-1' }), makeFilters({ sprintId: 'sprint-1' }))).toBe(true)
+  })
+
+  it('hides todo with non-matching sprintId', () => {
+    expect(applyFilters(makeTodo({ sprintId: 'sprint-2' }), makeFilters({ sprintId: 'sprint-1' }))).toBe(false)
+  })
+
+  it('shows any todo when sprintId filter is empty', () => {
+    expect(applyFilters(makeTodo({ sprintId: 'sprint-1' }), makeFilters({ sprintId: '' }))).toBe(true)
+    expect(applyFilters(makeTodo({ sprintId: null }), makeFilters({ sprintId: '' }))).toBe(true)
+  })
+
+  it('hides todo with null sprintId when sprintId filter is set', () => {
+    expect(applyFilters(makeTodo({ sprintId: null }), makeFilters({ sprintId: 'sprint-1' }))).toBe(false)
   })
 
   // — combined filters (AND logic) —

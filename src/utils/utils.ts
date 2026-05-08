@@ -52,6 +52,8 @@ export interface FilterState {
 	search: string
 	dueDateFrom: string
 	dueDateTo: string
+	projectId?: string
+	sprintId?: string
 }
 
 export function applyFilters(
@@ -69,6 +71,12 @@ export function applyFilters(
 	if (filters.tags.length > 0) {
 		const todoTags = todo.tags ?? []
 		if (!filters.tags.some((t) => todoTags.includes(t))) return false
+	}
+	if (filters.projectId) {
+		if (todo.projectId !== filters.projectId) return false
+	}
+	if (filters.sprintId) {
+		if (todo.sprintId !== filters.sprintId) return false
 	}
 	if (filters.search) {
 		const q = filters.search.toLowerCase()

@@ -8,7 +8,14 @@ import {
 	HiXMark,
 } from 'react-icons/hi2'
 
-import { commentsAtom, dictAtom, tagsAtom, todoListAtom } from '@/atoms'
+import {
+	commentsAtom,
+	dictAtom,
+	projectsAtom,
+	sprintsAtom,
+	tagsAtom,
+	todoListAtom,
+} from '@/atoms'
 import { Comments, TaskDetailModal } from '@/components'
 import { Switch, Tooltip } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
@@ -23,7 +30,6 @@ import {
 	updateTodoStorage,
 } from '@/utils'
 
-import DangerZone from './DangerZone'
 import TodoItem from './TodoItem'
 
 function FilterPill({
@@ -55,6 +61,8 @@ function TodoList() {
 	const [comments, setComments] = useAtom(commentsAtom)
 	const dict = useAtomValue(dictAtom)
 	const globalTags = useAtomValue(tagsAtom)
+	const projects = useAtomValue(projectsAtom)
+	const sprints = useAtomValue(sprintsAtom)
 
 	const [filterStatus, setFilterStatus] = React.useState<Status | ''>('')
 	const [filterCompletion, setFilterCompletion] = React.useState<
@@ -67,6 +75,8 @@ function TodoList() {
 	const [filterSearch, setFilterSearch] = React.useState('')
 	const [filterDueDateFrom, setFilterDueDateFrom] = React.useState('')
 	const [filterDueDateTo, setFilterDueDateTo] = React.useState('')
+	const [filterProjectId, setFilterProjectId] = React.useState<string>('')
+	const [filterSprintId, setFilterSprintId] = React.useState<string>('')
 
 	const [showFilters, setShowFilters] = React.useState(() =>
 		typeof window !== 'undefined'
@@ -87,11 +97,18 @@ function TodoList() {
 	}, [setComments])
 
 	React.useEffect(() => {
+		const now = new Date()
+		const endOfToday = new Date()
+		endOfToday.setHours(23, 59, 59, 999)
 		const newTodos = todos.map((todo) => {
-			if (!todo.dueDate) return todo
+			if (!todo.dueDate || todo.completed || todo.notify) return todo
 			const dueDate = new Date(todo.dueDate)
-			if (!todo.completed && dueDate < new Date() && !todo.notify) {
+			if (dueDate < now) {
 				notifyUser('Task Scaduto', `Il task "${todo.title}" è scaduto.`)
+				return { ...todo, notify: true }
+			}
+			if (dueDate <= endOfToday) {
+				notifyUser('Task in scadenza', `Il task "${todo.title}" scade oggi.`)
 				return { ...todo, notify: true }
 			}
 			return todo
@@ -113,6 +130,8 @@ function TodoList() {
 		filterTags.length > 0,
 		filterSearch !== '',
 		filterDueDateFrom !== '' || filterDueDateTo !== '',
+		filterProjectId !== '',
+		filterSprintId !== '',
 	].filter(Boolean).length
 
 	const resetFilters = () => {
@@ -123,6 +142,8 @@ function TodoList() {
 		setFilterSearch('')
 		setFilterDueDateFrom('')
 		setFilterDueDateTo('')
+		setFilterProjectId('')
+		setFilterSprintId('')
 	}
 
 	const toggleTagFilter = (tag: string) => {
@@ -139,11 +160,13 @@ function TodoList() {
 		search: filterSearch,
 		dueDateFrom: filterDueDateFrom,
 		dueDateTo: filterDueDateTo,
+		projectId: filterProjectId,
+		sprintId: filterSprintId,
 	}
 
-	const filteredTodos = todos.filter((todo) =>
-		applyFilters(todo, filters, comments),
-	)
+	const filteredTodos = todos
+		.filter((todo) => !todo.deletedAt)
+		.filter((todo) => applyFilters(todo, filters, comments))
 
 	const allStatuses: { value: Status; label: string }[] = [
 		{ value: 'backlog', label: dict.todolist.listitem.status.items.backlog },
@@ -350,6 +373,62 @@ function TodoList() {
 									</div>
 								)}
 
+								{/* Project filter */}
+								{projects.length > 0 && (
+									<div>
+										<p className="mb-2 font-semibold text-gray-500 text-xs uppercase tracking-wide dark:text-gray-400">
+											{dict.todolist.listitem.filter.by_project}
+										</p>
+										<div className="flex flex-wrap gap-1.5">
+											<FilterPill
+												isActive={filterProjectId === ''}
+												label={dict.todolist.listitem.filter.all}
+												onClick={() => setFilterProjectId('')}
+											/>
+											{projects.map((p) => (
+												<FilterPill
+													key={p.id}
+													isActive={filterProjectId === p.id}
+													label={p.name}
+													onClick={() =>
+														setFilterProjectId(
+															filterProjectId === p.id ? '' : p.id,
+														)
+													}
+												/>
+											))}
+										</div>
+									</div>
+								)}
+
+								{/* Sprint filter */}
+								{sprints.length > 0 && (
+									<div>
+										<p className="mb-2 font-semibold text-gray-500 text-xs uppercase tracking-wide dark:text-gray-400">
+											{dict.todolist.listitem.filter.by_sprint}
+										</p>
+										<div className="flex flex-wrap gap-1.5">
+											<FilterPill
+												isActive={filterSprintId === ''}
+												label={dict.todolist.listitem.filter.all}
+												onClick={() => setFilterSprintId('')}
+											/>
+											{sprints.map((s) => (
+												<FilterPill
+													key={s.id}
+													isActive={filterSprintId === s.id}
+													label={s.name}
+													onClick={() =>
+														setFilterSprintId(
+															filterSprintId === s.id ? '' : s.id,
+														)
+													}
+												/>
+											))}
+										</div>
+									</div>
+								)}
+
 								{/* Due date range */}
 								<div>
 									<p className="mb-2 font-semibold text-gray-500 text-xs uppercase tracking-wide dark:text-gray-400">
@@ -464,13 +543,6 @@ function TodoList() {
 				isOpen={detailTodoId !== null}
 				todoId={detailTodoId}
 				onClose={() => setDetailTodoId(null)}
-			/>
-
-			<DangerZone
-				comments={comments}
-				setComments={setComments}
-				setTodos={setTodos}
-				todos={todos}
 			/>
 		</div>
 	)

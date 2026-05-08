@@ -4,7 +4,7 @@ import { exportCommentsToCSV, exportToCSV, parseCommentsCSV, parseCSV } from '..
 import { Comment, Todo } from '../src/types'
 
 const TODO_HEADER =
-  'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status,subtasks,tags'
+  'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status,subtasks,tags,projectId,sprintId,deletedAt'
 
 const COMMENT_HEADER = 'id,todoId,text,createdAt'
 
@@ -23,6 +23,9 @@ function todoRow(overrides: Record<string, string> = {}): string {
     status: 'todo',
     subtasks: '[]',
     tags: '[]',
+    projectId: '',
+    sprintId: '',
+    deletedAt: '',
   }
   const row = { ...defaults, ...overrides }
   return [
@@ -39,6 +42,9 @@ function todoRow(overrides: Record<string, string> = {}): string {
     row.status,
     row.subtasks,
     row.tags,
+    row.projectId,
+    row.sprintId,
+    row.deletedAt,
   ].join(',')
 }
 
@@ -197,6 +203,47 @@ describe('parseCSV', () => {
     const csv = [TODO_HEADER, todoRow({ tags: 'not-json' })].join('\n')
     expect(parseCSV(csv)[0].tags).toEqual([])
   })
+
+  it('parses projectId when present', () => {
+    const csv = [TODO_HEADER, todoRow({ projectId: 'proj-abc' })].join('\n')
+    expect(parseCSV(csv)[0].projectId).toBe('proj-abc')
+  })
+
+  it('sets projectId to null when column is empty', () => {
+    const csv = [TODO_HEADER, todoRow({ projectId: '' })].join('\n')
+    expect(parseCSV(csv)[0].projectId).toBeNull()
+  })
+
+  it('parses sprintId when present', () => {
+    const csv = [TODO_HEADER, todoRow({ sprintId: 'sprint-xyz' })].join('\n')
+    expect(parseCSV(csv)[0].sprintId).toBe('sprint-xyz')
+  })
+
+  it('sets sprintId to null when column is empty', () => {
+    const csv = [TODO_HEADER, todoRow({ sprintId: '' })].join('\n')
+    expect(parseCSV(csv)[0].sprintId).toBeNull()
+  })
+
+  it('parses deletedAt when present', () => {
+    const ts = '2024-06-01T12:00:00.000Z'
+    const csv = [TODO_HEADER, todoRow({ deletedAt: ts })].join('\n')
+    expect(parseCSV(csv)[0].deletedAt).toBe(ts)
+  })
+
+  it('sets deletedAt to null when column is empty', () => {
+    const csv = [TODO_HEADER, todoRow({ deletedAt: '' })].join('\n')
+    expect(parseCSV(csv)[0].deletedAt).toBeNull()
+  })
+
+  it('defaults projectId/sprintId/deletedAt to null when columns are missing (old CSV)', () => {
+    const oldHeader =
+      'id,title,description,completed,createdAt,updatedAt,completedAt,dueDate,notify,priority,status,subtasks,tags'
+    const row = 'abc,Old task,,false,2024-01-01T00:00:00.000Z,,,,,medium,todo,[],[]'
+    const result = parseCSV([oldHeader, row].join('\n'))
+    expect(result[0].projectId).toBeNull()
+    expect(result[0].sprintId).toBeNull()
+    expect(result[0].deletedAt).toBeNull()
+  })
 })
 
 describe('parseCommentsCSV', () => {
@@ -254,6 +301,9 @@ function makeTodo(overrides: Partial<Todo> = {}): Todo {
     status: 'todo',
     subtasks: [],
     tags: [],
+    projectId: null,
+    sprintId: null,
+    deletedAt: null,
     ...overrides,
   }
 }

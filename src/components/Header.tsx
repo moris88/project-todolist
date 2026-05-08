@@ -1,53 +1,92 @@
-import { useAtom } from 'jotai'
-import { HiMoon, HiSun } from 'react-icons/hi2'
+import { useAtomValue } from 'jotai'
+import { HiBell } from 'react-icons/hi2'
 
-import { darkModeAtom, languageAtom } from '@/atoms'
-import { dicts, type Language } from '@/utils/constants'
-
-const languages: { value: Language; label: string; flag: string }[] = [
-	{ value: 'it', label: 'Italiano', flag: '🇮🇹' },
-	{ value: 'en', label: 'English', flag: '🇬🇧' },
-]
+import {
+	dictAtom,
+	projectsAtom,
+	sprintsAtom,
+	todoListAtom,
+	trashAtom,
+} from '@/atoms'
 
 function Header() {
-	const [language, setLanguage] = useAtom(languageAtom)
-	const [darkMode, setDarkMode] = useAtom(darkModeAtom)
+	const dict = useAtomValue(dictAtom)
+	const todos = useAtomValue(todoListAtom)
+	const projects = useAtomValue(projectsAtom)
+	const sprints = useAtomValue(sprintsAtom)
+	const trash = useAtomValue(trashAtom)
+
+	const activeTasks = todos.filter((t) => !t.completed && !t.deletedAt).length
+	const activeProjects = projects.filter((p) => p.status === 'active').length
+	const activeSprints = sprints.filter((s) => s.status === 'active').length
+	const trashCount = trash.length
+
+	const endOfToday = new Date()
+	endOfToday.setHours(23, 59, 59, 999)
+	const alertCount = todos.filter((t) => {
+		if (t.completed || t.deletedAt || !t.dueDate) return false
+		return new Date(t.dueDate) <= endOfToday
+	}).length
 
 	return (
-		<header className="flex flex-col items-center justify-center gap-y-2 border-gray-200 border-b px-5 py-2 sm:flex-row sm:justify-between lg:px-20 dark:border-gray-700">
-			<div>
-				<h1 className="text-center font-bold text-gray-800 text-xl sm:text-left dark:text-gray-100">
-					{dicts[language].title}
-				</h1>
-				<p className="text-center text-gray-500 text-sm italic sm:text-left dark:text-gray-400">
-					{dicts[language].subtitle}
-				</p>
+		<header className="border-gray-200 border-b px-5 py-2 lg:px-20 dark:border-gray-700">
+			<div className="flex items-center justify-between">
+				<div className="flex w-full flex-col items-center justify-between md:flex-row">
+					<div className="flex flex-col gap-1">
+						<h1 className="text-center font-bold text-gray-800 text-xl md:text-start dark:text-gray-100">
+							{dict.title}
+						</h1>
+						<p className="text-gray-500 text-sm italic dark:text-gray-400">
+							{dict.subtitle}
+						</p>
+					</div>
+					<div>
+						<p>By Maurizio Tolomeo</p>
+					</div>
+				</div>
+				{alertCount > 0 && (
+					<div
+						className="flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-red-600 dark:bg-red-900/30 dark:text-red-400"
+						title={dict.header.notifications}
+					>
+						<HiBell className="h-4 w-4" />
+						<span className="font-semibold text-sm">{alertCount}</span>
+					</div>
+				)}
 			</div>
-			<div className="flex items-center justify-end gap-3">
-				<select
-					className="cursor-pointer rounded-md border border-gray-300 bg-white px-2 py-1 text-gray-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-[#2a2927] dark:text-gray-200"
-					value={language}
-					onChange={(e) => setLanguage(e.target.value as Language)}
-				>
-					{languages.map((lang) => (
-						<option key={lang.value} value={lang.value}>
-							{lang.flag} {lang.label}
-						</option>
-					))}
-				</select>
 
-				<button
-					type="button"
-					aria-label="Toggle dark mode"
-					className="flex items-center justify-center rounded-md border border-gray-300 p-1.5 text-gray-700 transition-colors hover:bg-gray-100 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-700"
-					onClick={() => setDarkMode((prev) => !prev)}
-				>
-					{darkMode ? (
-						<HiSun className="h-4 w-4" />
-					) : (
-						<HiMoon className="h-4 w-4" />
-					)}
-				</button>
+			{/* Counters */}
+			<div className="mt-1 flex flex-wrap justify-center gap-3 border-gray-100 border-t pt-2 sm:justify-start dark:border-gray-700/50">
+				<span className="flex items-center gap-1.5 text-gray-500 text-xs dark:text-gray-400">
+					<span className="h-2 w-2 rounded-full bg-blue-500" />
+					{dict.header.active_tasks}:
+					<span className="font-semibold text-gray-700 dark:text-gray-200">
+						{activeTasks}
+					</span>
+				</span>
+				<span className="flex items-center gap-1.5 text-gray-500 text-xs dark:text-gray-400">
+					<span className="h-2 w-2 rounded-full bg-green-500" />
+					{dict.header.active_projects}:
+					<span className="font-semibold text-gray-700 dark:text-gray-200">
+						{activeProjects}
+					</span>
+				</span>
+				<span className="flex items-center gap-1.5 text-gray-500 text-xs dark:text-gray-400">
+					<span className="h-2 w-2 rounded-full bg-purple-500" />
+					{dict.header.active_sprints}:
+					<span className="font-semibold text-gray-700 dark:text-gray-200">
+						{activeSprints}
+					</span>
+				</span>
+				{trashCount > 0 && (
+					<span className="flex items-center gap-1.5 text-gray-500 text-xs dark:text-gray-400">
+						<span className="h-2 w-2 rounded-full bg-red-400" />
+						{dict.trash.title}:
+						<span className="font-semibold text-red-500 dark:text-red-400">
+							{trashCount}
+						</span>
+					</span>
+				)}
 			</div>
 		</header>
 	)
