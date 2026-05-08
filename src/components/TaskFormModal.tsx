@@ -83,7 +83,7 @@ function TaskFormBody({
     initialValues.dueDate ?? null
   )
   const [status, setStatus] = React.useState<Status>(
-    initialValues.status ?? 'todo'
+    initialValues.status ?? 'backlog'
   )
   const [subtasks, setSubtasks] = React.useState<SubTask[]>(
     initialValues.subtasks ?? []
@@ -333,6 +333,9 @@ function TaskFormBody({
             label={dict.todolist.listitem.status.label}
             onChange={(e) => setStatus(e.target.value as Status)}
           >
+            <SelectItem value="backlog">
+              {dict.todolist.listitem.status.items.backlog}
+            </SelectItem>
             <SelectItem value="todo">
               {dict.todolist.listitem.status.items.todo}
             </SelectItem>

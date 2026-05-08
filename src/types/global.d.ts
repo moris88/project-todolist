@@ -23,6 +23,7 @@ export interface Todo {
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
 export type Status =
+  | 'backlog'
   | 'todo'
   | 'progress'
   | 'review'

@@ -249,6 +249,7 @@ function TodoItem({
   }
 
   const allStatuses: Status[] = [
+    'backlog',
     'todo',
     'progress',
     'review',
@@ -262,7 +263,7 @@ function TodoItem({
   const statusColor = (s: Status) =>
     s === 'done'
       ? 'bg-green-500'
-      : s === 'todo'
+      : s === 'todo' || s === 'backlog'
         ? 'bg-gray-400'
         : s === 'archived'
           ? 'bg-red-500'

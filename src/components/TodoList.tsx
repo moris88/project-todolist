@@ -146,6 +146,7 @@ function TodoList() {
   )
 
   const allStatuses: { value: Status; label: string }[] = [
+    { value: 'backlog', label: dict.todolist.listitem.status.items.backlog },
     { value: 'todo', label: dict.todolist.listitem.status.items.todo },
     { value: 'progress', label: dict.todolist.listitem.status.items.progress },
     { value: 'review', label: dict.todolist.listitem.status.items.review },
