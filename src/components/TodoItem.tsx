@@ -254,9 +254,9 @@ function TodoItem({
     'progress',
     'review',
     'testing',
-    'blocked',
     'paused',
     'done',
+    'blocked',
     'archived',
   ]
 
@@ -265,7 +265,7 @@ function TodoItem({
       ? 'bg-green-500'
       : s === 'todo' || s === 'backlog'
         ? 'bg-gray-400'
-        : s === 'archived'
+        : s === 'archived' || s === 'blocked'
           ? 'bg-red-500'
           : 'bg-yellow-500'
 
@@ -342,7 +342,9 @@ function TodoItem({
                 onPointerDown={(e) => e.stopPropagation()}
               >
                 <Checkbox
-                  isDisabled={todo.status === 'archived'}
+                  isDisabled={
+                    todo.status === 'archived' || todo.status === 'blocked'
+                  }
                   isSelected={todo.completed}
                   onChange={() => toggleTodo()}
                 />
@@ -644,9 +646,10 @@ function TodoItem({
                   color={
                     todo.status === 'done'
                       ? 'success'
-                      : todo.status === 'todo'
+                      : todo.status === 'todo' || todo.status === 'backlog'
                         ? 'default'
-                        : todo.status === 'archived'
+                        : todo.status === 'archived' ||
+                            todo.status === 'blocked'
                           ? 'danger'
                           : 'warning'
                   }
