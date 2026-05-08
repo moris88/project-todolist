@@ -15,6 +15,8 @@
 - [ ] aggiungere ai progetti la possibilità di aggiungere la priorità e lo stato
 - [ ] aggiungere agli sprints la possibilità di aggiungere la data di scadenza e lo stato
 - [ ] aggiungere la possibilità di visualizzare le task in una vista a calendario se hanno una data di scadenza
+- [ ] aggiornare tailwind CSS alla versione 4 per sfruttare le nuove funzionalità e migliorare le prestazioni
+- [ ] aggiornare packages e dipendenze alla versione più recente per garantire sicurezza e stabilità
 
 ## BugFix
 
