@@ -133,6 +133,13 @@ const itDict = {
       move_confirm: 'Sposta',
       move_no_tasks: 'Non ci sono compiti',
     },
+    tags: {
+      title: 'Tag',
+      add: 'Aggiungi',
+      placeholder: 'Nuovo tag...',
+      no_tags: 'Nessun tag',
+      suggestions: 'Suggeriti',
+    },
   },
 }
 
@@ -268,6 +275,13 @@ const enDict = {
       move_to: 'Select destination task',
       move_confirm: 'Move',
       move_no_tasks: 'There are no tasks',
+    },
+    tags: {
+      title: 'Tags',
+      add: 'Add',
+      placeholder: 'New tag...',
+      no_tags: 'No tags',
+      suggestions: 'Suggested',
     },
   },
 }

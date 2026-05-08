@@ -41,6 +41,7 @@ import {
   isTaskOverdue,
   removeCommentsByTodoId,
   removeTodoStorage,
+  tagColor,
   updateTodoStorage,
 } from '@/utils'
 
@@ -146,6 +147,7 @@ function TodoItem({
           dueDate: pendingEditValues.dueDate,
           status: pendingEditValues.status,
           subtasks: pendingEditValues.subtasks,
+          tags: pendingEditValues.tags,
           completed: pendingEditValues.status === 'done' ? true : t.completed,
           completedAt:
             pendingEditValues.status === 'done' && !t.completed
@@ -316,6 +318,7 @@ function TodoItem({
           dueDate: todo.dueDate,
           status: todo.status,
           subtasks: todo.subtasks,
+          tags: todo.tags ?? [],
         }}
         isDismissable={false}
         isOpen={isEditing}
@@ -477,6 +480,21 @@ function TodoItem({
             </div>
           )}
         </div>
+        {(todo.tags ?? []).length > 0 && (
+          <div
+            className="flex flex-wrap gap-1"
+            onPointerDown={(e) => e.stopPropagation()}
+          >
+            {(todo.tags ?? []).map((tag) => (
+              <span
+                key={tag}
+                className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${tagColor(tag)}`}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
         <div
           className={twMerge(
             'flex justify-start gap-y-4 md:justify-between',

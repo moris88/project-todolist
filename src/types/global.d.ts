@@ -18,6 +18,7 @@ export interface Todo {
   priority: Priority
   status: Status
   subtasks: SubTask[]
+  tags: string[]
 }
 
 export type Priority = 'low' | 'medium' | 'high' | 'urgent'
