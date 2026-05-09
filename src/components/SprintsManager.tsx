@@ -9,7 +9,7 @@ import {
 	HiMiniPlus,
 	HiMiniTrash,
 } from 'react-icons/hi2'
-
+import { VscCircleFilled } from "react-icons/vsc"
 import {
 	deletedSprintsAtom,
 	dictAtom,
@@ -40,6 +40,7 @@ import {
 	generateUniqueId,
 	isTaskOverdue,
 	SPRINT_COLORS,
+	tagColor,
 	updateTodoStorage,
 } from '@/utils'
 
@@ -178,19 +179,6 @@ function SprintsManager() {
 			else next.add(id)
 			return next
 		})
-	}
-
-	const toggleComplete = (todoId: string) => {
-		const updated = todos.map((t) =>
-			t.id === todoId
-				? {
-						...t,
-						completed: !t.completed,
-						completedAt: !t.completed ? new Date().toISOString() : null,
-					}
-				: t,
-		)
-		setTodos(updateTodoStorage(updated))
 	}
 
 	const openCreateTask = (sprint: Sprint) => {
@@ -434,14 +422,8 @@ function SprintsManager() {
 															key={t.id}
 															className="flex flex-wrap items-center gap-2 px-4 py-2"
 														>
-															<input
-																checked={t.completed}
-																className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-blue-500"
-																type="checkbox"
-																onChange={() => toggleComplete(t.id)}
-															/>
 															<span
-																className={`min-w-0 flex-1 truncate text-sm ${
+																className={`flex min-w-0 flex-1 items-center gap-2 truncate text-sm ${
 																	t.completed
 																		? 'text-gray-400 line-through'
 																		: isTaskOverdue(t.dueDate)
@@ -449,8 +431,16 @@ function SprintsManager() {
 																			: 'text-gray-700 dark:text-gray-200'
 																}`}
 															>
-																{t.title}
+																<VscCircleFilled className="h-3.5 w-3.5" />{t.title}
 															</span>
+															{(t.tags ?? []).map((tag) => (
+																<span
+																	key={tag}
+																	className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${tagColor(tag)}`}
+																>
+																	{tag}
+																</span>
+															))}
 															<Chip
 																color={priorityChipColor[t.priority]}
 																size="sm"
