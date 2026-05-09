@@ -5,10 +5,11 @@ import {
   type FilterState,
   applyFilters,
   generateUniqueId,
+  makeSortComparator,
   orderTodos,
   tagColor,
 } from '../src/utils/utils'
-import type { Comment, Todo } from '../src/types'
+import type { Comment, SortState, Todo } from '../src/types'
 
 describe('generateUniqueId', () => {
   it('returns a non-empty string', () => {
@@ -412,5 +413,83 @@ describe('applyFilters', () => {
       status: 'progress',
       completion: 'completed',
     }))).toBe(false)
+  })
+})
+
+// ─── makeSortComparator ───────────────────────────────────────────────────────
+
+describe('makeSortComparator', () => {
+  it('returns orderTodos behavior when field is empty', () => {
+    const sort: SortState = { field: '', dir: 'asc' }
+    const comp = makeSortComparator(sort)
+    const completed = makeTodo({ completed: true })
+    const pending = makeTodo({ completed: false })
+    expect(comp(completed, pending)).toBeGreaterThan(0)
+  })
+
+  it('sorts by priority asc — urgent before low', () => {
+    const sort: SortState = { field: 'priority', dir: 'asc' }
+    const comp = makeSortComparator(sort)
+    expect(comp(makeTodo({ priority: 'urgent' }), makeTodo({ priority: 'low' }))).toBeLessThan(0)
+  })
+
+  it('sorts by priority desc — low before urgent', () => {
+    const sort: SortState = { field: 'priority', dir: 'desc' }
+    const comp = makeSortComparator(sort)
+    expect(comp(makeTodo({ priority: 'urgent' }), makeTodo({ priority: 'low' }))).toBeGreaterThan(0)
+  })
+
+  it('sorts by status asc alphabetically', () => {
+    const sort: SortState = { field: 'status', dir: 'asc' }
+    const comp = makeSortComparator(sort)
+    const a = makeTodo({ status: 'done' })
+    const b = makeTodo({ status: 'todo' })
+    expect(comp(a, b)).toBeLessThan(0)
+  })
+
+  it('sorts by status desc', () => {
+    const sort: SortState = { field: 'status', dir: 'desc' }
+    const comp = makeSortComparator(sort)
+    const a = makeTodo({ status: 'done' })
+    const b = makeTodo({ status: 'todo' })
+    expect(comp(a, b)).toBeGreaterThan(0)
+  })
+
+  it('sorts by dueDate asc — earlier date first', () => {
+    const sort: SortState = { field: 'dueDate', dir: 'asc' }
+    const comp = makeSortComparator(sort)
+    const earlier = makeTodo({ dueDate: '2024-01-01T00:00:00.000Z' })
+    const later = makeTodo({ dueDate: '2024-06-01T00:00:00.000Z' })
+    expect(comp(earlier, later)).toBeLessThan(0)
+  })
+
+  it('sorts by dueDate desc — later date first', () => {
+    const sort: SortState = { field: 'dueDate', dir: 'desc' }
+    const comp = makeSortComparator(sort)
+    const earlier = makeTodo({ dueDate: '2024-01-01T00:00:00.000Z' })
+    const later = makeTodo({ dueDate: '2024-06-01T00:00:00.000Z' })
+    expect(comp(earlier, later)).toBeGreaterThan(0)
+  })
+
+  it('handles both null dueDates — returns 0', () => {
+    const sort: SortState = { field: 'dueDate', dir: 'asc' }
+    const comp = makeSortComparator(sort)
+    expect(comp(makeTodo({ dueDate: null }), makeTodo({ dueDate: null }))).toBe(0)
+  })
+
+  it('null dueDate on a puts it after b in asc sort', () => {
+    const sort: SortState = { field: 'dueDate', dir: 'asc' }
+    const comp = makeSortComparator(sort)
+    const a = makeTodo({ dueDate: null })
+    const b = makeTodo({ dueDate: '2024-01-01T00:00:00.000Z' })
+    expect(comp(a, b)).toBeGreaterThan(0)
+  })
+
+  it('null dueDate on b puts it after a in asc sort', () => {
+    const sort: SortState = { field: 'dueDate', dir: 'asc' }
+    const comp = makeSortComparator(sort)
+    const a = makeTodo({ dueDate: '2024-01-01T00:00:00.000Z' })
+    const b = makeTodo({ dueDate: null })
+    expect(comp(a, b)).toBeLessThan(0)
   })
 })

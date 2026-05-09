@@ -1,6 +1,8 @@
-import type { Comment, Status, Todo } from '@/types'
+import type { Comment, FilterState, SortState, Todo } from '@/types'
 
 import { isTaskOverdue } from './todo'
+
+export type { FilterState }
 
 const TAG_COLORS = [
 	'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
@@ -28,7 +30,7 @@ export function generateUniqueId() {
 	return `${timestamp}-${random}`
 }
 
-const PRIORITY_RANK: Record<string, number> = {
+export const PRIORITY_RANK: Record<string, number> = {
 	urgent: 0,
 	high: 1,
 	medium: 2,
@@ -43,16 +45,27 @@ export function orderTodos(a: Todo, b: Todo): number {
 	return (PRIORITY_RANK[a.priority] ?? 4) - (PRIORITY_RANK[b.priority] ?? 4)
 }
 
-export interface FilterState {
-	status: Status | ''
-	completion: 'all' | 'completed' | 'uncompleted'
-	overdue: 'all' | 'overdue' | 'not_overdue'
-	tags: string[]
-	search: string
-	dueDateFrom: string
-	dueDateTo: string
-	projectId?: string
-	sprintId?: string
+export function makeSortComparator(
+	sort: SortState,
+): (a: Todo, b: Todo) => number {
+	if (!sort.field) return orderTodos
+	const mult = sort.dir === 'asc' ? 1 : -1
+	if (sort.field === 'priority') {
+		return (a, b) =>
+			((PRIORITY_RANK[a.priority] ?? 4) - (PRIORITY_RANK[b.priority] ?? 4)) *
+			mult
+	}
+	if (sort.field === 'status') {
+		return (a, b) => a.status.localeCompare(b.status) * mult
+	}
+	return (a, b) => {
+		if (!a.dueDate && !b.dueDate) return 0
+		if (!a.dueDate) return mult
+		if (!b.dueDate) return -mult
+		return (
+			(new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) * mult
+		)
+	}
 }
 
 export function applyFilters(

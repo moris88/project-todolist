@@ -9,7 +9,14 @@ import {
 	HiRectangleStack,
 } from 'react-icons/hi2'
 import type { ActiveView } from '@/atoms'
-import { activeViewAtom, darkModeAtom, dictAtom, trashAtom } from '@/atoms'
+import {
+	activeViewAtom,
+	darkModeAtom,
+	deletedProjectsAtom,
+	deletedSprintsAtom,
+	dictAtom,
+	trashAtom,
+} from '@/atoms'
 import CalendarView from '@/components/CalendarView'
 import Header from '@/components/Header'
 import ProjectsManager from '@/components/ProjectsManager'
@@ -26,6 +33,13 @@ function Wrapper({ children }: WrapperProps) {
 	const [activeView, setActiveView] = useAtom(activeViewAtom)
 	const dict = useAtomValue(dictAtom)
 	const trash = useAtomValue(trashAtom)
+	const deletedProjects = useAtomValue(deletedProjectsAtom)
+	const deletedSprints = useAtomValue(deletedSprintsAtom)
+
+	const countDeletedItems =
+		trash.length + deletedProjects.length + deletedSprints.length
+	const hasDeletedItems = countDeletedItems > 0
+	const hasDeletedPlusNine = countDeletedItems > 9
 
 	React.useEffect(() => {
 		if (darkMode) {
@@ -63,9 +77,9 @@ function Wrapper({ children }: WrapperProps) {
 				icon: (
 					<span className="relative">
 						<HiMiniTrash className="h-4 w-4" />
-						{trash.length > 0 && (
+						{hasDeletedItems && (
 							<span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 font-bold text-[9px] text-white">
-								{trash.length > 9 ? '9+' : trash.length}
+								{hasDeletedPlusNine ? '9+' : countDeletedItems}
 							</span>
 						)}
 					</span>

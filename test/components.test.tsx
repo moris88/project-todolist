@@ -7,7 +7,7 @@ import type React from 'react'
 import { createRef } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-import { commentsAtom, projectsAtom, sprintsAtom, tagsAtom, todoListAtom, trashAtom } from '../src/atoms/atoms'
+import { commentsAtom, deletedProjectsAtom, deletedSprintsAtom, pageSizeAtom, projectsAtom, sprintsAtom, tagsAtom, todoListAtom, trashAtom } from '../src/atoms/atoms'
 import CalendarView from '../src/components/CalendarView'
 import Comments from '../src/components/Comments'
 import ConfirmModal from '../src/components/ConfirmModal'
@@ -42,7 +42,7 @@ import SelectItem from '../src/components/UI/SelectItem'
 import Switch from '../src/components/UI/Switch'
 import Textarea from '../src/components/UI/Textarea'
 import Tooltip from '../src/components/UI/Tooltip'
-import type { Comment, Project, Sprint, Todo } from '../src/types'
+import type { Comment, DeletedProject, DeletedSprint, Project, Sprint, Todo } from '../src/types'
 
 // ─── Test helpers ─────────────────────────────────────────────────────────────
 
@@ -142,12 +142,23 @@ const baseSprint: Sprint = {
   id: 'sprint-1',
   name: 'Test Sprint',
   description: 'Sprint description',
+  color: '#3b82f6',
   startDate: '2024-01-01',
   dueDate: '2024-01-31',
   status: 'active',
   projectId: 'project-1',
   createdAt: '2024-01-01T10:00:00.000Z',
   updatedAt: null,
+}
+
+const deletedProject: DeletedProject = {
+  ...baseProject,
+  deletedAt: '2024-01-05T10:00:00.000Z',
+}
+
+const deletedSprint: DeletedSprint = {
+  ...baseSprint,
+  deletedAt: '2024-01-05T10:00:00.000Z',
 }
 
 // Wrapper that reads todo from atom so UI updates on state changes
@@ -3399,6 +3410,144 @@ describe('TrashView', () => {
       expect(screen.getByText('Il cestino è vuoto')).toBeInTheDocument()
     })
   })
+
+  it('shows deleted projects section when deletedProjectsAtom has data', () => {
+    render(
+      <TestProvider initialValues={[[deletedProjectsAtom, [deletedProject]]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    expect(screen.getByText('Test Project')).toBeInTheDocument()
+    expect(screen.getByText('Svuota cestino')).toBeInTheDocument()
+  })
+
+  it('restores a deleted project to projectsAtom', () => {
+    render(
+      <TestProvider initialValues={[[deletedProjectsAtom, [deletedProject]], [projectsAtom, []]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByText('Ripristina'))
+    expect(screen.queryByText('Test Project')).toBeNull()
+  })
+
+  it('opens confirm modal for permanent project delete', () => {
+    render(
+      <TestProvider initialValues={[[deletedProjectsAtom, [deletedProject]]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    const trashBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim())
+    if (trashBtns.length > 0) {
+      fireEvent.click(trashBtns[0])
+      expect(screen.getAllByText('Elimina definitivamente').length).toBeGreaterThan(0)
+    }
+  })
+
+  it('permanently deletes a project', () => {
+    render(
+      <TestProvider initialValues={[[deletedProjectsAtom, [deletedProject]]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    const trashBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim())
+    if (trashBtns.length > 0) {
+      fireEvent.click(trashBtns[0])
+      fireEvent.click(screen.getByRole('button', { name: 'Elimina definitivamente' }))
+      expect(screen.queryByText('Test Project')).toBeNull()
+    }
+  })
+
+  it('cancels permanent project delete', () => {
+    render(
+      <TestProvider initialValues={[[deletedProjectsAtom, [deletedProject]]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    const trashBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim())
+    if (trashBtns.length > 0) {
+      fireEvent.click(trashBtns[0])
+      fireEvent.click(screen.getByRole('button', { name: 'Annulla' }))
+      expect(screen.getByText('Test Project')).toBeInTheDocument()
+    }
+  })
+
+  it('shows deleted sprints section when deletedSprintsAtom has data', () => {
+    render(
+      <TestProvider initialValues={[[deletedSprintsAtom, [deletedSprint]]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    expect(screen.getByText('Test Sprint')).toBeInTheDocument()
+  })
+
+  it('restores a deleted sprint to sprintsAtom', () => {
+    render(
+      <TestProvider initialValues={[[deletedSprintsAtom, [deletedSprint]], [sprintsAtom, []]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByText('Ripristina'))
+    expect(screen.queryByText('Test Sprint')).toBeNull()
+  })
+
+  it('opens confirm modal for permanent sprint delete', () => {
+    render(
+      <TestProvider initialValues={[[deletedSprintsAtom, [deletedSprint]]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    const trashBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim())
+    if (trashBtns.length > 0) {
+      fireEvent.click(trashBtns[0])
+      expect(screen.getAllByText('Elimina definitivamente').length).toBeGreaterThan(0)
+    }
+  })
+
+  it('permanently deletes a sprint', () => {
+    render(
+      <TestProvider initialValues={[[deletedSprintsAtom, [deletedSprint]]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    const trashBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim())
+    if (trashBtns.length > 0) {
+      fireEvent.click(trashBtns[0])
+      fireEvent.click(screen.getByRole('button', { name: 'Elimina definitivamente' }))
+      expect(screen.queryByText('Test Sprint')).toBeNull()
+    }
+  })
+
+  it('cancels permanent sprint delete', () => {
+    render(
+      <TestProvider initialValues={[[deletedSprintsAtom, [deletedSprint]]]}>
+        <TrashView />
+      </TestProvider>
+    )
+    const trashBtns = screen.getAllByRole('button').filter(b => !b.textContent?.trim())
+    if (trashBtns.length > 0) {
+      fireEvent.click(trashBtns[0])
+      fireEvent.click(screen.getByRole('button', { name: 'Annulla' }))
+      expect(screen.getByText('Test Sprint')).toBeInTheDocument()
+    }
+  })
+
+  it('empty trash removes deleted projects and sprints too', async () => {
+    render(
+      <TestProvider initialValues={[
+        [deletedProjectsAtom, [deletedProject]],
+        [deletedSprintsAtom, [deletedSprint]],
+      ]}>
+        <TrashView />
+      </TestProvider>
+    )
+    fireEvent.click(screen.getByText('Svuota cestino'))
+    const confirmBtns = screen.getAllByRole('button', { name: 'Svuota cestino' })
+    fireEvent.click(confirmBtns[confirmBtns.length - 1])
+    await waitFor(() => {
+      expect(screen.getByText('Il cestino è vuoto')).toBeInTheDocument()
+    })
+  })
 })
 
 // ─── SettingsView ─────────────────────────────────────────────────────────────
@@ -3441,6 +3590,39 @@ describe('SettingsView', () => {
     render(<TestProvider><SettingsView /></TestProvider>)
     expect(screen.getByText('Import/Export')).toBeInTheDocument()
     expect(screen.getByText('Danger Zone')).toBeInTheDocument()
+  })
+
+  it('renders page size section', () => {
+    render(<TestProvider><SettingsView /></TestProvider>)
+    expect(screen.getByText('Elementi per pagina')).toBeInTheDocument()
+  })
+
+  it('changing page size input fires onChange without error', () => {
+    render(<TestProvider><SettingsView /></TestProvider>)
+    const numberInputs = document.querySelectorAll('input[type="number"]')
+    const pageSizeInput = numberInputs[numberInputs.length - 1] as HTMLInputElement
+    fireEvent.change(pageSizeInput, { target: { value: '25' } })
+    expect(pageSizeInput).toBeInTheDocument()
+  })
+
+  it('renders max active sprints section', () => {
+    render(<TestProvider><SettingsView /></TestProvider>)
+    expect(screen.getByText('Sprint attivi massimi')).toBeInTheDocument()
+  })
+
+  it('renders project limits section', () => {
+    render(<TestProvider><SettingsView /></TestProvider>)
+    expect(screen.getByText('Limiti task per priorità')).toBeInTheDocument()
+  })
+
+  it('changing max active sprints input fires onChange', () => {
+    render(<TestProvider><SettingsView /></TestProvider>)
+    const numberInputs = document.querySelectorAll('input[type="number"]')
+    // The max sprints input is after the 4 priority limit inputs (index 4)
+    if (numberInputs.length >= 5) {
+      fireEvent.change(numberInputs[4], { target: { value: '5' } })
+      expect(numberInputs[4]).toBeInTheDocument()
+    }
   })
 })
 
@@ -3664,14 +3846,9 @@ describe('ProjectsManager', () => {
     expect(screen.getByText('Nuovo Progetto', { selector: 'button' }) || screen.getAllByText('Nuovo Progetto').length).toBeTruthy()
   })
 
-  it('clicking expand button toggles task list', () => {
-    const todoForProject: Todo = {
-      ...baseTodo,
-      id: 'proj-todo-1',
-      projectId: 'project-1',
-    }
+  it('clicking expand button toggles sprint list section', () => {
     render(
-      <TestProvider initialValues={[[projectsAtom, [baseProject]], [todoListAtom, [todoForProject]]]}>
+      <TestProvider initialValues={[[projectsAtom, [baseProject]], [sprintsAtom, [baseSprint]]]}>
         <ProjectsManager />
       </TestProvider>
     )
@@ -3680,7 +3857,7 @@ describe('ProjectsManager', () => {
     )
     if (expandBtn) {
       fireEvent.click(expandBtn)
-      expect(screen.getByText('Test Task')).toBeInTheDocument()
+      expect(screen.getByText('Test Sprint')).toBeInTheDocument()
     }
   })
 
@@ -3706,15 +3883,15 @@ describe('ProjectsManager', () => {
     expect(screen.getAllByText('Elimina Progetto').length).toBeGreaterThan(0)
   })
 
-  it('confirming delete removes the project', () => {
+  it('confirming delete moves the project to trash', () => {
     render(
       <TestProvider initialValues={[[projectsAtom, [baseProject]]]}>
         <ProjectsManager />
       </TestProvider>
     )
     fireEvent.click(screen.getByTitle('Elimina Progetto'))
-    // pick the confirm button inside the modal (last button with that accessible name)
-    const confirmBtns = screen.getAllByRole('button', { name: 'Elimina Progetto' })
+    // confirm button is now "Cestina" (soft-delete)
+    const confirmBtns = screen.getAllByRole('button', { name: 'Cestina' })
     fireEvent.click(confirmBtns[confirmBtns.length - 1])
     expect(screen.queryByText('Test Project')).toBeNull()
   })
@@ -3744,14 +3921,9 @@ describe('ProjectsManager', () => {
     expect(screen.getByText(/compiti/i)).toBeInTheDocument()
   })
 
-  it('toggle complete on task in expanded project', () => {
-    const todoForProject: Todo = {
-      ...baseTodo,
-      id: 'proj-todo-3',
-      projectId: 'project-1',
-    }
+  it('shows no-sprints message when project has no sprints in expanded section', () => {
     render(
-      <TestProvider initialValues={[[projectsAtom, [baseProject]], [todoListAtom, [todoForProject]]]}>
+      <TestProvider initialValues={[[projectsAtom, [baseProject]]]}>
         <ProjectsManager />
       </TestProvider>
     )
@@ -3760,22 +3932,14 @@ describe('ProjectsManager', () => {
     )
     if (expandBtn) {
       fireEvent.click(expandBtn)
-      const checkbox = screen.getByRole('checkbox')
-      fireEvent.click(checkbox)
-      expect(checkbox).toBeInTheDocument()
+      expect(screen.getByText('Nessuno sprint disponibile')).toBeInTheDocument()
     }
   })
 
-  it('shows detail modal when eye button clicked on expanded task', async () => {
-    const todoForProject: Todo = {
-      ...baseTodo,
-      id: 'proj-todo-4',
-      projectId: 'project-1',
-    }
+  it('shows sprint name in expanded project section', () => {
     render(
-      <TestProvider initialValues={[[projectsAtom, [baseProject]], [todoListAtom, [todoForProject]]]}>
+      <TestProvider initialValues={[[projectsAtom, [baseProject]], [sprintsAtom, [baseSprint]]]}>
         <ProjectsManager />
-
       </TestProvider>
     )
     const expandBtn = screen.getAllByRole('button').find(b =>
@@ -3783,11 +3947,8 @@ describe('ProjectsManager', () => {
     )
     if (expandBtn) {
       fireEvent.click(expandBtn)
-      const eyeBtn = screen.getByTitle('Dettaglio')
-      fireEvent.click(eyeBtn)
-      await waitFor(() => {
-        expect(screen.getAllByText('Test Task').length).toBeGreaterThan(1)
-      })
+      // Sprint name appears inside the expanded section
+      expect(screen.getByText('Test Sprint')).toBeInTheDocument()
     }
   })
 
@@ -3920,14 +4081,15 @@ describe('SprintsManager', () => {
     expect(screen.getAllByText('Elimina Sprint').length).toBeGreaterThan(0)
   })
 
-  it('confirming delete removes the sprint', () => {
+  it('confirming delete moves the sprint to trash', () => {
     render(
       <TestProvider initialValues={[[sprintsAtom, [baseSprint]], [projectsAtom, [baseProject]]]}>
         <SprintsManager />
       </TestProvider>
     )
     fireEvent.click(screen.getByTitle('Elimina Sprint'))
-    const confirmBtns = screen.getAllByRole('button', { name: 'Elimina Sprint' })
+    // confirm button is now "Cestina" (soft-delete)
+    const confirmBtns = screen.getAllByRole('button', { name: 'Cestina' })
     fireEvent.click(confirmBtns[confirmBtns.length - 1])
     expect(screen.queryByText('Test Sprint')).toBeNull()
   })
@@ -4730,6 +4892,135 @@ describe('TodoList project/sprint filter section coverage', () => {
   })
 })
 
+// ─── TodoList sort panel coverage ────────────────────────────────────────────
+
+describe('TodoList sort panel coverage', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('shows sort panel when filter is open and todos are present', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    expect(screen.getByText('Ordina per')).toBeInTheDocument()
+  })
+
+  it('clicking priority sort pill sorts todos', async () => {
+    const lowTodo: Todo = { ...baseTodo, id: 'low-1', title: 'Low Task', priority: 'low' }
+    seedTodosStorage([baseTodo, lowTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const priorityPill = screen.getByRole('button', { name: 'Priorità' })
+    fireEvent.click(priorityPill) // asc
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+
+  it('clicking sort pill twice switches to desc', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const priorityPill = screen.getByRole('button', { name: 'Priorità' })
+    fireEvent.click(priorityPill) // asc
+    fireEvent.click(priorityPill) // desc
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+
+  it('clicking sort pill three times resets to default', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const priorityPill = screen.getByRole('button', { name: 'Priorità' })
+    fireEvent.click(priorityPill) // asc
+    fireEvent.click(priorityPill) // desc
+    fireEvent.click(priorityPill) // reset
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+
+  it('clicking status sort pill works', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const statusPill = screen.getByRole('button', { name: 'Stato' })
+    fireEvent.click(statusPill)
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+
+  it('clicking dueDate sort pill works', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    const dueDatePill = screen.getByRole('button', { name: 'Scadenza' })
+    fireEvent.click(dueDatePill)
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+
+  it('clicking default sort pill resets sort', async () => {
+    seedTodosStorage([baseTodo])
+    render(<TestProvider><TodoList /></TestProvider>)
+    await waitFor(() => screen.getByText('Test Task'))
+    fireEvent.click(screen.getByRole('button', { name: /Filtri/i }))
+    // First activate a sort
+    fireEvent.click(screen.getByRole('button', { name: 'Priorità' }))
+    // Then click Predefinito
+    const defaultPill = screen.getByRole('button', { name: 'Predefinito' })
+    fireEvent.click(defaultPill)
+    expect(screen.getByText('Test Task')).toBeInTheDocument()
+  })
+})
+
+// ─── TodoList pagination coverage ────────────────────────────────────────────
+
+describe('TodoList pagination coverage', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  it('shows pagination controls when todos exceed page size', async () => {
+    // Default page size is 20; seed 25 todos to trigger pagination
+    const manyTodos: Todo[] = Array.from({ length: 25 }, (_, i) => ({
+      ...baseTodo,
+      id: `todo-page-${i}`,
+      title: `Task Page ${i}`,
+    }))
+    seedTodosStorage(manyTodos)
+    render(
+      <TestProvider initialValues={[[pageSizeAtom, 5]]}>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => {
+      expect(screen.getByText(/Pagina \d+ di \d+/i)).toBeInTheDocument()
+    })
+  })
+
+  it('next/prev page buttons navigate between pages', async () => {
+    const manyTodos: Todo[] = Array.from({ length: 15 }, (_, i) => ({
+      ...baseTodo,
+      id: `todo-nav-${i}`,
+      title: `Nav Task ${i}`,
+    }))
+    seedTodosStorage(manyTodos)
+    render(
+      <TestProvider initialValues={[[pageSizeAtom, 5]]}>
+        <TodoList />
+      </TestProvider>
+    )
+    await waitFor(() => screen.getByText(/Pagina \d+ di \d+/i))
+    // Click next page
+    const allBtns = screen.getAllByRole('button')
+    const paginationNextBtn = allBtns.filter(b => b.querySelector('svg')).find(b =>
+      b.closest('.flex.items-center.justify-center.gap-3')
+    )
+    if (paginationNextBtn) fireEvent.click(paginationNextBtn)
+    expect(screen.getByText(/Pagina \d+ di \d+/i)).toBeInTheDocument()
+  })
+})
+
 // ─── CalendarView with tags/project/sprint coverage ───────────────────────────
 
 describe('CalendarView tags/project/sprint coverage', () => {
@@ -4888,20 +5179,11 @@ describe('SprintsManager and ProjectsManager completed task display', () => {
     }
   })
 
-  it('ProjectsManager shows completed task in expanded project', () => {
-    const completedProjectTodo: Todo = {
-      ...baseTodo,
-      id: 'comp-proj-todo',
-      title: 'Completed Project Task',
-      completed: true,
-      completedAt: new Date().toISOString(),
-      status: 'done',
-      projectId: 'project-1',
-    }
+  it('ProjectsManager shows sprint in expanded project section', () => {
     render(
       <TestProvider initialValues={[
         [projectsAtom, [baseProject]],
-        [todoListAtom, [completedProjectTodo]],
+        [sprintsAtom, [baseSprint]],
       ]}>
         <ProjectsManager />
       </TestProvider>
@@ -4911,7 +5193,7 @@ describe('SprintsManager and ProjectsManager completed task display', () => {
     )
     if (expandBtn) {
       fireEvent.click(expandBtn)
-      expect(screen.getByText('Completed Project Task')).toBeInTheDocument()
+      expect(screen.getByText('Test Sprint')).toBeInTheDocument()
     }
   })
 

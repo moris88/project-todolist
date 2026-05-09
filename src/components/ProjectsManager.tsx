@@ -1,4 +1,4 @@
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import moment from 'moment'
 import React from 'react'
 import {
@@ -11,6 +11,8 @@ import {
 } from 'react-icons/hi2'
 import { twMerge } from 'tailwind-merge'
 import {
+	deletedProjectsAtom,
+	deletedSprintsAtom,
 	dictAtom,
 	maxActiveSprintsAtom,
 	projectLimitsAtom,
@@ -52,8 +54,10 @@ const defaultForm: ProjectFormValues = {
 
 function ProjectsManager() {
 	const [projects, setProjects] = useAtom(projectsAtom)
+	const [sprints, setSprints] = useAtom(sprintsAtom)
+	const setDeletedProjects = useSetAtom(deletedProjectsAtom)
+	const setDeletedSprints = useSetAtom(deletedSprintsAtom)
 	const todos = useAtomValue(todoListAtom)
-	const sprints = useAtomValue(sprintsAtom)
 	const limits = useAtomValue(projectLimitsAtom)
 	const maxSprints = useAtomValue(maxActiveSprintsAtom)
 	const dict = useAtomValue(dictAtom)
@@ -118,7 +122,20 @@ function ProjectsManager() {
 
 	const handleDelete = () => {
 		if (!deleteId) return
-		setProjects((prev) => prev.filter((p) => p.id !== deleteId))
+		const now = new Date().toISOString()
+		const project = projects.find((p) => p.id === deleteId)
+		if (project) {
+			setDeletedProjects((prev) => [...prev, { ...project, deletedAt: now }])
+			const projectSprints = sprints.filter((s) => s.projectId === deleteId)
+			if (projectSprints.length > 0) {
+				setDeletedSprints((prev) => [
+					...prev,
+					...projectSprints.map((s) => ({ ...s, deletedAt: now })),
+				])
+				setSprints((prev) => prev.filter((s) => s.projectId !== deleteId))
+			}
+			setProjects((prev) => prev.filter((p) => p.id !== deleteId))
+		}
 		setDeleteId(null)
 	}
 
@@ -521,7 +538,7 @@ function ProjectsManager() {
 			{/* Delete confirm */}
 			<ConfirmModal
 				buttonCancel={dict.projects.cancel}
-				buttonConfirm={dict.projects.delete}
+				buttonConfirm={dict.projects.move_to_trash}
 				description={dict.projects.delete_confirm}
 				isOpen={deleteId !== null}
 				title={dict.projects.delete}

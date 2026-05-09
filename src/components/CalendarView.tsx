@@ -111,7 +111,7 @@ function CalendarView() {
 						return (
 							<button
 								key={day.format('YYYY-MM-DD')}
-								className={`relative min-h-[60px] cursor-pointer border-gray-100 p-1 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50 ${
+								className={`relative min-h-15 cursor-pointer border-gray-100 p-1 text-left transition-colors hover:bg-gray-50 dark:border-gray-700 dark:hover:bg-gray-700/50 ${
 									idx % 7 !== 6 ? 'border-r' : ''
 								} ${Math.floor(idx / 7) > 0 ? 'border-t' : ''} ${
 									isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : ''

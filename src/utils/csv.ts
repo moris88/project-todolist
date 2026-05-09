@@ -133,6 +133,7 @@ export interface AppData {
 		tags: string[]
 		projectLimits: ProjectLimits
 		maxActiveSprints: number
+		pageSize?: number
 	}
 }
 

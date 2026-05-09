@@ -92,6 +92,21 @@ const itDict = {
 				by_sprint: 'Sprint',
 				no_project: 'Nessun progetto',
 				no_sprint: 'Nessuno sprint',
+				sort: {
+					label: 'Ordina per',
+					priority: 'Priorità',
+					status: 'Stato',
+					dueDate: 'Scadenza',
+					asc: 'Crescente',
+					desc: 'Decrescente',
+					default: 'Predefinito',
+				},
+				pagination: {
+					page: 'Pagina',
+					of: 'di',
+					previous: 'Precedente',
+					next: 'Successiva',
+				},
 				csv: {
 					section_tasks: 'Task',
 					section_projects: 'Progetti',
@@ -221,7 +236,9 @@ const itDict = {
 			archived: 'Archiviato',
 			paused: 'In pausa',
 		},
-		delete_confirm: 'Sei sicuro di voler eliminare questo progetto?',
+		delete_confirm:
+			"Sei sicuro di voler spostare questo progetto nel cestino? I suoi sprint verranno anch'essi cestinati.",
+		move_to_trash: 'Cestina',
 		cancel: 'Annulla',
 		save: 'Salva',
 		create: 'Crea',
@@ -250,7 +267,8 @@ const itDict = {
 			completed: 'Completato',
 			cancelled: 'Annullato',
 		},
-		delete_confirm: 'Sei sicuro di voler eliminare questo sprint?',
+		delete_confirm: 'Sei sicuro di voler spostare questo sprint nel cestino?',
+		move_to_trash: 'Cestina',
 		cancel: 'Annulla',
 		save: 'Salva',
 		create: 'Crea',
@@ -268,8 +286,16 @@ const itDict = {
 			'Sei sicuro di voler svuotare il cestino? Questa azione è irreversibile.',
 		delete_confirm:
 			'Sei sicuro di voler eliminare definitivamente questo compito?',
+		delete_project_confirm:
+			'Sei sicuro di voler eliminare definitivamente questo progetto?',
+		delete_sprint_confirm:
+			'Sei sicuro di voler eliminare definitivamente questo sprint?',
 		deleted_at: 'Eliminato il',
 		cancel: 'Annulla',
+		deleted_projects: 'Progetti nel cestino',
+		deleted_sprints: 'Sprint nel cestino',
+		no_deleted_projects: 'Nessun progetto eliminato',
+		no_deleted_sprints: 'Nessuno sprint eliminato',
 	},
 	calendar: {
 		today: 'Oggi',
@@ -290,6 +316,8 @@ const itDict = {
 		max_active_sprints: 'Sprint attivi massimi',
 		max_active_sprints_desc:
 			'Numero massimo di sprint su cui puoi lavorare contemporaneamente',
+		page_size: 'Elementi per pagina',
+		page_size_desc: 'Numero di task da mostrare per ogni pagina nella lista',
 	},
 }
 
@@ -386,6 +414,21 @@ const enDict = {
 				by_sprint: 'Sprint',
 				no_project: 'No project',
 				no_sprint: 'No sprint',
+				sort: {
+					label: 'Sort by',
+					priority: 'Priority',
+					status: 'Status',
+					dueDate: 'Due date',
+					asc: 'Ascending',
+					desc: 'Descending',
+					default: 'Default',
+				},
+				pagination: {
+					page: 'Page',
+					of: 'of',
+					previous: 'Previous',
+					next: 'Next',
+				},
 				csv: {
 					section_tasks: 'Tasks',
 					section_projects: 'Projects',
@@ -513,7 +556,9 @@ const enDict = {
 			archived: 'Archived',
 			paused: 'Paused',
 		},
-		delete_confirm: 'Are you sure you want to delete this project?',
+		delete_confirm:
+			'Are you sure you want to move this project to trash? Its sprints will also be moved to trash.',
+		move_to_trash: 'Move to Trash',
 		cancel: 'Cancel',
 		save: 'Save',
 		create: 'Create',
@@ -542,7 +587,8 @@ const enDict = {
 			completed: 'Completed',
 			cancelled: 'Cancelled',
 		},
-		delete_confirm: 'Are you sure you want to delete this sprint?',
+		delete_confirm: 'Are you sure you want to move this sprint to trash?',
+		move_to_trash: 'Move to Trash',
 		cancel: 'Cancel',
 		save: 'Save',
 		create: 'Create',
@@ -559,8 +605,16 @@ const enDict = {
 		empty_trash_confirm:
 			'Are you sure you want to empty the trash? This action is irreversible.',
 		delete_confirm: 'Are you sure you want to permanently delete this task?',
+		delete_project_confirm:
+			'Are you sure you want to permanently delete this project?',
+		delete_sprint_confirm:
+			'Are you sure you want to permanently delete this sprint?',
 		deleted_at: 'Deleted on',
 		cancel: 'Cancel',
+		deleted_projects: 'Deleted projects',
+		deleted_sprints: 'Deleted sprints',
+		no_deleted_projects: 'No deleted projects',
+		no_deleted_sprints: 'No deleted sprints',
 	},
 	calendar: {
 		today: 'Today',
@@ -581,6 +635,8 @@ const enDict = {
 		max_active_sprints: 'Maximum active sprints',
 		max_active_sprints_desc:
 			'Maximum number of sprints you can work on simultaneously',
+		page_size: 'Items per page',
+		page_size_desc: 'Number of tasks to show per page in the task list',
 	},
 }
 

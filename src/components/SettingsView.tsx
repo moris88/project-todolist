@@ -7,6 +7,7 @@ import {
 	languageAtom,
 	maxActiveSprintsAtom,
 	type ProjectLimits,
+	pageSizeAtom,
 	projectLimitsAtom,
 } from '@/atoms'
 import { Switch } from '@/components/UI'
@@ -32,6 +33,7 @@ function SettingsView() {
 	const [darkMode, setDarkMode] = useAtom(darkModeAtom)
 	const [limits, setLimits] = useAtom(projectLimitsAtom)
 	const [maxSprints, setMaxSprints] = useAtom(maxActiveSprintsAtom)
+	const [pageSize, setPageSize] = useAtom(pageSizeAtom)
 	const dict = useAtomValue(dictAtom)
 
 	return (
@@ -127,6 +129,26 @@ function SettingsView() {
 					type="number"
 					value={maxSprints}
 					onChange={(e) => setMaxSprints(Math.max(1, Number(e.target.value)))}
+				/>
+			</div>
+
+			{/* Page size */}
+			<div className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-700 dark:bg-gray-800">
+				<h3 className="mb-1 font-semibold text-gray-700 dark:text-gray-300">
+					{dict.settings.page_size}
+				</h3>
+				<p className="mb-4 text-gray-400 text-xs">
+					{dict.settings.page_size_desc}
+				</p>
+				<input
+					className="w-24 rounded-lg border border-gray-300 px-3 py-1.5 text-center text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+					max={100}
+					min={5}
+					type="number"
+					value={pageSize}
+					onChange={(e) =>
+						setPageSize(Math.max(5, Math.min(100, Number(e.target.value))))
+					}
 				/>
 			</div>
 

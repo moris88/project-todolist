@@ -1,4 +1,4 @@
-import { useAtom, useAtomValue } from 'jotai'
+import { useAtom, useAtomValue, useSetAtom } from 'jotai'
 import moment from 'moment'
 import React from 'react'
 import {
@@ -11,6 +11,7 @@ import {
 } from 'react-icons/hi2'
 
 import {
+	deletedSprintsAtom,
 	dictAtom,
 	maxActiveSprintsAtom,
 	projectsAtom,
@@ -21,6 +22,7 @@ import type { SubtaskTransfer, TaskFormValues } from '@/components'
 import { ConfirmModal, TaskDetailModal, TaskFormModal } from '@/components'
 import {
 	Button,
+	Chip,
 	DatePicker,
 	Input,
 	Modal,
@@ -64,6 +66,7 @@ const defaultForm: SprintFormValues = {
 function SprintsManager() {
 	const [sprints, setSprints] = useAtom(sprintsAtom)
 	const [todos, setTodos] = useAtom(todoListAtom)
+	const setDeletedSprints = useSetAtom(deletedSprintsAtom)
 	const projects = useAtomValue(projectsAtom)
 	const maxSprints = useAtomValue(maxActiveSprintsAtom)
 	const dict = useAtomValue(dictAtom)
@@ -151,7 +154,14 @@ function SprintsManager() {
 
 	const handleDelete = () => {
 		if (!deleteId) return
-		setSprints((prev) => prev.filter((s) => s.id !== deleteId))
+		const sprint = sprints.find((s) => s.id === deleteId)
+		if (sprint) {
+			setDeletedSprints((prev) => [
+				...prev,
+				{ ...sprint, deletedAt: new Date().toISOString() },
+			])
+			setSprints((prev) => prev.filter((s) => s.id !== deleteId))
+		}
 		setDeleteId(null)
 	}
 
@@ -409,53 +419,77 @@ function SprintsManager() {
 											</p>
 										) : (
 											<ul className="divide-y divide-gray-100 dark:divide-gray-700">
-												{sTodos.map((t) => (
-													<li
-														key={t.id}
-														className="flex items-center gap-2 px-4 py-2"
-													>
-														<input
-															checked={t.completed}
-															className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-blue-500"
-															type="checkbox"
-															onChange={() => toggleComplete(t.id)}
-														/>
-														<span
-															className={`min-w-0 flex-1 truncate text-sm ${
-																t.completed
-																	? 'text-gray-400 line-through'
-																	: isTaskOverdue(t.dueDate)
-																		? 'text-red-600 dark:text-red-400'
-																		: 'text-gray-700 dark:text-gray-200'
-															}`}
+												{sTodos.map((t) => {
+													const priorityChipColor: Record<
+														string,
+														'danger' | 'warning' | 'default' | 'success'
+													> = {
+														urgent: 'danger',
+														high: 'warning',
+														medium: 'default',
+														low: 'success',
+													}
+													return (
+														<li
+															key={t.id}
+															className="flex flex-wrap items-center gap-2 px-4 py-2"
 														>
-															{t.title}
-														</span>
-														{t.dueDate && (
+															<input
+																checked={t.completed}
+																className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-blue-500"
+																type="checkbox"
+																onChange={() => toggleComplete(t.id)}
+															/>
 															<span
-																className={`shrink-0 text-xs ${isTaskOverdue(t.dueDate) ? 'text-red-500' : 'text-gray-400'}`}
+																className={`min-w-0 flex-1 truncate text-sm ${
+																	t.completed
+																		? 'text-gray-400 line-through'
+																		: isTaskOverdue(t.dueDate)
+																			? 'text-red-600 dark:text-red-400'
+																			: 'text-gray-700 dark:text-gray-200'
+																}`}
 															>
-																{moment(t.dueDate).format('DD/MM')}
+																{t.title}
 															</span>
-														)}
-														<button
-															className="shrink-0 rounded p-0.5 text-gray-300 transition-colors hover:text-blue-500 dark:text-gray-600 dark:hover:text-blue-400"
-															title={dict.todolist.listitem.edit}
-															type="button"
-															onClick={() => openEditTask(t)}
-														>
-															<HiMiniPencilSquare className="h-3.5 w-3.5" />
-														</button>
-														<button
-															className="shrink-0 rounded p-0.5 text-gray-300 transition-colors hover:text-blue-500 dark:text-gray-600 dark:hover:text-blue-400"
-															title={dict.todolist.listitem.detail}
-															type="button"
-															onClick={() => setDetailTodoId(t.id)}
-														>
-															<HiEye className="h-3.5 w-3.5" />
-														</button>
-													</li>
-												))}
+															<Chip
+																color={priorityChipColor[t.priority]}
+																size="sm"
+															>
+																{
+																	dict.todolist.listitem.priority.items[
+																		t.priority
+																	]
+																}
+															</Chip>
+															<Chip color="default" size="sm">
+																{dict.todolist.listitem.status.items[t.status]}
+															</Chip>
+															{t.dueDate && (
+																<span
+																	className={`shrink-0 text-xs ${isTaskOverdue(t.dueDate) ? 'text-red-500' : 'text-gray-400'}`}
+																>
+																	{moment(t.dueDate).format('DD/MM')}
+																</span>
+															)}
+															<button
+																className="shrink-0 rounded p-0.5 text-gray-300 transition-colors hover:text-blue-500 dark:text-gray-600 dark:hover:text-blue-400"
+																title={dict.todolist.listitem.edit}
+																type="button"
+																onClick={() => openEditTask(t)}
+															>
+																<HiMiniPencilSquare className="h-3.5 w-3.5" />
+															</button>
+															<button
+																className="shrink-0 rounded p-0.5 text-gray-300 transition-colors hover:text-blue-500 dark:text-gray-600 dark:hover:text-blue-400"
+																title={dict.todolist.listitem.detail}
+																type="button"
+																onClick={() => setDetailTodoId(t.id)}
+															>
+																<HiEye className="h-3.5 w-3.5" />
+															</button>
+														</li>
+													)
+												})}
 											</ul>
 										)}
 										<div className="border-gray-100 border-t px-4 py-2 dark:border-gray-700">
@@ -620,7 +654,7 @@ function SprintsManager() {
 			{/* Delete confirm */}
 			<ConfirmModal
 				buttonCancel={dict.sprints.cancel}
-				buttonConfirm={dict.sprints.delete}
+				buttonConfirm={dict.sprints.move_to_trash}
 				description={dict.sprints.delete_confirm}
 				isOpen={deleteId !== null}
 				title={dict.sprints.delete}

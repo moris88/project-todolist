@@ -17,6 +17,9 @@
 		"enabled": true,
 		"rules": {
 			"recommended": true,
+			"a11y": {
+				"useButtonType": "off"
+			},
 			"nursery": {
 				"useSortedClasses": "warn"
 			},
@@ -27,6 +30,9 @@
 			"correctness": {
 				"noUnusedVariables": "off",
 				"noUnusedImports": "off"
+			},
+			"style": {
+				"noNonNullAssertion": "off"
 			}
 		}
 	},

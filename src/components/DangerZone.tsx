@@ -8,6 +8,7 @@ import {
 	dictAtom,
 	languageAtom,
 	maxActiveSprintsAtom,
+	pageSizeAtom,
 	projectLimitsAtom,
 	projectsAtom,
 	sprintsAtom,
@@ -38,6 +39,7 @@ function DangerZone() {
 	const [darkMode, setDarkMode] = useAtom(darkModeAtom)
 	const [projectLimits, setProjectLimits] = useAtom(projectLimitsAtom)
 	const [maxActiveSprints, setMaxActiveSprints] = useAtom(maxActiveSprintsAtom)
+	const [pageSize, setPageSize] = useAtom(pageSizeAtom)
 	const dict = useAtomValue(dictAtom)
 
 	const [showDangerZone, setShowDangerZone] = React.useState(false)
@@ -73,7 +75,14 @@ function DangerZone() {
 			projects,
 			sprints,
 			comments,
-			settings: { language, darkMode, tags, projectLimits, maxActiveSprints },
+			settings: {
+				language,
+				darkMode,
+				tags,
+				projectLimits,
+				maxActiveSprints,
+				pageSize,
+			},
 		})
 	}
 
@@ -108,6 +117,7 @@ function DangerZone() {
 			if (d.settings.projectLimits) setProjectLimits(d.settings.projectLimits)
 			if (d.settings.maxActiveSprints !== undefined)
 				setMaxActiveSprints(d.settings.maxActiveSprints)
+			if (d.settings.pageSize !== undefined) setPageSize(d.settings.pageSize)
 		}
 		setPendingJSONData(null)
 		setShowConfirmImportJSON(false)

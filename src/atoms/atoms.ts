@@ -1,7 +1,16 @@
 import { atom } from 'jotai'
 import { atomWithStorage } from 'jotai/utils'
 
-import type { Comment, Project, Sprint, Todo } from '@/types'
+import type {
+	Comment,
+	DeletedProject,
+	DeletedSprint,
+	FilterState,
+	Project,
+	SortState,
+	Sprint,
+	Todo,
+} from '@/types'
 import { type Dict, dicts, type Language } from '@/utils/constants'
 
 export const todoListAtom = atom<Todo[]>([])
@@ -13,6 +22,14 @@ export const dictAtom = atom<Dict>((get) => dicts[get(languageAtom)])
 export const projectsAtom = atomWithStorage<Project[]>('projects', [])
 export const sprintsAtom = atomWithStorage<Sprint[]>('sprints', [])
 export const trashAtom = atomWithStorage<Todo[]>('trash', [])
+export const deletedProjectsAtom = atomWithStorage<DeletedProject[]>(
+	'deletedProjects',
+	[],
+)
+export const deletedSprintsAtom = atomWithStorage<DeletedSprint[]>(
+	'deletedSprints',
+	[],
+)
 export type ActiveView =
 	| 'tasks'
 	| 'projects'
@@ -43,3 +60,26 @@ export const maxActiveSprintsAtom = atomWithStorage<number>(
 	'maxActiveSprints',
 	3,
 )
+
+export const pageSizeAtom = atomWithStorage<number>('pageSize', 20)
+
+export const defaultFilters: FilterState = {
+	status: '',
+	completion: 'all',
+	overdue: 'all',
+	tags: [],
+	search: '',
+	dueDateFrom: '',
+	dueDateTo: '',
+	projectId: '',
+	sprintId: '',
+}
+
+export const defaultSort: SortState = { field: '', dir: 'asc' }
+
+export const todoFiltersAtom = atomWithStorage<FilterState>(
+	'todoFilters',
+	defaultFilters,
+)
+
+export const todoSortAtom = atomWithStorage<SortState>('todoSort', defaultSort)
