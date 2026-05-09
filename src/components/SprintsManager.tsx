@@ -124,7 +124,10 @@ function SprintsManager() {
 			const activeCount = projectActiveSprintsCount(form.projectId)
 			if (activeCount >= maxSprints) {
 				window.alert(
-					dict.sprints.max_active_sprints.replace('{count}', maxSprints.toString()),
+					dict.sprints.max_active_sprints.replace(
+						'{count}',
+						maxSprints.toString(),
+					),
 				)
 				return
 			}
@@ -377,24 +380,24 @@ function SprintsManager() {
 									</div>
 									<div className="flex shrink-0 gap-1">
 										<Tooltip content={dict.sprints.edit} placement="left">
-										<button
-											className="cursor-pointer rounded p-1 text-gray-400 transition-colors hover:text-blue-500"
-											title={dict.sprints.edit}
-											type="button"
-											onClick={() => openEdit(sprint)}
-										>
-											<HiMiniPencilSquare className="h-4 w-4" />
-										</button>
+											<button
+												className="cursor-pointer rounded p-1 text-gray-400 transition-colors hover:text-blue-500"
+												title={dict.sprints.edit}
+												type="button"
+												onClick={() => openEdit(sprint)}
+											>
+												<HiMiniPencilSquare className="h-4 w-4" />
+											</button>
 										</Tooltip>
 										<Tooltip content={dict.sprints.delete} placement="left">
-										<button
-											className="cursor-pointer rounded p-1 text-gray-400 transition-colors hover:text-red-500"
-											title={dict.sprints.delete}
-											type="button"
-											onClick={() => setDeleteId(sprint.id)}
-										>
-											<HiMiniTrash className="h-4 w-4" />
-										</button>
+											<button
+												className="cursor-pointer rounded p-1 text-gray-400 transition-colors hover:text-red-500"
+												title={dict.sprints.delete}
+												type="button"
+												onClick={() => setDeleteId(sprint.id)}
+											>
+												<HiMiniTrash className="h-4 w-4" />
+											</button>
 										</Tooltip>
 									</div>
 								</div>
