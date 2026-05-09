@@ -23,6 +23,7 @@ import ProjectsManager from '@/components/ProjectsManager'
 import SettingsView from '@/components/SettingsView'
 import SprintsManager from '@/components/SprintsManager'
 import TrashView from '@/components/TrashView'
+import Toast from '@/components/UI/Toast'
 
 interface WrapperProps {
 	children: React.ReactNode
@@ -94,6 +95,7 @@ function Wrapper({ children }: WrapperProps) {
 
 	return (
 		<div className="min-h-screen bg-white dark:bg-[#1b1a19] dark:text-white">
+			<Toast />
 			<Header />
 			<div className="container">
 				{/* Tab navigation */}

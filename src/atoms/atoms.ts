@@ -63,6 +63,14 @@ export const maxActiveSprintsAtom = atomWithStorage<number>(
 
 export const pageSizeAtom = atomWithStorage<number>('pageSize', 20)
 
+export type ToastType = 'success' | 'error' | 'warning' | 'info'
+export interface ToastMessage {
+	id: string
+	message: string
+	type: ToastType
+}
+export const toastsAtom = atom<ToastMessage[]>([])
+
 export const defaultFilters: FilterState = {
 	status: '',
 	completion: 'all',

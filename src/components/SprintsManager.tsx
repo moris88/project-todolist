@@ -9,7 +9,6 @@ import {
 	HiMiniPlus,
 	HiMiniTrash,
 } from 'react-icons/hi2'
-import { VscCircleFilled } from "react-icons/vsc"
 import {
 	deletedSprintsAtom,
 	dictAtom,
@@ -34,6 +33,7 @@ import {
 	SelectItem,
 	Tooltip,
 } from '@/components/UI'
+import { useToast } from '@/hooks'
 import type { Sprint, SprintStatus, Todo } from '@/types'
 import {
 	addTodoStorage,
@@ -71,6 +71,7 @@ function SprintsManager() {
 	const projects = useAtomValue(projectsAtom)
 	const maxSprints = useAtomValue(maxActiveSprintsAtom)
 	const dict = useAtomValue(dictAtom)
+	const toast = useToast()
 
 	const projectActiveSprintsCount = (projectId: string) =>
 		sprints.filter((s) => s.projectId === projectId && s.status === 'active')
@@ -127,11 +128,12 @@ function SprintsManager() {
 			// todo controlla se il progetto ha già il numero massimo di sprint attivi
 			const activeCount = projectActiveSprintsCount(form.projectId)
 			if (activeCount >= maxSprints) {
-				window.alert(
+				toast(
 					dict.sprints.max_active_sprints.replace(
 						'{count}',
 						maxSprints.toString(),
 					),
+					'warning',
 				)
 				return
 			}
@@ -423,7 +425,7 @@ function SprintsManager() {
 															className="flex flex-wrap items-center gap-2 px-4 py-2"
 														>
 															<span
-																className={`flex min-w-0 flex-1 items-center gap-2 truncate text-sm ${
+																className={`min-w-0 flex-1 truncate text-sm ${
 																	t.completed
 																		? 'text-gray-400 line-through'
 																		: isTaskOverdue(t.dueDate)
@@ -431,7 +433,7 @@ function SprintsManager() {
 																			: 'text-gray-700 dark:text-gray-200'
 																}`}
 															>
-																<VscCircleFilled className="h-3.5 w-3.5" />{t.title}
+																{t.title}
 															</span>
 															{(t.tags ?? []).map((tag) => (
 																<span

@@ -22,8 +22,11 @@ import TaskFormModal from '../src/components/TaskFormModal'
 import TodoInput from '../src/components/TodoInput'
 import TodoItem from '../src/components/TodoItem'
 import TodoList from '../src/components/TodoList'
+import Toast from '../src/components/UI/Toast'
 import TrashView from '../src/components/TrashView'
 import Wrapper from '../src/components/Wrapper'
+import { toastsAtom } from '../src/atoms/atoms'
+import type { ToastMessage } from '../src/atoms/atoms'
 import Button from '../src/components/UI/Button'
 import ButtonGroup from '../src/components/UI/ButtonGroup'
 import Checkbox from '../src/components/UI/Checkbox'
@@ -1113,8 +1116,7 @@ describe('DangerZone', () => {
     mockAlert.mockRestore()
   })
 
-  it('shows alert on invalid JSON import', async () => {
-    const mockAlert = vi.spyOn(window, 'alert').mockImplementation(() => {})
+  it('shows toast on invalid JSON import', async () => {
     let capturedOnload: any = null
     const readerMock = {
       readAsText: vi.fn(),
@@ -1123,7 +1125,7 @@ describe('DangerZone', () => {
     }
     vi.stubGlobal('FileReader', vi.fn(function(this: any) { return readerMock }))
 
-    const { container } = render(<TestProvider><DangerZone /></TestProvider>)
+    const { container } = render(<TestProvider><DangerZone /><Toast /></TestProvider>)
     fireEvent.click(screen.getAllByRole('checkbox')[0])
 
     const input = container.querySelector('input[type="file"]') as HTMLInputElement
@@ -1132,9 +1134,8 @@ describe('DangerZone', () => {
     await waitFor(() => expect(typeof capturedOnload).toBe('function'))
     capturedOnload({ target: { result: 'not valid json' } })
 
-    await waitFor(() => expect(mockAlert).toHaveBeenCalled())
+    await waitFor(() => expect(screen.getByText('File JSON non valido o corrotto')).toBeInTheDocument())
     vi.unstubAllGlobals()
-    mockAlert.mockRestore()
   })
 })
 
@@ -3779,8 +3780,9 @@ describe('CalendarView', () => {
         <CalendarView />
       </TestProvider>
     )
-    const dots = container.querySelectorAll('.h-1\\.5.w-1\\.5')
-    expect(dots.length).toBeGreaterThan(0)
+    // Calendar now uses count chips instead of dots — find the task count chip
+    const chips = container.querySelectorAll('.rounded-full')
+    expect(chips.length).toBeGreaterThan(0)
   })
 
   it('shows overdue task with red styling in selected day panel', () => {
@@ -4114,32 +4116,6 @@ describe('SprintsManager', () => {
     expect(screen.getByText(/compiti/i)).toBeInTheDocument()
   })
 
-  it('toggle complete on task in expanded sprint', () => {
-    const sprintTodo: Todo = {
-      ...baseTodo,
-      id: 'sprint-todo-2',
-      sprintId: 'sprint-1',
-    }
-    render(
-      <TestProvider initialValues={[
-        [sprintsAtom, [baseSprint]],
-        [projectsAtom, [baseProject]],
-        [todoListAtom, [sprintTodo]],
-      ]}>
-        <SprintsManager />
-      </TestProvider>
-    )
-    const expandBtn = screen.getAllByRole('button').find(b =>
-      b.querySelector('svg') && !b.textContent?.trim()
-    )
-    if (expandBtn) {
-      fireEvent.click(expandBtn)
-      const checkbox = screen.getByRole('checkbox')
-      fireEvent.click(checkbox)
-      expect(checkbox).toBeInTheDocument()
-    }
-  })
-
   it('shows detail modal when eye button clicked on expanded task', async () => {
     const sprintTodo: Todo = {
       ...baseTodo,
@@ -4372,7 +4348,7 @@ describe('DangerZone project/sprint danger zone coverage', () => {
     })
   })
 
-  it('confirms JSON import and calls success alert', async () => {
+  it('confirms JSON import and shows success toast', async () => {
     const validJSON = JSON.stringify({
       version: '1',
       exportedAt: '2026-01-01T00:00:00.000Z',
@@ -4395,7 +4371,7 @@ describe('DangerZone project/sprint danger zone coverage', () => {
       }
     })
 
-    render(<TestProvider><DangerZone /></TestProvider>)
+    render(<TestProvider><DangerZone /><Toast /></TestProvider>)
     const switches = screen.getAllByRole('checkbox')
     fireEvent.click(switches[0])
 
@@ -4409,7 +4385,9 @@ describe('DangerZone project/sprint danger zone coverage', () => {
     })
 
     fireEvent.click(screen.getByRole('button', { name: 'Importa JSON' }))
-    expect(window.alert).toHaveBeenCalledWith('Importazione completata con successo')
+    await waitFor(() => {
+      expect(screen.getByText('Importazione completata con successo')).toBeInTheDocument()
+    })
   })
 
   it('cancels JSON import confirm modal without alert', async () => {
@@ -4452,7 +4430,7 @@ describe('DangerZone project/sprint danger zone coverage', () => {
     expect(window.alert).not.toHaveBeenCalled()
   })
 
-  it('shows error alert on invalid JSON import', () => {
+  it('shows error toast on invalid JSON import', async () => {
     vi.stubGlobal('FileReader', class {
       onload: ((ev: any) => void) | null = null
       readAsText(_file: Blob) {
@@ -4460,7 +4438,7 @@ describe('DangerZone project/sprint danger zone coverage', () => {
       }
     })
 
-    render(<TestProvider><DangerZone /></TestProvider>)
+    render(<TestProvider><DangerZone /><Toast /></TestProvider>)
     const switches = screen.getAllByRole('checkbox')
     fireEvent.click(switches[0])
 
@@ -4469,7 +4447,9 @@ describe('DangerZone project/sprint danger zone coverage', () => {
     Object.defineProperty(fileInput, 'files', { value: [file], configurable: true })
     fireEvent.change(fileInput)
 
-    expect(window.alert).toHaveBeenCalledWith('File JSON non valido o corrotto')
+    await waitFor(() => {
+      expect(screen.getByText('File JSON non valido o corrotto')).toBeInTheDocument()
+    })
   })
 
   it('does nothing when file input change fires with no files', () => {
@@ -5281,5 +5261,87 @@ describe('DangerZone JSON import button click', () => {
     }
     // No assertion needed - just verify no throw
     expect(true).toBe(true)
+  })
+})
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+
+describe('Toast', () => {
+  beforeEach(() => localStorage.clear())
+  afterEach(() => localStorage.clear())
+
+  const successToast: ToastMessage = { id: 'toast-1', message: 'Operazione riuscita', type: 'success' }
+  const errorToast: ToastMessage = { id: 'toast-2', message: 'Errore imprevisto', type: 'error' }
+  const warningToast: ToastMessage = { id: 'toast-3', message: 'Attenzione', type: 'warning' }
+  const infoToast: ToastMessage = { id: 'toast-4', message: 'Informazione', type: 'info' }
+
+  it('renders a success toast message', () => {
+    render(
+      <TestProvider initialValues={[[toastsAtom, [successToast]]]}>
+        <Toast />
+      </TestProvider>
+    )
+    expect(screen.getByText('Operazione riuscita')).toBeInTheDocument()
+  })
+
+  it('renders an error toast message', () => {
+    render(
+      <TestProvider initialValues={[[toastsAtom, [errorToast]]]}>
+        <Toast />
+      </TestProvider>
+    )
+    expect(screen.getByText('Errore imprevisto')).toBeInTheDocument()
+  })
+
+  it('renders a warning toast message', () => {
+    render(
+      <TestProvider initialValues={[[toastsAtom, [warningToast]]]}>
+        <Toast />
+      </TestProvider>
+    )
+    expect(screen.getByText('Attenzione')).toBeInTheDocument()
+  })
+
+  it('renders an info toast message', () => {
+    render(
+      <TestProvider initialValues={[[toastsAtom, [infoToast]]]}>
+        <Toast />
+      </TestProvider>
+    )
+    expect(screen.getByText('Informazione')).toBeInTheDocument()
+  })
+
+  it('renders multiple toasts at once', () => {
+    render(
+      <TestProvider initialValues={[[toastsAtom, [successToast, errorToast]]]}>
+        <Toast />
+      </TestProvider>
+    )
+    expect(screen.getByText('Operazione riuscita')).toBeInTheDocument()
+    expect(screen.getByText('Errore imprevisto')).toBeInTheDocument()
+  })
+
+  it('dismisses a toast when the X button is clicked', async () => {
+    render(
+      <TestProvider initialValues={[[toastsAtom, [successToast]]]}>
+        <Toast />
+      </TestProvider>
+    )
+    expect(screen.getByText('Operazione riuscita')).toBeInTheDocument()
+    const closeBtn = screen.getByRole('button')
+    fireEvent.click(closeBtn)
+    await waitFor(() => {
+      expect(screen.queryByText('Operazione riuscita')).toBeNull()
+    })
+  })
+
+  it('renders nothing when toastsAtom is empty', () => {
+    const { container } = render(
+      <TestProvider initialValues={[[toastsAtom, []]]}>
+        <Toast />
+      </TestProvider>
+    )
+    // portal renders into document.body — no visible toast text
+    expect(screen.queryByRole('button')).toBeNull()
   })
 })

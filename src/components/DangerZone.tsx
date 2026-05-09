@@ -17,6 +17,7 @@ import {
 } from '@/atoms'
 import { ConfirmModal } from '@/components'
 import { Button, ButtonGroup, Switch } from '@/components/UI'
+import { useToast } from '@/hooks'
 import {
 	clearTodosCompleted,
 	clearTodosExpired,
@@ -67,6 +68,7 @@ function DangerZone() {
 		clear_all_sprints: boolean
 	}>({ clear_completed_sprints: false, clear_all_sprints: false })
 
+	const toast = useToast()
 	const csv = dict.todolist.listitem.filter.csv
 
 	const handleExportJSON = () => {
@@ -96,7 +98,7 @@ function DangerZone() {
 				setPendingJSONData(data)
 				setShowConfirmImportJSON(true)
 			} catch {
-				alert(csv.error_json)
+				toast(csv.error_json, 'error')
 			}
 		}
 		reader.readAsText(file)
@@ -121,7 +123,7 @@ function DangerZone() {
 		}
 		setPendingJSONData(null)
 		setShowConfirmImportJSON(false)
-		alert(csv.success_json)
+		toast(csv.success_json, 'success')
 	}
 
 	const buttons: {

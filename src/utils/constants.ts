@@ -303,6 +303,7 @@ const itDict = {
 		legend_active: 'Attivo',
 		legend_completed: 'Completato',
 		legend_overdue: 'Scaduto',
+		legend_sprint: 'Sprint in scadenza',
 	},
 	settings: {
 		title: 'Impostazioni',
@@ -623,6 +624,7 @@ const enDict = {
 		legend_active: 'Active',
 		legend_completed: 'Completed',
 		legend_overdue: 'Overdue',
+		legend_sprint: 'Sprint due',
 	},
 	settings: {
 		title: 'Settings',

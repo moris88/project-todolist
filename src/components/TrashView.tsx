@@ -120,7 +120,7 @@ function TrashView() {
 					{trash.length > 0 && (
 						<div className="flex flex-col gap-3">
 							<h3 className="font-semibold text-gray-600 text-sm dark:text-gray-400">
-									{dict.trash.deleted_tasks} ({trash.length})
+								{dict.trash.deleted_tasks} ({trash.length})
 							</h3>
 							{trash.map((item) => (
 								<div
