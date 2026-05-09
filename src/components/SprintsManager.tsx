@@ -261,7 +261,7 @@ function SprintsManager() {
 		<div className="mt-4 space-y-4">
 			<div className="flex items-center justify-between">
 				<h2 className="font-bold text-gray-800 text-xl dark:text-gray-100">
-					{dict.sprints.title}
+					{dict.sprints.title} ({sprints.length})
 				</h2>
 				<Button size="sm" variant="primary" onPress={openCreate}>
 					<HiMiniPlus className="h-4 w-4" />
@@ -283,7 +283,7 @@ function SprintsManager() {
 								key={sprint.id}
 								className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
 							>
-								<div className="flex items-start gap-3 p-4">
+								<div className="flex items-center gap-3 p-4">
 									<button
 										className="mt-0.5 shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
 										type="button"

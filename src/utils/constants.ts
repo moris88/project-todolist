@@ -200,7 +200,7 @@ const itDict = {
 		},
 	},
 	projects: {
-		title: 'Progetti',
+		title: 'Lista Progetti',
 		add: 'Nuovo Progetto',
 		edit: 'Modifica Progetto',
 		delete: 'Elimina Progetto',
@@ -225,7 +225,7 @@ const itDict = {
 		tasks_count: 'compiti',
 	},
 	sprints: {
-		title: 'Sprint',
+		title: 'Lista Sprint',
 		add: 'Nuovo Sprint',
 		edit: 'Modifica Sprint',
 		delete: 'Elimina Sprint',

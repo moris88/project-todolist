@@ -5,6 +5,7 @@ import {
 	HiChevronUp,
 	HiFunnel,
 	HiMagnifyingGlass,
+	HiMiniPlus,
 	HiXMark,
 } from 'react-icons/hi2'
 
@@ -16,8 +17,8 @@ import {
 	tagsAtom,
 	todoListAtom,
 } from '@/atoms'
-import { Comments, TaskDetailModal } from '@/components'
-import { Switch, Tooltip } from '@/components/UI'
+import { Comments, TaskDetailModal, TodoInput } from '@/components'
+import { Button, Switch, Tooltip } from '@/components/UI'
 import { useNotificationRequest } from '@/hooks'
 import type { Status } from '@/types'
 import {
@@ -64,6 +65,7 @@ function TodoList() {
 	const projects = useAtomValue(projectsAtom)
 	const sprints = useAtomValue(sprintsAtom)
 
+	const [isFormOpen, setIsFormOpen] = React.useState(false)
 	const [filterStatus, setFilterStatus] = React.useState<Status | ''>('')
 	const [filterCompletion, setFilterCompletion] = React.useState<
 		'all' | 'completed' | 'uncompleted'
@@ -182,6 +184,15 @@ function TodoList() {
 
 	return (
 		<div className="mt-4 min-h-[calc(100vh-250px)] space-y-4" id="todo-list">
+			<div className="flex items-center justify-between">
+				<h2 className="font-bold text-gray-800 text-xl dark:text-gray-100">
+					{dict.todolist.listitem.title} ({filteredTodos.length})
+				</h2>
+				<Button size="sm" variant="primary" onPress={() => setIsFormOpen(true)}>
+					<HiMiniPlus className="h-4 w-4" />
+					{dict.todolist.addTask.title}
+				</Button>
+			</div>
 			{todos.length > 0 && (
 				<div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
 					{/* Filter header / toggle */}
@@ -556,6 +567,8 @@ function TodoList() {
 					</div>
 				))
 			)}
+
+			<TodoInput isFormOpen={isFormOpen} setIsFormOpen={setIsFormOpen} />
 
 			<TaskDetailModal
 				isOpen={detailTodoId !== null}

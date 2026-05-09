@@ -87,7 +87,7 @@ function Wrapper({ children }: WrapperProps) {
 					{navItems.map((item) => (
 						<button
 							key={item.key}
-							className={`flex shrink-0 items-center gap-1.5 rounded-t-lg px-4 py-2 font-medium text-sm transition-colors ${
+							className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-t-lg px-4 py-2 font-medium text-sm transition-colors ${
 								activeView === item.key
 									? 'border border-gray-200 border-b-white bg-white text-blue-600 dark:border-gray-700 dark:border-b-[#1b1a19] dark:bg-[#1b1a19] dark:text-blue-400'
 									: 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'

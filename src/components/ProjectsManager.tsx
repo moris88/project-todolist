@@ -204,7 +204,7 @@ function ProjectsManager() {
 		<div className="mt-4 space-y-4">
 			<div className="flex items-center justify-between">
 				<h2 className="font-bold text-gray-800 text-xl dark:text-gray-100">
-					{dict.projects.title}
+					{dict.projects.title} ({projects.length})
 				</h2>
 				<Button size="sm" variant="primary" onPress={openCreate}>
 					<HiMiniPlus className="h-4 w-4" />
