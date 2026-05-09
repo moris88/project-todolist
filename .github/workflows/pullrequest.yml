@@ -1,11 +1,11 @@
 name: Check Push
 
 on:
-  push:
+  pull_request:
     branches:
       - '**'
-    tags-ignore:
-      - '*' 
+    types: [opened, synchronize, reopened]
+permissions: {}
 
 jobs:
   lint:
