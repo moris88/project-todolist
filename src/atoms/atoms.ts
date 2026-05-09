@@ -37,6 +37,7 @@ export type ActiveView =
 	| 'trash'
 	| 'calendar'
 	| 'settings'
+	| 'stats'
 export const activeViewAtom = atomWithStorage<ActiveView>('activeView', 'tasks')
 
 export interface ProjectLimits {

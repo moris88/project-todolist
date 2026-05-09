@@ -8,16 +8,18 @@ Applicazione web moderna per la gestione di attività con supporto a progetti, s
 - **Priorità & Stati:** Livelli configurabili (Urgente, Alta, Media, Bassa) e vari stati di avanzamento (Backlog, Todo, In Progress, Review, Testing, Blocked, Paused, Done, Archived).
 - **Markdown:** Descrizione dei task in Markdown con anteprima in-editor.
 - **Progetti:** Associazione dei task a progetti con colore, priorità e stato (Attivo, In pausa, Completato, Archiviato).
-- **Sprint:** Associazione dei task a sprint collegati obbligatoriamente a un progetto, con date di inizio/fine e stato (Planning, Attivo, Completato, Annullato).
-- **Filtri:** Filtro task per progetto e/o sprint dalla vista compiti.
-- **Cestino:** Eliminazione soft con possibilità di ripristino; eliminazione definitiva dalla sezione Cestino.
+- **Sprint:** Associazione dei task a sprint collegati obbligatoriamente a un progetto, con colore, date di inizio/fine e stato (Planning, Attivo, Completato, Annullato).
+- **Filtri & Ordinamento:** Filtri avanzati (stato, completamento, scadenza, tag, date, progetto/sprint) e ordinamento personalizzabile.
+- **Cestino:** Eliminazione soft per task, progetti e sprint con possibilità di ripristino; eliminazione definitiva dalla sezione Cestino.
 - **Vista Calendario:** Visualizzazione dei task con data di scadenza su un calendario in italiano; click su task per aprire il dettaglio/modifica.
-- **Import/Export CSV:** Portabilità completa dei dati (include projectId, sprintId, deletedAt, priority/status dei sottotask).
-- **Notifiche:** Avviso in-app per task in scadenza o scaduti.
+- **Import/Export:** Supporto CSV per singoli moduli e backup/ripristino completo tramite file **JSON** (include tutti i dati e le impostazioni).
+- **Impostazioni e Limiti:** Configurazione lingua, tema, limiti di task attivi per priorità (per progetto), limiti di sprint attivi contemporaneamente e dimensione della pagina.
+- **Notifiche:** Avvisi in-app (Toast) per azioni completate e avvisi per task in scadenza o scaduti.
 - **Persistenza:** Salvataggio locale via `localStorage` con pattern a indice separato per le ottimizzazioni di lettura.
 - **Internazionalizzazione:** Supporto italiano e inglese con cambio lingua live.
 - **Dark Mode:** Tema chiaro/scuro con persistenza.
 - **UI/UX:** Design moderno con Tailwind CSS v4, animazioni con Framer Motion e layout responsive.
+- **Paginazione:** Gestione di grandi liste di task tramite paginazione configurabile.
 
 ## Tecnologie
 
@@ -26,6 +28,7 @@ Applicazione web moderna per la gestione di attività con supporto a progetti, s
 - **Stato:** [Jotai](https://jotai.org/) (Atomic state management)
 - **Styling:** [Tailwind CSS v4](https://tailwindcss.com/) (via `@tailwindcss/vite`, senza PostCSS)
 - **Date:** [moment.js](https://momentjs.com/) con locale italiano
+- **Grafici:** [Recharts](https://recharts.org/)
 - **Animazioni:** [Framer Motion](https://www.framer.com/motion/)
 - **Qualità del Codice:** [Biome](https://biomejs.dev/) (Linting & Formatting)
 - **Testing:** [Vitest](https://vitest.dev/) + [React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)
@@ -42,7 +45,6 @@ Applicazione web moderna per la gestione di attività con supporto a progetti, s
 
 ## Per Sviluppatori & AI
 
-- **`TODO.md`**: Elenco delle feature e dei refactor da implementare. Punto di ingresso per i task.
 - **`CONTEXT.md`**: Guida dettagliata sull'architettura e sulle convenzioni del progetto.
 
 ## Installazione ed Esecuzione

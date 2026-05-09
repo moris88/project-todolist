@@ -8,6 +8,7 @@ const itDict = {
 		trash: 'Cestino',
 		calendar: 'Calendario',
 		settings: 'Impostazioni',
+		stats: 'Statistiche',
 	},
 	header: {
 		active_tasks: 'Compiti attivi',
@@ -321,6 +322,24 @@ const itDict = {
 		page_size: 'Elementi per pagina',
 		page_size_desc: 'Numero di task da mostrare per ogni pagina nella lista',
 	},
+	stats: {
+		total: 'Totale',
+		completed: 'Completati',
+		overdue: 'Scaduti',
+		completion_rate: 'Completamento',
+		active: 'Attivi',
+		avg_velocity: 'Velocità media',
+		by_status: 'Per stato',
+		by_priority: 'Per priorità',
+		over_time: 'Tendenza (12 settimane)',
+		per_project: 'Task per progetto',
+		per_sprint: 'Task per sprint',
+		velocity: 'Velocity sprint',
+		no_data: 'Nessun dato disponibile',
+		created: 'Creati',
+		tasks_count: 'Compiti',
+		completion_pct: 'Completamento %',
+	},
 }
 
 const enDict = {
@@ -333,6 +352,7 @@ const enDict = {
 		trash: 'Trash',
 		calendar: 'Calendar',
 		settings: 'Settings',
+		stats: 'Statistics',
 	},
 	header: {
 		active_tasks: 'Active tasks',
@@ -641,6 +661,24 @@ const enDict = {
 			'Maximum number of sprints you can work on simultaneously',
 		page_size: 'Items per page',
 		page_size_desc: 'Number of tasks to show per page in the task list',
+	},
+	stats: {
+		total: 'Total',
+		completed: 'Completed',
+		overdue: 'Overdue',
+		completion_rate: 'Completion',
+		active: 'Active',
+		avg_velocity: 'Avg velocity',
+		by_status: 'By status',
+		by_priority: 'By priority',
+		over_time: 'Trend (12 weeks)',
+		per_project: 'Tasks per project',
+		per_sprint: 'Tasks per sprint',
+		velocity: 'Sprint velocity',
+		no_data: 'No data available',
+		created: 'Created',
+		tasks_count: 'Tasks',
+		completion_pct: 'Completion %',
 	},
 }
 

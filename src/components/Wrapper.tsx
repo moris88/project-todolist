@@ -3,6 +3,7 @@ import React from 'react'
 import {
 	HiArchiveBox,
 	HiCalendarDays,
+	HiChartBar,
 	HiClipboardDocumentList,
 	HiCog6Tooth,
 	HiMiniTrash,
@@ -22,6 +23,7 @@ import Header from '@/components/Header'
 import ProjectsManager from '@/components/ProjectsManager'
 import SettingsView from '@/components/SettingsView'
 import SprintsManager from '@/components/SprintsManager'
+import StatsView from '@/components/StatsView'
 import TrashView from '@/components/TrashView'
 import Toast from '@/components/UI/Toast'
 
@@ -66,6 +68,11 @@ function Wrapper({ children }: WrapperProps) {
 				key: 'sprints',
 				label: dict.nav.sprints,
 				icon: <HiArchiveBox className="h-4 w-4" />,
+			},
+			{
+				key: 'stats',
+				label: dict.nav.stats,
+				icon: <HiChartBar className="h-4 w-4" />,
 			},
 			{
 				key: 'calendar',
@@ -120,6 +127,7 @@ function Wrapper({ children }: WrapperProps) {
 				{activeView === 'tasks' && children}
 				{activeView === 'projects' && <ProjectsManager />}
 				{activeView === 'sprints' && <SprintsManager />}
+				{activeView === 'stats' && <StatsView />}
 				{activeView === 'calendar' && <CalendarView />}
 				{activeView === 'trash' && <TrashView />}
 				{activeView === 'settings' && <SettingsView />}
