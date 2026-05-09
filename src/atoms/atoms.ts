@@ -21,3 +21,25 @@ export type ActiveView =
 	| 'calendar'
 	| 'settings'
 export const activeViewAtom = atomWithStorage<ActiveView>('activeView', 'tasks')
+
+export interface ProjectLimits {
+	urgent: number
+	high: number
+	medium: number
+	low: number
+}
+
+export const projectLimitsAtom = atomWithStorage<ProjectLimits>(
+	'projectLimits',
+	{
+		urgent: 2,
+		high: 2,
+		medium: 4,
+		low: 6,
+	},
+)
+
+export const maxActiveSprintsAtom = atomWithStorage<number>(
+	'maxActiveSprints',
+	3,
+)

@@ -40,6 +40,7 @@ export interface Project {
 export interface Sprint {
 	id: string
 	name: string
+	color: string
 	description: string
 	startDate: string | null
 	dueDate: string | null

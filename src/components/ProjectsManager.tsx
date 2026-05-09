@@ -11,7 +11,14 @@ import {
 	HiMiniTrash,
 } from 'react-icons/hi2'
 
-import { dictAtom, projectsAtom, todoListAtom } from '@/atoms'
+import {
+	dictAtom,
+	maxActiveSprintsAtom,
+	projectLimitsAtom,
+	projectsAtom,
+	sprintsAtom,
+	todoListAtom,
+} from '@/atoms'
 import { ConfirmModal, TaskDetailModal } from '@/components'
 import {
 	Button,
@@ -24,24 +31,14 @@ import {
 	Select,
 	SelectItem,
 } from '@/components/UI'
-import type { Priority, Project, ProjectStatus } from '@/types'
+import type { Priority, Project, ProjectStatus, SprintStatus } from '@/types'
 import {
 	generateUniqueId,
 	isTaskOverdue,
+	PROJECT_COLORS,
 	priorityItems,
 	updateTodoStorage,
 } from '@/utils'
-
-const PROJECT_COLORS = [
-	{ value: '#3b82f6', label: 'Blu' },
-	{ value: '#10b981', label: 'Verde' },
-	{ value: '#f59e0b', label: 'Giallo' },
-	{ value: '#ef4444', label: 'Rosso' },
-	{ value: '#8b5cf6', label: 'Viola' },
-	{ value: '#ec4899', label: 'Rosa' },
-	{ value: '#06b6d4', label: 'Ciano' },
-	{ value: '#f97316', label: 'Arancio' },
-]
 
 interface ProjectFormValues {
 	name: string
@@ -62,6 +59,9 @@ const defaultForm: ProjectFormValues = {
 function ProjectsManager() {
 	const [projects, setProjects] = useAtom(projectsAtom)
 	const [todos, setTodos] = useAtom(todoListAtom)
+	const sprints = useAtomValue(sprintsAtom)
+	const limits = useAtomValue(projectLimitsAtom)
+	const maxSprints = useAtomValue(maxActiveSprintsAtom)
 	const dict = useAtomValue(dictAtom)
 	const [detailTodoId, setDetailTodoId] = React.useState<string | null>(null)
 	const [showForm, setShowForm] = React.useState(false)
@@ -128,11 +128,22 @@ function ProjectsManager() {
 		setDeleteId(null)
 	}
 
+	const EXCLUDED_STATUSES = ['done', 'blocked', 'archived']
+
 	const taskCount = (projectId: string) =>
 		todos.filter((t) => t.projectId === projectId && !t.deletedAt).length
 
 	const projectTodos = (projectId: string) =>
 		todos.filter((t) => t.projectId === projectId && !t.deletedAt)
+
+	const projectTasksByPriority = (projectId: string, priority: Priority) =>
+		todos.filter(
+			(t) =>
+				t.projectId === projectId &&
+				!t.deletedAt &&
+				t.priority === priority &&
+				!EXCLUDED_STATUSES.includes(t.status),
+		).length
 
 	const toggleExpanded = (id: string) => {
 		setExpandedIds((prev) => {
@@ -154,6 +165,22 @@ function ProjectsManager() {
 				: t,
 		)
 		setTodos(updateTodoStorage(updated))
+	}
+
+	const projectSprints = (projectId: string) =>
+		sprints.filter((s) => s.projectId === projectId)
+
+	const projectActiveSprintsCount = (projectId: string) =>
+		sprints.filter((s) => s.projectId === projectId && s.status === 'active')
+			.length
+
+	const sprintStatusBadge: Record<SprintStatus, string> = {
+		planning: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-400',
+		active:
+			'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300',
+		completed:
+			'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
+		cancelled: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
 	}
 
 	const priorityColor: Record<Priority, string> = {
@@ -199,7 +226,7 @@ function ProjectsManager() {
 								key={project.id}
 								className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
 							>
-								<div className="flex items-start gap-3 p-4">
+								<div className="flex gap-3 p-4">
 									<button
 										className="mt-0.5 shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
 										type="button"
@@ -211,12 +238,12 @@ function ProjectsManager() {
 											<HiChevronRight className="h-4 w-4" />
 										)}
 									</button>
-									<span
-										className="mt-1 h-3 w-3 shrink-0 rounded-full"
-										style={{ backgroundColor: project.color }}
-									/>
 									<div className="min-w-0 flex-1">
 										<div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+											<span
+												className="mt-1 h-3 w-3 shrink-0 rounded-full"
+												style={{ backgroundColor: project.color }}
+											/>
 											<span className="font-semibold text-gray-800 dark:text-gray-100">
 												{project.name}
 											</span>
@@ -242,6 +269,50 @@ function ProjectsManager() {
 												{moment(project.createdAt).format('DD/MM/YYYY')}
 											</span>
 										</div>
+										<div className="mt-1.5 flex flex-wrap gap-1.5">
+											{(() => {
+												const activeCount = projectActiveSprintsCount(
+													project.id,
+												)
+												const exceeded = activeCount >= maxSprints
+												if (activeCount === 0) return null
+												return (
+													<span
+														className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium text-xs ${
+															exceeded
+																? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+																: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+														}`}
+													>
+														{dict.sprints.status_items.active}: {activeCount}/
+														{maxSprints}
+													</span>
+												)
+											})()}
+											{(['urgent', 'high', 'medium', 'low'] as Priority[]).map(
+												(p) => {
+													const count = projectTasksByPriority(project.id, p)
+													const limit = limits[p]
+													const exceeded = count >= limit
+													if (count === 0 && !exceeded) return null
+													return (
+														<span
+															key={p}
+															className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium text-xs ${
+																exceeded
+																	? 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300'
+																	: 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'
+															}`}
+														>
+															<HiFlag
+																className={`h-2.5 w-2.5 ${priorityColor[p]}`}
+															/>
+															{count}/{limit}
+														</span>
+													)
+												},
+											)}
+										</div>
 									</div>
 									<div className="flex shrink-0 gap-1">
 										<button
@@ -264,6 +335,47 @@ function ProjectsManager() {
 								</div>
 								{isExpanded && (
 									<div className="border-gray-200 border-t dark:border-gray-700">
+										{/* Sprints section */}
+										{projectSprints(project.id).length > 0 && (
+											<div className="border-gray-100 border-b px-4 py-3 dark:border-gray-700">
+												<p className="mb-2 font-semibold text-gray-500 text-xs uppercase tracking-wide dark:text-gray-400">
+													{dict.sprints.title}
+												</p>
+												<ul className="flex flex-col gap-1.5">
+													{projectSprints(project.id).map((sprint) => (
+														<li
+															key={sprint.id}
+															className="flex flex-wrap items-center gap-2"
+														>
+															<span
+																className={`inline-flex items-center rounded-full px-2 py-0.5 font-medium text-xs ${sprintStatusBadge[sprint.status]}`}
+															>
+																{dict.sprints.status_items[sprint.status]}
+															</span>
+															<span className="text-gray-700 text-sm dark:text-gray-200">
+																{sprint.name}
+															</span>
+															{(sprint.startDate || sprint.dueDate) && (
+																<span className="text-gray-400 text-xs">
+																	{sprint.startDate
+																		? moment(sprint.startDate).format(
+																				'DD/MM/YYYY',
+																			)
+																		: '—'}
+																	{' → '}
+																	{sprint.dueDate
+																		? moment(sprint.dueDate).format(
+																				'DD/MM/YYYY',
+																			)
+																		: '—'}
+																</span>
+															)}
+														</li>
+													))}
+												</ul>
+											</div>
+										)}
+										{/* Tasks section */}
 										{pTodos.length === 0 ? (
 											<p className="px-4 py-3 text-gray-400 text-sm italic">
 												{dict.todolist.listitem.no_task}
@@ -431,14 +543,10 @@ function ProjectsManager() {
 						</div>
 					</ModalBody>
 					<ModalFooter>
-						<Button
-							size="sm"
-							variant="ghost"
-							onPress={() => setShowForm(false)}
-						>
+						<Button variant="ghost" onPress={() => setShowForm(false)}>
 							{dict.projects.cancel}
 						</Button>
-						<Button size="sm" variant="primary" onPress={handleSave}>
+						<Button variant="primary" onPress={handleSave}>
 							{editingProject ? dict.projects.save : dict.projects.create}
 						</Button>
 					</ModalFooter>

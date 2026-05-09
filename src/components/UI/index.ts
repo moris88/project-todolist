@@ -13,6 +13,7 @@ export {
 } from './Modal'
 export { default as Select } from './Select'
 export { default as SelectItem } from './SelectItem'
+export { default as StatusDropdown } from './StatusDropdown'
 export { default as Switch } from './Switch'
 export { default as Textarea } from './Textarea'
 export { default as Tooltip } from './Tooltip'

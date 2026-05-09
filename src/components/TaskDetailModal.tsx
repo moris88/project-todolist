@@ -13,9 +13,16 @@ import {
 	ModalContent,
 	ModalFooter,
 	ModalHeader,
+	StatusDropdown,
 } from '@/components/UI'
 import type { Status, Todo } from '@/types'
-import { isTaskOverdue, tagColor, updateTodoStorage } from '@/utils'
+import {
+	DATE_FORMAT,
+	isTaskOverdue,
+	PRIORITY_CHIP_COLOR,
+	tagColor,
+	updateTodoStorage,
+} from '@/utils'
 
 import Comments from './Comments'
 import ConfirmModal from './ConfirmModal'
@@ -31,16 +38,6 @@ interface TaskDetailModalProps {
 	onClose: () => void
 }
 
-const priorityChipColor: Record<
-	string,
-	'default' | 'success' | 'warning' | 'danger'
-> = {
-	urgent: 'danger',
-	high: 'warning',
-	medium: 'default',
-	low: 'success',
-}
-
 function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 	const dict = useAtomValue(dictAtom)
 	const [todos, setTodos] = useAtom(todoListAtom)
@@ -52,21 +49,8 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 		SubtaskTransfer[]
 	>([])
 	const [showEditConfirm, setShowEditConfirm] = React.useState(false)
-	const [isEditingStatus, setIsEditingStatus] = React.useState(false)
-	const statusDropdownRef = React.useRef<HTMLDivElement>(null)
 
 	const todo: Todo | null = todos.find((t) => t.id === todoId) ?? null
-
-	React.useEffect(() => {
-		if (!isEditingStatus) return
-		const handler = (e: MouseEvent) => {
-			if (!statusDropdownRef.current?.contains(e.target as Node)) {
-				setIsEditingStatus(false)
-			}
-		}
-		document.addEventListener('mousedown', handler)
-		return () => document.removeEventListener('mousedown', handler)
-	}, [isEditingStatus])
 
 	if (!todo) return null
 
@@ -97,27 +81,6 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 		)
 	}
 
-	const allStatuses: Status[] = [
-		'backlog',
-		'todo',
-		'progress',
-		'review',
-		'testing',
-		'paused',
-		'done',
-		'blocked',
-		'archived',
-	]
-
-	const statusColor = (s: Status) =>
-		s === 'done'
-			? 'bg-green-500'
-			: s === 'todo' || s === 'backlog'
-				? 'bg-gray-400'
-				: s === 'archived' || s === 'blocked'
-					? 'bg-red-500'
-					: 'bg-yellow-500'
-
 	const updateStatusInline = (newStatus: Status) => {
 		setTodos(
 			updateTodoStorage(
@@ -136,7 +99,6 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 				}),
 			),
 		)
-		setIsEditingStatus(false)
 	}
 
 	const handleEditSubmit = (
@@ -197,7 +159,9 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 									<GoAlertFill className="h-4 w-4 shrink-0 text-red-600" />
 								)}
 								{todo.priority !== 'medium' && (
-									<HiFlag className={`h-4 w-4 shrink-0 ${todo.priority === 'urgent' ? 'text-red-600' : todo.priority === 'high' ? 'text-yellow-600' : 'text-green-600'}`} />
+									<HiFlag
+										className={`h-4 w-4 shrink-0 ${todo.priority === 'urgent' ? 'text-red-600' : todo.priority === 'high' ? 'text-yellow-600' : 'text-green-600'}`}
+									/>
 								)}
 								<span
 									className={`truncate ${todo.completed ? 'text-green-600 line-through' : ''}`}
@@ -232,53 +196,13 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 						<div className="flex flex-col gap-5">
 							{/* Status · Priority · Tags */}
 							<div className="flex flex-wrap items-center gap-2">
-								<div ref={statusDropdownRef} className="relative">
-									<div className="flex items-center gap-1">
-										<Chip
-											color={
-												todo.status === 'done'
-													? 'success'
-													: todo.status === 'todo'
-														? 'default'
-														: todo.status === 'archived'
-															? 'danger'
-															: 'warning'
-											}
-										>
-											{dict.todolist.listitem.status.status}:{' '}
-											{dict.todolist.listitem.status.items[todo.status]}
-										</Chip>
-										<button
-											className="rounded p-0.5 text-gray-400 transition-colors hover:text-blue-500"
-											type="button"
-											onClick={() => setIsEditingStatus((v) => !v)}
-										>
-											<HiOutlinePencilSquare className="h-3.5 w-3.5" />
-										</button>
-									</div>
-									{isEditingStatus && (
-										<div className="absolute top-full left-0 z-50 mt-1 min-w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
-											{allStatuses.map((s) => (
-												<button
-													key={s}
-													className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-														todo.status === s
-															? 'font-semibold text-blue-600 dark:text-blue-400'
-															: 'text-gray-700 dark:text-gray-300'
-													}`}
-													type="button"
-													onClick={() => updateStatusInline(s)}
-												>
-													<span
-														className={`h-2 w-2 shrink-0 rounded-full ${statusColor(s)}`}
-													/>
-													{dict.todolist.listitem.status.items[s]}
-												</button>
-											))}
-										</div>
-									)}
-								</div>
-								<Chip color={priorityChipColor[todo.priority]}>
+								<StatusDropdown
+									status={todo.status}
+									statusLabel={dict.todolist.listitem.status.status}
+									statusItems={dict.todolist.listitem.status.items}
+									onChange={updateStatusInline}
+								/>
+								<Chip color={PRIORITY_CHIP_COLOR[todo.priority]}>
 									{dict.todolist.listitem.priority.items[todo.priority]}
 								</Chip>
 								{(todo.tags ?? []).map((tag) => (
@@ -296,19 +220,19 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 								{todo.createdAt && (
 									<Chip color="default" size="sm">
 										{dict.todolist.listitem.createdAt}:{' '}
-										{moment(todo.createdAt).format('DD/MM/YYYY HH:mm')}
+										{moment(todo.createdAt).format(DATE_FORMAT)}
 									</Chip>
 								)}
 								{todo.updatedAt && (
 									<Chip color="default" size="sm">
 										{dict.todolist.listitem.updatedAt}:{' '}
-										{moment(todo.updatedAt).format('DD/MM/YYYY HH:mm')}
+										{moment(todo.updatedAt).format(DATE_FORMAT)}
 									</Chip>
 								)}
 								{todo.completedAt && (
 									<Chip color="success" size="sm">
 										{dict.todolist.listitem.completedAt}:{' '}
-										{moment(todo.completedAt).format('DD/MM/YYYY HH:mm')}
+										{moment(todo.completedAt).format(DATE_FORMAT)}
 									</Chip>
 								)}
 								{todo.dueDate && (
@@ -319,7 +243,7 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 										{overdue && !todo.completed
 											? dict.todolist.listitem.expired
 											: dict.todolist.listitem.dueDateAt}
-										: {moment(todo.dueDate).format('DD/MM/YYYY HH:mm')}
+										: {moment(todo.dueDate).format(DATE_FORMAT)}
 									</Chip>
 								)}
 							</div>
@@ -387,8 +311,7 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 													</span>
 													{s.completed && s.completedAt && (
 														<span className="ml-1 text-gray-400 text-xs">
-															—{' '}
-															{moment(s.completedAt).format('DD/MM/YYYY HH:mm')}
+															— {moment(s.completedAt).format(DATE_FORMAT)}
 														</span>
 													)}
 													{!s.completed && (s.priority || s.status) && (
@@ -445,7 +368,7 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 					</ModalBody>
 
 					<ModalFooter>
-						<Button size="sm" variant="ghost" onPress={onClose}>
+						<Button variant="ghost" onPress={onClose}>
 							{dict.todolist.editTask.cancel}
 						</Button>
 					</ModalFooter>

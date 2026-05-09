@@ -28,7 +28,12 @@ export function generateUniqueId() {
 	return `${timestamp}-${random}`
 }
 
-const PRIORITY_RANK: Record<string, number> = { urgent: 0, high: 1, medium: 2, low: 3 }
+const PRIORITY_RANK: Record<string, number> = {
+	urgent: 0,
+	high: 1,
+	medium: 2,
+	low: 3,
+}
 
 export function orderTodos(a: Todo, b: Todo): number {
 	if (a.completed !== b.completed) return a.completed ? 1 : -1
@@ -67,10 +72,14 @@ export function applyFilters(
 		if (!filters.tags.some((t) => todoTags.includes(t))) return false
 	}
 	if (filters.projectId) {
-		if (todo.projectId !== filters.projectId) return false
+		if (filters.projectId === '__none__') {
+			if (todo.projectId) return false
+		} else if (todo.projectId !== filters.projectId) return false
 	}
 	if (filters.sprintId) {
-		if (todo.sprintId !== filters.sprintId) return false
+		if (filters.sprintId === '__none__') {
+			if (todo.sprintId) return false
+		} else if (todo.sprintId !== filters.sprintId) return false
 	}
 	if (filters.search) {
 		const q = filters.search.toLowerCase()

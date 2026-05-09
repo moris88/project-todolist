@@ -385,6 +385,15 @@ function TodoList() {
 												label={dict.todolist.listitem.filter.all}
 												onClick={() => setFilterProjectId('')}
 											/>
+											<FilterPill
+												isActive={filterProjectId === '__none__'}
+												label={dict.todolist.listitem.filter.no_project}
+												onClick={() =>
+													setFilterProjectId(
+														filterProjectId === '__none__' ? '' : '__none__',
+													)
+												}
+											/>
 											{projects.map((p) => (
 												<FilterPill
 													key={p.id}
@@ -412,6 +421,15 @@ function TodoList() {
 												isActive={filterSprintId === ''}
 												label={dict.todolist.listitem.filter.all}
 												onClick={() => setFilterSprintId('')}
+											/>
+											<FilterPill
+												isActive={filterSprintId === '__none__'}
+												label={dict.todolist.listitem.filter.no_sprint}
+												onClick={() =>
+													setFilterSprintId(
+														filterSprintId === '__none__' ? '' : '__none__',
+													)
+												}
 											/>
 											{sprints.map((s) => (
 												<FilterPill

@@ -34,6 +34,7 @@ import {
 	ButtonGroup,
 	Checkbox,
 	Chip,
+	Input,
 	Modal,
 	ModalBody,
 	ModalContent,
@@ -41,10 +42,12 @@ import {
 	ModalHeader,
 	Select,
 	SelectItem,
+	StatusDropdown,
 	Tooltip,
 } from '@/components/UI'
 import type { Status, Todo } from '@/types'
 import {
+	DATE_FORMAT,
 	generateUniqueId,
 	isTaskOverdue,
 	removeTodoStorage,
@@ -91,8 +94,6 @@ function TodoItem({
 	const [showSubtasksLocal, setShowSubtasksLocal] = React.useState(false)
 	const [moveSubtaskId, setMoveSubtaskId] = React.useState<string | null>(null)
 	const [moveTargetTodoId, setMoveTargetTodoId] = React.useState('')
-	const [isEditingStatus, setIsEditingStatus] = React.useState(false)
-	const statusDropdownRef = React.useRef<HTMLDivElement>(null)
 
 	const hasComments = comments.filter((c) => c.todoId === todo.id)?.length > 0
 	const hasSubtasks = todo.subtasks?.length > 0
@@ -260,27 +261,6 @@ function TodoItem({
 		setMoveTargetTodoId('')
 	}
 
-	const allStatuses: Status[] = [
-		'backlog',
-		'todo',
-		'progress',
-		'review',
-		'testing',
-		'paused',
-		'done',
-		'blocked',
-		'archived',
-	]
-
-	const statusColor = (s: Status) =>
-		s === 'done'
-			? 'bg-green-500'
-			: s === 'todo' || s === 'backlog'
-				? 'bg-gray-400'
-				: s === 'archived' || s === 'blocked'
-					? 'bg-red-500'
-					: 'bg-yellow-500'
-
 	const updateStatusInline = (newStatus: Status) => {
 		const updatedTodos = todos.map((t) => {
 			if (t.id !== todo.id) return t
@@ -296,20 +276,7 @@ function TodoItem({
 			}
 		})
 		setTodos(updateTodoStorage(updatedTodos))
-		setIsEditingStatus(false)
 	}
-
-	React.useEffect(() => {
-		if (!isEditingStatus) return
-		const handler = (e: MouseEvent) => {
-			if (!statusDropdownRef.current?.contains(e.target as Node)) {
-				setIsEditingStatus(false)
-			}
-		}
-		document.addEventListener('mousedown', handler)
-		return () => document.removeEventListener('mousedown', handler)
-	}, [isEditingStatus])
-
 
 	return (
 		<div className={`flex w-full flex-col items-start justify-start gap-y-2`}>
@@ -348,9 +315,13 @@ function TodoItem({
 									onChange={() => toggleTodo()}
 								/>
 							</div>
-							{isTaskOverdue(todo.dueDate) && <GoAlertFill className="h-4 w-4 text-red-600" />}{' '}
+							{isTaskOverdue(todo.dueDate) && (
+								<GoAlertFill className="h-4 w-4 text-red-600" />
+							)}{' '}
 							{todo.priority !== 'medium' && (
-								<HiFlag className={`h-3 w-3 ${todo.priority === 'urgent' ? 'text-red-600' : todo.priority === 'high' ? 'text-yellow-600' : 'text-green-600'}`} />
+								<HiFlag
+									className={`h-3 w-3 ${todo.priority === 'urgent' ? 'text-red-600' : todo.priority === 'high' ? 'text-yellow-600' : 'text-green-600'}`}
+								/>
 							)}{' '}
 							<span
 								className={`line-clamp-1 overflow-hidden text-ellipsis ${
@@ -394,7 +365,11 @@ function TodoItem({
 								(() => {
 									const sprint = sprints.find((s) => s.id === todo.sprintId)
 									return sprint ? (
-										<span className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 font-medium text-blue-600 text-xs dark:bg-blue-900/30 dark:text-blue-400">
+										<span className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2 py-0.5 font-medium text-gray-600 text-xs dark:bg-gray-700 dark:text-gray-300">
+											<span
+												className="h-2 w-2 shrink-0 rounded-full"
+												style={{ backgroundColor: sprint.color }}
+											/>
 											{sprint.name}
 										</span>
 									) : null
@@ -467,7 +442,7 @@ function TodoItem({
 													{s.completed && s.completedAt && (
 														<span className="block text-gray-400 text-xs dark:text-gray-500">
 															{dict.todolist.listitem.completedAt}:{' '}
-															{moment(s.completedAt).format('DD/MM/YYYY HH:mm')}
+															{moment(s.completedAt).format(DATE_FORMAT)}
 														</span>
 													)}
 													{!s.completed && (s.priority || s.status) && (
@@ -541,10 +516,9 @@ function TodoItem({
 								!todo.completed &&
 								todo.status !== 'archived' && (
 									<div className="flex items-center gap-2 border-gray-200 border-t px-2 py-2 dark:border-gray-700">
-										<input
-											className="flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+										<Input
+											className="flex-1"
 											placeholder={dict.todolist.subtasks.placeholder}
-											type="text"
 											value={quickAddTitle}
 											onChange={(e) => setQuickAddTitle(e.target.value)}
 											onKeyDown={(e) => {
@@ -597,21 +571,21 @@ function TodoItem({
 							{todo.createdAt && (
 								<Chip color="default" size="sm">
 									{dict.todolist.listitem.createdAt}:{' '}
-									{moment(todo.createdAt).format('DD/MM/YYYY HH:mm')}
+									{moment(todo.createdAt).format(DATE_FORMAT)}
 								</Chip>
 							)}
 
 							{todo.updatedAt && (
 								<Chip color="default" size="sm">
 									{dict.todolist.listitem.updatedAt}:{' '}
-									{moment(todo.updatedAt).format('DD/MM/YYYY HH:mm')}
+									{moment(todo.updatedAt).format(DATE_FORMAT)}
 								</Chip>
 							)}
 
 							{todo.completed ? (
 								<Chip color="success" size="sm">
 									{dict.todolist.listitem.completedAt}:{' '}
-									{moment(todo.completedAt).format('DD/MM/YYYY HH:mm')}
+									{moment(todo.completedAt).format(DATE_FORMAT)}
 								</Chip>
 							) : (
 								todo.dueDate && (
@@ -622,7 +596,7 @@ function TodoItem({
 										{isTaskOverdue(todo.dueDate)
 											? dict.todolist.listitem.expired
 											: dict.todolist.listitem.dueDateAt}
-										: {moment(todo.dueDate).format('DD/MM/YYYY HH:mm')}
+										: {moment(todo.dueDate).format(DATE_FORMAT)}
 									</Chip>
 								)
 							)}
@@ -697,60 +671,12 @@ function TodoItem({
 				</div>
 				{!showOnlyTitle && (
 					<div className="flex w-full items-center justify-between gap-2">
-						<div ref={statusDropdownRef} className="relative">
-							<div className="flex items-center gap-1">
-								<Chip
-									color={
-										todo.status === 'done'
-											? 'success'
-											: todo.status === 'todo' || todo.status === 'backlog'
-												? 'default'
-												: todo.status === 'archived' ||
-														todo.status === 'blocked'
-													? 'danger'
-													: 'warning'
-									}
-								>
-									{dict.todolist.listitem.status.status}:{' '}
-									{dict.todolist.listitem.status.items[todo.status]}
-								</Chip>
-								<button
-									className="rounded p-0.5 text-gray-400 transition-colors hover:text-blue-500"
-									title="Modifica stato"
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation()
-										setIsEditingStatus((v) => !v)
-									}}
-								>
-									<HiOutlinePencilSquare className="h-3.5 w-3.5" />
-								</button>
-							</div>
-							{isEditingStatus && (
-								<div className="absolute top-full left-0 z-50 mt-1 min-w-40 rounded-lg border border-gray-200 bg-white py-1 shadow-lg dark:border-gray-600 dark:bg-gray-800">
-									{allStatuses.map((s) => (
-										<button
-											key={s}
-											className={`flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm transition-colors hover:bg-gray-100 dark:hover:bg-gray-700 ${
-												todo.status === s
-													? 'font-semibold text-blue-600 dark:text-blue-400'
-													: 'text-gray-700 dark:text-gray-300'
-											}`}
-											type="button"
-											onClick={(e) => {
-												e.stopPropagation()
-												updateStatusInline(s)
-											}}
-										>
-											<span
-												className={`h-2 w-2 shrink-0 rounded-full ${statusColor(s)}`}
-											/>
-											{dict.todolist.listitem.status.items[s]}
-										</button>
-									))}
-								</div>
-							)}
-						</div>
+						<StatusDropdown
+							status={todo.status}
+							statusLabel={dict.todolist.listitem.status.status}
+							statusItems={dict.todolist.listitem.status.items}
+							onChange={updateStatusInline}
+						/>
 						<div className="flex items-center gap-2">
 							{hasSubtasks && (
 								<Chip color="default">

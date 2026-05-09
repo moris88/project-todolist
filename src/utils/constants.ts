@@ -90,16 +90,16 @@ const itDict = {
 				no_project: 'Nessun progetto',
 				no_sprint: 'Nessuno sprint',
 				csv: {
-					export: 'Esporta in CSV',
-					import: 'Importa da CSV',
-					success: 'Importazione completata con successo',
-					error: "Errore durante l'importazione del file CSV",
-					export_comments: 'Esporta commenti',
-					import_comments: 'Importa commenti',
-					success_comments: 'Importazione commenti completata con successo',
-					error_comments: "Errore durante l'importazione dei commenti",
 					section_tasks: 'Task',
-					section_comments: 'Commenti',
+					section_projects: 'Progetti',
+					section_sprints: 'Sprint',
+					section_json: 'Backup completo',
+					export_json: 'Esporta JSON',
+					import_json: 'Importa JSON',
+					success_json: 'Importazione completata con successo',
+					error_json: 'File JSON non valido o corrotto',
+					confirm_import_json:
+						'Importando il JSON sostituirai tutti i dati esistenti (task, progetti, sprint, commenti e impostazioni). Continuare?',
 				},
 				buttons: {
 					message: 'Che operazione vuoi fare?',
@@ -116,6 +116,25 @@ const itDict = {
 					clear_all: {
 						label: 'Rimuovi tutti i compiti',
 						message: 'Sei sicuro di voler eliminare tutti i compiti?',
+					},
+					clear_completed_projects: {
+						label: 'Pulisci progetti completati',
+						message:
+							'Sei sicuro di voler eliminare tutti i progetti completati (e i loro sprint)?',
+					},
+					clear_all_projects: {
+						label: 'Rimuovi tutti i progetti',
+						message:
+							'Sei sicuro di voler eliminare tutti i progetti e tutti i loro sprint?',
+					},
+					clear_completed_sprints: {
+						label: 'Pulisci sprint completati',
+						message:
+							'Sei sicuro di voler eliminare tutti gli sprint completati?',
+					},
+					clear_all_sprints: {
+						label: 'Rimuovi tutti gli sprint',
+						message: 'Sei sicuro di voler eliminare tutti gli sprint?',
 					},
 					no_tasks: 'Non ci sono compiti da filtrare',
 				},
@@ -232,6 +251,8 @@ const itDict = {
 		save: 'Salva',
 		create: 'Crea',
 		tasks_count: 'compiti',
+		add_task_placeholder: 'Aggiungi un compito...',
+		add_task: 'Aggiungi',
 	},
 	trash: {
 		title: 'Cestino',
@@ -259,6 +280,12 @@ const itDict = {
 		theme_dark: 'Tema scuro',
 		import_export: 'Import / Export',
 		danger_zone: 'Danger Zone',
+		project_limits: 'Limiti task per priorità',
+		project_limits_desc:
+			'Numero massimo di task attivi per priorità (per singolo progetto, esclude done/blocked/archived)',
+		max_active_sprints: 'Sprint attivi massimi',
+		max_active_sprints_desc:
+			'Numero massimo di sprint su cui puoi lavorare contemporaneamente',
 	},
 }
 
@@ -353,16 +380,16 @@ const enDict = {
 				no_project: 'No project',
 				no_sprint: 'No sprint',
 				csv: {
-					export: 'Export to CSV',
-					import: 'Import from CSV',
-					success: 'Import completed successfully',
-					error: 'Error while importing the CSV file',
-					export_comments: 'Export comments',
-					import_comments: 'Import comments',
-					success_comments: 'Comments import completed successfully',
-					error_comments: 'Error while importing comments',
 					section_tasks: 'Tasks',
-					section_comments: 'Comments',
+					section_projects: 'Projects',
+					section_sprints: 'Sprints',
+					section_json: 'Full backup',
+					export_json: 'Export JSON',
+					import_json: 'Import JSON',
+					success_json: 'Import completed successfully',
+					error_json: 'Invalid or corrupted JSON file',
+					confirm_import_json:
+						'Importing JSON will replace all existing data (tasks, projects, sprints, comments and settings). Continue?',
 				},
 				buttons: {
 					message: 'What do you want to do?',
@@ -378,6 +405,24 @@ const enDict = {
 					clear_all: {
 						label: 'Remove all tasks',
 						message: 'Are you sure you want to delete all tasks?',
+					},
+					clear_completed_projects: {
+						label: 'Clear completed projects',
+						message:
+							'Are you sure you want to delete all completed projects (and their sprints)?',
+					},
+					clear_all_projects: {
+						label: 'Remove all projects',
+						message:
+							'Are you sure you want to delete all projects and their sprints?',
+					},
+					clear_completed_sprints: {
+						label: 'Clear completed sprints',
+						message: 'Are you sure you want to delete all completed sprints?',
+					},
+					clear_all_sprints: {
+						label: 'Remove all sprints',
+						message: 'Are you sure you want to delete all sprints?',
 					},
 					no_tasks: 'There are no tasks to filter',
 				},
@@ -494,6 +539,8 @@ const enDict = {
 		save: 'Save',
 		create: 'Create',
 		tasks_count: 'tasks',
+		add_task_placeholder: 'Add a task...',
+		add_task: 'Add',
 	},
 	trash: {
 		title: 'Trash',
@@ -520,6 +567,12 @@ const enDict = {
 		theme_dark: 'Dark mode',
 		import_export: 'Import / Export',
 		danger_zone: 'Danger Zone',
+		project_limits: 'Task limits by priority',
+		project_limits_desc:
+			'Maximum active tasks per priority (per project, excludes done/blocked/archived)',
+		max_active_sprints: 'Maximum active sprints',
+		max_active_sprints_desc:
+			'Maximum number of sprints you can work on simultaneously',
 	},
 }
 

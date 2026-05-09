@@ -1067,7 +1067,7 @@ describe('DangerZone', () => {
     expect(screen.getAllByText('Pulisci completati').length).toBeGreaterThan(1)
   })
 
-  it('handles CSV import for todos', async () => {
+  it('handles JSON import successfully', async () => {
     const mockAlert = vi.spyOn(window, 'alert').mockImplementation(() => {})
     let capturedOnload: any = null
     const readerMock = {
@@ -1075,31 +1075,34 @@ describe('DangerZone', () => {
       set onload(fn: any) { capturedOnload = fn },
       get onload() { return capturedOnload }
     }
-    vi.stubGlobal('FileReader', vi.fn(function(this: any) {
-      return readerMock
-    }))
+    vi.stubGlobal('FileReader', vi.fn(function(this: any) { return readerMock }))
 
-    const { container } = render(
-      <TestProvider>
-        <DangerZone />
-      </TestProvider>
-    )
-    fireEvent.click(screen.getAllByRole('checkbox')[0]) // Enable Import/Export
+    const validJSON = JSON.stringify({
+      version: '1',
+      exportedAt: new Date().toISOString(),
+      todos: [],
+      projects: [],
+      sprints: [],
+      comments: [],
+      settings: { language: 'it', darkMode: false, tags: [], projectLimits: { urgent: 2, high: 2, medium: 4, low: 6 }, maxActiveSprints: 3 },
+    })
 
-    const inputs = container.querySelectorAll('input[type="file"]')
-    const input = inputs[0] as HTMLInputElement
-    fireEvent.change(input, { target: { files: [new File(['id,title\nt1,Task'], 'tasks.csv', { type: 'text/csv' })] } })
+    const { container } = render(<TestProvider><DangerZone /></TestProvider>)
+    fireEvent.click(screen.getAllByRole('checkbox')[0])
 
-    // Wait for the handler to instantiate FileReader and set onload
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [new File([validJSON], 'backup.json', { type: 'application/json' })] } })
+
     await waitFor(() => expect(typeof capturedOnload).toBe('function'))
-    capturedOnload({ target: { result: 'id,title\nt1,Task' } })
+    capturedOnload({ target: { result: validJSON } })
 
-    await waitFor(() => expect(mockAlert).toHaveBeenCalledWith(expect.stringContaining('Importazione completata con successo')))
+    // Confirm modal should appear (multiple elements with this text is fine)
+    await waitFor(() => expect(screen.getAllByText('Importa JSON').length).toBeGreaterThan(0))
     vi.unstubAllGlobals()
     mockAlert.mockRestore()
   })
 
-  it('handles CSV import for comments', async () => {
+  it('shows alert on invalid JSON import', async () => {
     const mockAlert = vi.spyOn(window, 'alert').mockImplementation(() => {})
     let capturedOnload: any = null
     const readerMock = {
@@ -1107,26 +1110,18 @@ describe('DangerZone', () => {
       set onload(fn: any) { capturedOnload = fn },
       get onload() { return capturedOnload }
     }
-    vi.stubGlobal('FileReader', vi.fn(function(this: any) {
-      return readerMock
-    }))
+    vi.stubGlobal('FileReader', vi.fn(function(this: any) { return readerMock }))
 
-    const { container } = render(
-      <TestProvider>
-        <DangerZone />
-      </TestProvider>
-    )
-    fireEvent.click(screen.getAllByRole('checkbox')[0]) // Enable Import/Export
+    const { container } = render(<TestProvider><DangerZone /></TestProvider>)
+    fireEvent.click(screen.getAllByRole('checkbox')[0])
 
-    const inputs = container.querySelectorAll('input[type="file"]')
-    const input = inputs[1] as HTMLInputElement
-    fireEvent.change(input, { target: { files: [new File(['id,todoId,text,createdAt\nc1,t1,Comm,2024-01-01'], 'comments.csv', { type: 'text/csv' })] } })
+    const input = container.querySelector('input[type="file"]') as HTMLInputElement
+    fireEvent.change(input, { target: { files: [new File(['not valid json'], 'bad.json', { type: 'application/json' })] } })
 
-    // Wait for the handler to instantiate FileReader and set onload
     await waitFor(() => expect(typeof capturedOnload).toBe('function'))
-    capturedOnload({ target: { result: 'id,todoId,text,createdAt\nc1,t1,Comm,2024-01-01' } })
+    capturedOnload({ target: { result: 'not valid json' } })
 
-    await waitFor(() => expect(mockAlert).toHaveBeenCalledWith(expect.stringContaining('Importazione commenti completata con successo')))
+    await waitFor(() => expect(mockAlert).toHaveBeenCalled())
     vi.unstubAllGlobals()
     mockAlert.mockRestore()
   })
@@ -1282,7 +1277,7 @@ describe('TodoItem', () => {
         <TodoItem todo={baseTodo} />
       </TestProvider>
     )
-    const editStatusBtn = screen.getByTitle('Modifica stato')
+    const editStatusBtn = screen.getByTestId('status-edit-btn')
     fireEvent.click(editStatusBtn)
     expect(screen.getByText('In corso')).toBeInTheDocument()
   })
@@ -2158,7 +2153,7 @@ describe('TodoItem extra', () => {
     )
     const addInput = screen.getByPlaceholderText(/Titolo del sottocompito/i)
     fireEvent.change(addInput, { target: { value: 'New inline subtask' } })
-    const addBtn = addInput.parentElement?.querySelector('button')
+    const addBtn = addInput.parentElement?.parentElement?.querySelector('button')
     if (addBtn) fireEvent.click(addBtn)
     expect(screen.getByText('New inline subtask')).toBeInTheDocument()
   })
@@ -2195,7 +2190,7 @@ describe('TodoItem extra', () => {
         <TodoItem todo={baseTodo} />
       </TestProvider>
     )
-    fireEvent.click(screen.getByTitle('Modifica stato'))
+    fireEvent.click(screen.getByTestId('status-edit-btn'))
     const progressBtn = screen.getByText('In corso')
     fireEvent.click(progressBtn)
     // Dropdown should close and status should update
@@ -2756,23 +2751,30 @@ describe('DangerZone import/export coverage', () => {
     expect(global.URL.createObjectURL).toHaveBeenCalled()
   })
 
-  it('Export comments CSV button calls exportCommentsToCSV', () => {
-    const comment: Comment = {
-      id: 'c1',
-      todoId: 'todo-1',
-      text: 'hello',
-      createdAt: new Date().toISOString(),
-    }
+  it('Export projects CSV button triggers download', () => {
     render(
-      <TestProvider initialValues={[[todoListAtom, [baseTodo]], [commentsAtom, [comment]]]}>
+      <TestProvider>
         <DangerZone />
       </TestProvider>
     )
     const switches = screen.getAllByRole('checkbox')
     fireEvent.click(switches[0])
-    const csvBtns = screen.getAllByText('CSV')
-    // Third CSV button = export comments
-    if (csvBtns.length >= 3) fireEvent.click(csvBtns[2])
+    const csvBtns = screen.getAllByText('CSV').filter(el => el.tagName !== 'SPAN')
+    // Second CSV button = export projects
+    if (csvBtns.length >= 2) fireEvent.click(csvBtns[1])
+    expect(global.URL.createObjectURL).toHaveBeenCalled()
+  })
+
+  it('Export JSON button triggers download', () => {
+    render(
+      <TestProvider>
+        <DangerZone />
+      </TestProvider>
+    )
+    const switches = screen.getAllByRole('checkbox')
+    fireEvent.click(switches[0])
+    const jsonBtns = screen.getAllByText('JSON').filter(el => el.tagName !== 'SPAN')
+    if (jsonBtns.length >= 1) fireEvent.click(jsonBtns[0])
     expect(global.URL.createObjectURL).toHaveBeenCalled()
   })
 

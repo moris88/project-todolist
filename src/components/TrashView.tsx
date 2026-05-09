@@ -6,7 +6,7 @@ import { HiArrowUturnLeft, HiMiniTrash } from 'react-icons/hi2'
 import { commentsAtom, dictAtom, todoListAtom, trashAtom } from '@/atoms'
 import { ConfirmModal } from '@/components'
 import { Button, Chip } from '@/components/UI'
-import { addTodoStorage, removeCommentsByTodoId } from '@/utils'
+import { addTodoStorage, DATE_FORMAT, removeCommentsByTodoId } from '@/utils'
 
 function TrashView() {
 	const [trash, setTrash] = useAtom(trashAtom)
@@ -74,7 +74,7 @@ function TrashView() {
 								{item.deletedAt && (
 									<Chip color="danger" size="sm">
 										{dict.trash.deleted_at}:{' '}
-										{moment(item.deletedAt).format('DD/MM/YYYY HH:mm')}
+										{moment(item.deletedAt).format(DATE_FORMAT)}
 									</Chip>
 								)}
 							</div>
