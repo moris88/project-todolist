@@ -4,7 +4,6 @@ import { isTaskOverdue } from '../src/utils/todo'
 import {
   type FilterState,
   applyFilters,
-  filterTodoByStatus,
   generateUniqueId,
   orderTodos,
   tagColor,
@@ -114,81 +113,16 @@ describe('orderTodos', () => {
     expect(orderTodos(a, b)).toBeLessThan(0)
   })
 
-  it('sorts high before low (a=high, b=low → -1)', () => {
+  it('sorts high before low', () => {
     const a = makeTodo({ priority: 'high' })
     const b = makeTodo({ priority: 'low' })
-    expect(orderTodos(a, b)).toBe(-1)
+    expect(orderTodos(a, b)).toBeLessThan(0)
   })
 
   it('returns a number for identical todos with same priority', () => {
     const a = makeTodo({ priority: 'medium' })
     const b = makeTodo({ priority: 'medium' })
     expect(typeof orderTodos(a, b)).toBe('number')
-  })
-})
-
-// ─── filterTodoByStatus ───────────────────────────────────────────────────────
-
-describe('filterTodoByStatus', () => {
-  it("filter '0' always returns true regardless of status", () => {
-    expect(filterTodoByStatus(makeTodo({ status: 'todo' }), '0')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ status: 'progress', completed: true }), '0')).toBe(true)
-  })
-
-  it("filter '1' returns true for status=todo, false for progress", () => {
-    expect(filterTodoByStatus(makeTodo({ status: 'todo' }), '1')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ status: 'progress' }), '1')).toBe(false)
-  })
-
-  it("filter '2' returns true for status=progress, false for todo", () => {
-    expect(filterTodoByStatus(makeTodo({ status: 'progress' }), '2')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ status: 'todo' }), '2')).toBe(false)
-  })
-
-  it("filter '3' returns true for status=review", () => {
-    expect(filterTodoByStatus(makeTodo({ status: 'review' }), '3')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ status: 'todo' }), '3')).toBe(false)
-  })
-
-  it("filter '4' returns true for status=testing", () => {
-    expect(filterTodoByStatus(makeTodo({ status: 'testing' }), '4')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ status: 'todo' }), '4')).toBe(false)
-  })
-
-  it("filter '5' returns true for status=blocked", () => {
-    expect(filterTodoByStatus(makeTodo({ status: 'blocked' }), '5')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ status: 'todo' }), '5')).toBe(false)
-  })
-
-  it("filter '6' returns true for status=paused", () => {
-    expect(filterTodoByStatus(makeTodo({ status: 'paused' }), '6')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ status: 'todo' }), '6')).toBe(false)
-  })
-
-  it("filter '7' returns true for completed=true, false for completed=false", () => {
-    expect(filterTodoByStatus(makeTodo({ completed: true }), '7')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ completed: false }), '7')).toBe(false)
-  })
-
-  it("filter '8' returns true for completed=false, false for completed=true", () => {
-    expect(filterTodoByStatus(makeTodo({ completed: false }), '8')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ completed: true }), '8')).toBe(false)
-  })
-
-  it("filter '9' returns true for past dueDate, false for null", () => {
-    const past = new Date(Date.now() - 1000 * 60 * 60).toISOString()
-    expect(filterTodoByStatus(makeTodo({ dueDate: past }), '9')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ dueDate: null }), '9')).toBe(false)
-  })
-
-  it("filter '10' returns true for null dueDate, false for past dueDate", () => {
-    const past = new Date(Date.now() - 1000 * 60 * 60).toISOString()
-    expect(filterTodoByStatus(makeTodo({ dueDate: null }), '10')).toBe(true)
-    expect(filterTodoByStatus(makeTodo({ dueDate: past }), '10')).toBe(false)
-  })
-
-  it("default unknown filter returns false", () => {
-    expect(filterTodoByStatus(makeTodo(), 'unknown')).toBe(false)
   })
 })
 

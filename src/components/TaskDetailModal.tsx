@@ -186,13 +186,6 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 		setShowEditConfirm(false)
 	}
 
-	const flagIcon: Record<string, React.ReactNode> = {
-		low: <HiFlag className="h-4 w-4 shrink-0 text-green-600" />,
-		medium: null,
-		high: <HiFlag className="h-4 w-4 shrink-0 text-yellow-600" />,
-		urgent: <HiFlag className="h-4 w-4 shrink-0 text-red-600" />,
-	}
-
 	return (
 		<>
 			<Modal isDismissable isOpen={isOpen} onClose={onClose}>
@@ -203,7 +196,9 @@ function TaskDetailModal({ todoId, isOpen, onClose }: TaskDetailModalProps) {
 								{overdue && !todo.completed && (
 									<GoAlertFill className="h-4 w-4 shrink-0 text-red-600" />
 								)}
-								{flagIcon[todo.priority]}
+								{todo.priority !== 'medium' && (
+									<HiFlag className={`h-4 w-4 shrink-0 ${todo.priority === 'urgent' ? 'text-red-600' : todo.priority === 'high' ? 'text-yellow-600' : 'text-green-600'}`} />
+								)}
 								<span
 									className={`truncate ${todo.completed ? 'text-green-600 line-through' : ''}`}
 								>

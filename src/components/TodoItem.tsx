@@ -310,17 +310,6 @@ function TodoItem({
 		return () => document.removeEventListener('mousedown', handler)
 	}, [isEditingStatus])
 
-	const flagIcon: Record<string, React.ReactNode> = {
-		low: <HiFlag className="h-3 w-3 text-green-600" />,
-		medium: <></>,
-		high: <HiFlag className="h-3 w-3 text-yellow-600" />,
-		urgent: <HiFlag className="h-3 w-3 text-red-600" />,
-	}
-
-	const overdue: Record<string, React.ReactNode> = {
-		true: <GoAlertFill className="h-4 w-4 text-red-600" />,
-		false: <></>,
-	}
 
 	return (
 		<div className={`flex w-full flex-col items-start justify-start gap-y-2`}>
@@ -359,8 +348,10 @@ function TodoItem({
 									onChange={() => toggleTodo()}
 								/>
 							</div>
-							{overdue[isTaskOverdue(todo.dueDate) ? 'true' : 'false']}{' '}
-							{flagIcon[todo.priority]}{' '}
+							{isTaskOverdue(todo.dueDate) && <GoAlertFill className="h-4 w-4 text-red-600" />}{' '}
+							{todo.priority !== 'medium' && (
+								<HiFlag className={`h-3 w-3 ${todo.priority === 'urgent' ? 'text-red-600' : todo.priority === 'high' ? 'text-yellow-600' : 'text-green-600'}`} />
+							)}{' '}
 							<span
 								className={`line-clamp-1 overflow-hidden text-ellipsis ${
 									todo.completed

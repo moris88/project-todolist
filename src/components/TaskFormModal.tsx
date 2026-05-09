@@ -366,33 +366,11 @@ function TaskFormBody({
 						label={dict.todolist.listitem.status.label}
 						onChange={(e) => setStatus(e.target.value as Status)}
 					>
-						<SelectItem value="backlog">
-							{dict.todolist.listitem.status.items.backlog}
-						</SelectItem>
-						<SelectItem value="todo">
-							{dict.todolist.listitem.status.items.todo}
-						</SelectItem>
-						<SelectItem value="progress">
-							{dict.todolist.listitem.status.items.progress}
-						</SelectItem>
-						<SelectItem value="done">
-							{dict.todolist.listitem.status.items.done}
-						</SelectItem>
-						<SelectItem value="paused">
-							{dict.todolist.listitem.status.items.paused}
-						</SelectItem>
-						<SelectItem value="review">
-							{dict.todolist.listitem.status.items.review}
-						</SelectItem>
-						<SelectItem value="testing">
-							{dict.todolist.listitem.status.items.testing}
-						</SelectItem>
-						<SelectItem value="blocked">
-							{dict.todolist.listitem.status.items.blocked}
-						</SelectItem>
-						<SelectItem value="archived">
-							{dict.todolist.listitem.status.items.archived}
-						</SelectItem>
+						{(['backlog', 'todo', 'progress', 'done', 'paused', 'review', 'testing', 'blocked', 'archived'] as const).map((s) => (
+							<SelectItem key={s} value={s}>
+								{dict.todolist.listitem.status.items[s]}
+							</SelectItem>
+						))}
 					</Select>
 
 					{/* Project selector */}
