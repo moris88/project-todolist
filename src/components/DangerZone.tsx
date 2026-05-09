@@ -227,7 +227,7 @@ function DangerZone() {
 			</div>
 
 			<div
-				className={`${showImportExport ? 'rounded-lg bg-blue-200 p-1 hover:shadow-blue-500 hover:shadow-lg md:p-5' : ''}`}
+				className={`${showImportExport ? 'rounded-lg bg-blue-200 p-1 md:p-5' : ''}`}
 			>
 				{showImportExport && (
 					<div className="flex w-full flex-col items-center justify-center gap-4">
@@ -287,43 +287,20 @@ function DangerZone() {
 			</div>
 
 			<div
-				className={`${showDangerZone ? 'rounded-lg bg-red-200 p-1 hover:shadow-lg hover:shadow-red-500 md:p-5' : ''}`}
+				className={`${showDangerZone ? 'rounded-lg bg-red-200 p-1 md:p-5' : ''}`}
 			>
 				{showDangerZone && todos.length > 0 && (
-					<>
-						<div className="hidden w-full flex-col items-center justify-center md:flex">
-							<p className="py-5 font-bold text-black">
-								{dict.todolist.listitem.filter.buttons.message}
-							</p>
-							<p className="mb-5 text-center text-red-500 text-sm italic dark:text-red-400">
-								{dict.todolist.listitem.filter.buttons.description}
-							</p>
-							<ButtonGroup>
-								{buttons.map((button) => (
-									<Button
-										key={button.key}
-										size="lg"
-										variant="primary"
-										onPress={() =>
-											setShowDeleteModal({
-												...showDeleteModal,
-												[button.key]: true,
-											})
-										}
-									>
-										{button.text}
-									</Button>
-								))}
-							</ButtonGroup>
-						</div>
-						<div className="my-10 flex w-full flex-col items-center justify-center gap-y-2 md:hidden">
-							<p className="py-5 font-bold text-black">
-								{dict.todolist.listitem.filter.buttons.message}
-							</p>
+					<div className="w-full flex-col items-center justify-center">
+						<p className="py-5 text-center font-bold text-black">
+							{dict.todolist.listitem.filter.buttons.message}
+						</p>
+						<p className="mb-5 text-center text-red-500 text-sm italic dark:text-red-400">
+							{dict.todolist.listitem.filter.buttons.description}
+						</p>
+						<ButtonGroup autoOrientation>
 							{buttons.map((button) => (
 								<Button
 									key={button.key}
-									size="sm"
 									variant="primary"
 									onPress={() =>
 										setShowDeleteModal({
@@ -335,8 +312,8 @@ function DangerZone() {
 									{button.text}
 								</Button>
 							))}
-						</div>
-					</>
+						</ButtonGroup>
+					</div>
 				)}
 
 				{showDangerZone && todos.length === 0 && (
@@ -347,46 +324,38 @@ function DangerZone() {
 
 				{/* Projects danger buttons */}
 				{showDangerZone && (projects.length > 0 || sprints.length > 0) && (
-					<div className="mt-4 flex flex-col items-center gap-2 border-red-300 border-t pt-4">
-						{projects.length > 0 && (
-							<div className="flex flex-wrap justify-center gap-2">
-								{projectButtons.map((btn) => (
-									<Button
-										key={btn.key}
-										size="sm"
-										variant="primary"
-										onPress={() =>
-											setShowProjectModal({
-												...showProjectModal,
-												[btn.key]: true,
-											})
-										}
-									>
-										{btn.text}
-									</Button>
-								))}
-							</div>
-						)}
-						{sprints.length > 0 && (
-							<div className="flex flex-wrap justify-center gap-2">
-								{sprintButtons.map((btn) => (
-									<Button
-										key={btn.key}
-										size="sm"
-										variant="primary"
-										onPress={() =>
-											setShowSprintModal({
-												...showSprintModal,
-												[btn.key]: true,
-											})
-										}
-									>
-										{btn.text}
-									</Button>
-								))}
-							</div>
-						)}
-					</div>
+					<ButtonGroup autoOrientation className="mt-6">
+						{projects.length > 0 &&
+							projectButtons.map((btn) => (
+								<Button
+									key={btn.key}
+									variant="primary"
+									onPress={() =>
+										setShowProjectModal({
+											...showProjectModal,
+											[btn.key]: true,
+										})
+									}
+								>
+									{btn.text}
+								</Button>
+							))}
+						{sprints.length > 0 &&
+							sprintButtons.map((btn) => (
+								<Button
+									key={btn.key}
+									variant="primary"
+									onPress={() =>
+										setShowSprintModal({
+											...showSprintModal,
+											[btn.key]: true,
+										})
+									}
+								>
+									{btn.text}
+								</Button>
+							))}
+					</ButtonGroup>
 				)}
 			</div>
 
