@@ -9,6 +9,7 @@ interface SelectProps {
 	onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
 	children?: React.ReactNode
 	className?: string
+	isDisabled?: boolean
 }
 
 interface DropdownPos {
@@ -26,6 +27,7 @@ function Select({
 	onChange,
 	children,
 	className = '',
+	isDisabled = false,
 }: SelectProps) {
 	const [isOpen, setIsOpen] = React.useState(false)
 	const [internalValue, setInternalValue] = React.useState(
@@ -133,9 +135,10 @@ function Select({
 				ref={buttonRef}
 				id={label}
 				name={label}
-				className="flex w-full items-center justify-between rounded-lg border border-gray-300 bg-white px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+				className={`flex w-full items-center justify-between rounded-lg border px-3 py-2 text-left focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white ${isDisabled ? 'cursor-not-allowed border-gray-200 bg-gray-50 opacity-60 dark:bg-gray-900' : 'border-gray-300 bg-white'}`}
+				disabled={isDisabled}
 				type="button"
-				onClick={openDropdown}
+				onClick={isDisabled ? undefined : openDropdown}
 			>
 				<span className="flex items-center gap-2 truncate text-sm">
 					{selectedStartContent}

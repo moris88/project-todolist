@@ -1,6 +1,5 @@
 import { useAtom, useAtomValue } from 'jotai'
 import React from 'react'
-import { HiMiniPlus } from 'react-icons/hi2'
 
 import { dictAtom, todoListAtom } from '@/atoms'
 import {
@@ -9,14 +8,18 @@ import {
 	TaskFormModal,
 	type TaskFormValues,
 } from '@/components'
-import { Button } from '@/components/UI'
 import type { Todo } from '@/types'
 import { addTodoStorage, generateUniqueId } from '@/utils'
 
-function TodoInput() {
+interface TodoInputProps {
+	isFormOpen: boolean
+	setIsFormOpen: (open: boolean) => void
+}
+
+function TodoInput({ isFormOpen, setIsFormOpen }: TodoInputProps) {
 	const [todos, setTodos] = useAtom(todoListAtom)
 	const dict = useAtomValue(dictAtom)
-	const [isFormOpen, setIsFormOpen] = React.useState(false)
+
 	const [showAdd, setShowAdd] = React.useState(false)
 	const [showError, setShowError] = React.useState(false)
 	const [pendingValues, setPendingValues] =
@@ -62,18 +65,6 @@ function TodoInput() {
 
 	return (
 		<>
-			<Button
-				className="fixed right-6 bottom-6 z-40 gap-2 rounded-full shadow-lg transition-all hover:scale-105 active:scale-95"
-				size="lg"
-				variant="primary"
-				onPress={() => setIsFormOpen(true)}
-			>
-				<HiMiniPlus className="h-5 w-5" />
-				<span className="hidden font-semibold text-sm sm:inline">
-					{dict.todolist.addTask.title}
-				</span>
-			</Button>
-
 			<TaskFormModal
 				cancelLabel={dict.todolist.addTask.cancel}
 				headerLabel={dict.todolist.addTask.title}

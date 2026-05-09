@@ -1,6 +1,8 @@
-import type { Comment, Status, Todo } from '@/types'
+import type { Comment, FilterState, SortState, Todo } from '@/types'
 
 import { isTaskOverdue } from './todo'
+
+export type { FilterState }
 
 const TAG_COLORS = [
 	'bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300',
@@ -28,32 +30,42 @@ export function generateUniqueId() {
 	return `${timestamp}-${random}`
 }
 
-export function orderTodos(a: Todo, b: Todo): number {
-	if (a.completed && !b.completed) return 1
-	if (!a.completed && b.completed) return -1
-	if (isTaskOverdue(a.dueDate) && !isTaskOverdue(b.dueDate)) return -1
-	if (!isTaskOverdue(a.dueDate) && isTaskOverdue(b.dueDate)) return 1
-	if (a.priority === 'urgent' && b.priority !== 'urgent') return -1
-	if (a.priority !== 'urgent' && b.priority === 'urgent') return 1
-	if (a.priority === 'high' && b.priority !== 'high') return -1
-	if (a.priority !== 'high' && b.priority === 'high') return 1
-	if (a.priority === 'medium' && b.priority === 'medium') return -1
-	if (a.priority !== 'medium' && b.priority === 'medium') return 1
-	if (a.priority === 'low' && b.priority === 'low') return -1
-	if (a.priority !== 'low' && b.priority === 'low') return 1
-	return 0
+export const PRIORITY_RANK: Record<string, number> = {
+	urgent: 0,
+	high: 1,
+	medium: 2,
+	low: 3,
 }
 
-export interface FilterState {
-	status: Status | ''
-	completion: 'all' | 'completed' | 'uncompleted'
-	overdue: 'all' | 'overdue' | 'not_overdue'
-	tags: string[]
-	search: string
-	dueDateFrom: string
-	dueDateTo: string
-	projectId?: string
-	sprintId?: string
+export function orderTodos(a: Todo, b: Todo): number {
+	if (a.completed !== b.completed) return a.completed ? 1 : -1
+	const aOverdue = isTaskOverdue(a.dueDate)
+	const bOverdue = isTaskOverdue(b.dueDate)
+	if (aOverdue !== bOverdue) return aOverdue ? -1 : 1
+	return (PRIORITY_RANK[a.priority] ?? 4) - (PRIORITY_RANK[b.priority] ?? 4)
+}
+
+export function makeSortComparator(
+	sort: SortState,
+): (a: Todo, b: Todo) => number {
+	if (!sort.field) return orderTodos
+	const mult = sort.dir === 'asc' ? 1 : -1
+	if (sort.field === 'priority') {
+		return (a, b) =>
+			((PRIORITY_RANK[a.priority] ?? 4) - (PRIORITY_RANK[b.priority] ?? 4)) *
+			mult
+	}
+	if (sort.field === 'status') {
+		return (a, b) => a.status.localeCompare(b.status) * mult
+	}
+	return (a, b) => {
+		if (!a.dueDate && !b.dueDate) return 0
+		if (!a.dueDate) return mult
+		if (!b.dueDate) return -mult
+		return (
+			(new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()) * mult
+		)
+	}
 }
 
 export function applyFilters(
@@ -73,10 +85,14 @@ export function applyFilters(
 		if (!filters.tags.some((t) => todoTags.includes(t))) return false
 	}
 	if (filters.projectId) {
-		if (todo.projectId !== filters.projectId) return false
+		if (filters.projectId === '__none__') {
+			if (todo.projectId) return false
+		} else if (todo.projectId !== filters.projectId) return false
 	}
 	if (filters.sprintId) {
-		if (todo.sprintId !== filters.sprintId) return false
+		if (filters.sprintId === '__none__') {
+			if (todo.sprintId) return false
+		} else if (todo.sprintId !== filters.sprintId) return false
 	}
 	if (filters.search) {
 		const q = filters.search.toLowerCase()
@@ -99,33 +115,4 @@ export function applyFilters(
 		}
 	}
 	return true
-}
-
-export function filterTodoByStatus(todo: Todo, filter: string): boolean {
-	switch (filter) {
-		case '0':
-			return true
-		case '1':
-			return todo.status === 'todo'
-		case '2':
-			return todo.status === 'progress'
-		case '3':
-			return todo.status === 'review'
-		case '4':
-			return todo.status === 'testing'
-		case '5':
-			return todo.status === 'blocked'
-		case '6':
-			return todo.status === 'paused'
-		case '7':
-			return todo.completed
-		case '8':
-			return !todo.completed
-		case '9':
-			return isTaskOverdue(todo.dueDate)
-		case '10':
-			return !isTaskOverdue(todo.dueDate)
-		default:
-			return false
-	}
 }

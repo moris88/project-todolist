@@ -33,6 +33,9 @@ const itDict = {
 			show_only_title: 'Mostra solo titolo',
 			show_more: 'Mostra tutto',
 			show_less: 'Mostra meno',
+			checked: 'Completa il compito',
+			change_status: 'Cambia stato del compito',
+			no_due_date: 'Nessuna data di scadenza',
 			priority: {
 				label: 'Seleziona una priorità',
 				items: {
@@ -89,17 +92,32 @@ const itDict = {
 				by_sprint: 'Sprint',
 				no_project: 'Nessun progetto',
 				no_sprint: 'Nessuno sprint',
+				sort: {
+					label: 'Ordina per',
+					priority: 'Priorità',
+					status: 'Stato',
+					dueDate: 'Scadenza',
+					asc: 'Crescente',
+					desc: 'Decrescente',
+					default: 'Predefinito',
+				},
+				pagination: {
+					page: 'Pagina',
+					of: 'di',
+					previous: 'Precedente',
+					next: 'Successiva',
+				},
 				csv: {
-					export: 'Esporta in CSV',
-					import: 'Importa da CSV',
-					success: 'Importazione completata con successo',
-					error: "Errore durante l'importazione del file CSV",
-					export_comments: 'Esporta commenti',
-					import_comments: 'Importa commenti',
-					success_comments: 'Importazione commenti completata con successo',
-					error_comments: "Errore durante l'importazione dei commenti",
 					section_tasks: 'Task',
-					section_comments: 'Commenti',
+					section_projects: 'Progetti',
+					section_sprints: 'Sprint',
+					section_json: 'Backup completo',
+					export_json: 'Esporta JSON',
+					import_json: 'Importa JSON',
+					success_json: 'Importazione completata con successo',
+					error_json: 'File JSON non valido o corrotto',
+					confirm_import_json:
+						'Importando il JSON sostituirai tutti i dati esistenti (task, progetti, sprint, commenti e impostazioni). Continuare?',
 				},
 				buttons: {
 					message: 'Che operazione vuoi fare?',
@@ -116,6 +134,25 @@ const itDict = {
 					clear_all: {
 						label: 'Rimuovi tutti i compiti',
 						message: 'Sei sicuro di voler eliminare tutti i compiti?',
+					},
+					clear_completed_projects: {
+						label: 'Pulisci progetti completati',
+						message:
+							'Sei sicuro di voler eliminare tutti i progetti completati (e i loro sprint)?',
+					},
+					clear_all_projects: {
+						label: 'Rimuovi tutti i progetti',
+						message:
+							'Sei sicuro di voler eliminare tutti i progetti e tutti i loro sprint?',
+					},
+					clear_completed_sprints: {
+						label: 'Pulisci sprint completati',
+						message:
+							'Sei sicuro di voler eliminare tutti gli sprint completati?',
+					},
+					clear_all_sprints: {
+						label: 'Rimuovi tutti gli sprint',
+						message: 'Sei sicuro di voler eliminare tutti gli sprint?',
 					},
 					no_tasks: 'Non ci sono compiti da filtrare',
 				},
@@ -181,7 +218,7 @@ const itDict = {
 		},
 	},
 	projects: {
-		title: 'Progetti',
+		title: 'Lista Progetti',
 		add: 'Nuovo Progetto',
 		edit: 'Modifica Progetto',
 		delete: 'Elimina Progetto',
@@ -199,14 +236,16 @@ const itDict = {
 			archived: 'Archiviato',
 			paused: 'In pausa',
 		},
-		delete_confirm: 'Sei sicuro di voler eliminare questo progetto?',
+		delete_confirm:
+			"Sei sicuro di voler spostare questo progetto nel cestino? I suoi sprint verranno anch'essi cestinati.",
+		move_to_trash: 'Cestina',
 		cancel: 'Annulla',
 		save: 'Salva',
 		create: 'Crea',
 		tasks_count: 'compiti',
 	},
 	sprints: {
-		title: 'Sprint',
+		title: 'Lista Sprint',
 		add: 'Nuovo Sprint',
 		edit: 'Modifica Sprint',
 		delete: 'Elimina Sprint',
@@ -221,17 +260,21 @@ const itDict = {
 		no_project_selected: 'Nessun progetto selezionato',
 		project_required: 'Seleziona un progetto per creare uno sprint',
 		status: 'Stato',
+		max_active_sprints: 'Sprint attivi massimi consentiti: {count}',
 		status_items: {
 			planning: 'In pianificazione',
 			active: 'Attivo',
 			completed: 'Completato',
 			cancelled: 'Annullato',
 		},
-		delete_confirm: 'Sei sicuro di voler eliminare questo sprint?',
+		delete_confirm: 'Sei sicuro di voler spostare questo sprint nel cestino?',
+		move_to_trash: 'Cestina',
 		cancel: 'Annulla',
 		save: 'Salva',
 		create: 'Crea',
 		tasks_count: 'compiti',
+		add_task_placeholder: 'Aggiungi un compito...',
+		add_task: 'Aggiungi',
 	},
 	trash: {
 		title: 'Cestino',
@@ -243,14 +286,24 @@ const itDict = {
 			'Sei sicuro di voler svuotare il cestino? Questa azione è irreversibile.',
 		delete_confirm:
 			'Sei sicuro di voler eliminare definitivamente questo compito?',
+		delete_project_confirm:
+			'Sei sicuro di voler eliminare definitivamente questo progetto?',
+		delete_sprint_confirm:
+			'Sei sicuro di voler eliminare definitivamente questo sprint?',
 		deleted_at: 'Eliminato il',
 		cancel: 'Annulla',
+		deleted_tasks: 'Compiti nel cestino',
+		deleted_projects: 'Progetti nel cestino',
+		deleted_sprints: 'Sprint nel cestino',
+		no_deleted_projects: 'Nessun progetto eliminato',
+		no_deleted_sprints: 'Nessuno sprint eliminato',
 	},
 	calendar: {
 		today: 'Oggi',
 		legend_active: 'Attivo',
 		legend_completed: 'Completato',
 		legend_overdue: 'Scaduto',
+		legend_sprint: 'Sprint in scadenza',
 	},
 	settings: {
 		title: 'Impostazioni',
@@ -259,6 +312,14 @@ const itDict = {
 		theme_dark: 'Tema scuro',
 		import_export: 'Import / Export',
 		danger_zone: 'Danger Zone',
+		project_limits: 'Limiti task per priorità',
+		project_limits_desc:
+			'Numero massimo di task attivi per priorità (per singolo progetto, esclude done/blocked/archived)',
+		max_active_sprints: 'Sprint attivi massimi',
+		max_active_sprints_desc:
+			'Numero massimo di sprint su cui puoi lavorare contemporaneamente',
+		page_size: 'Elementi per pagina',
+		page_size_desc: 'Numero di task da mostrare per ogni pagina nella lista',
 	},
 }
 
@@ -297,6 +358,9 @@ const enDict = {
 			show_only_title: 'Show title only',
 			show_more: 'Show more',
 			show_less: 'Show less',
+			checked: 'Complete the task',
+			change_status: 'Change task status',
+			no_due_date: 'No due date',
 			priority: {
 				label: 'Select a priority',
 				items: {
@@ -352,17 +416,32 @@ const enDict = {
 				by_sprint: 'Sprint',
 				no_project: 'No project',
 				no_sprint: 'No sprint',
+				sort: {
+					label: 'Sort by',
+					priority: 'Priority',
+					status: 'Status',
+					dueDate: 'Due date',
+					asc: 'Ascending',
+					desc: 'Descending',
+					default: 'Default',
+				},
+				pagination: {
+					page: 'Page',
+					of: 'of',
+					previous: 'Previous',
+					next: 'Next',
+				},
 				csv: {
-					export: 'Export to CSV',
-					import: 'Import from CSV',
-					success: 'Import completed successfully',
-					error: 'Error while importing the CSV file',
-					export_comments: 'Export comments',
-					import_comments: 'Import comments',
-					success_comments: 'Comments import completed successfully',
-					error_comments: 'Error while importing comments',
 					section_tasks: 'Tasks',
-					section_comments: 'Comments',
+					section_projects: 'Projects',
+					section_sprints: 'Sprints',
+					section_json: 'Full backup',
+					export_json: 'Export JSON',
+					import_json: 'Import JSON',
+					success_json: 'Import completed successfully',
+					error_json: 'Invalid or corrupted JSON file',
+					confirm_import_json:
+						'Importing JSON will replace all existing data (tasks, projects, sprints, comments and settings). Continue?',
 				},
 				buttons: {
 					message: 'What do you want to do?',
@@ -378,6 +457,24 @@ const enDict = {
 					clear_all: {
 						label: 'Remove all tasks',
 						message: 'Are you sure you want to delete all tasks?',
+					},
+					clear_completed_projects: {
+						label: 'Clear completed projects',
+						message:
+							'Are you sure you want to delete all completed projects (and their sprints)?',
+					},
+					clear_all_projects: {
+						label: 'Remove all projects',
+						message:
+							'Are you sure you want to delete all projects and their sprints?',
+					},
+					clear_completed_sprints: {
+						label: 'Clear completed sprints',
+						message: 'Are you sure you want to delete all completed sprints?',
+					},
+					clear_all_sprints: {
+						label: 'Remove all sprints',
+						message: 'Are you sure you want to delete all sprints?',
 					},
 					no_tasks: 'There are no tasks to filter',
 				},
@@ -461,7 +558,9 @@ const enDict = {
 			archived: 'Archived',
 			paused: 'Paused',
 		},
-		delete_confirm: 'Are you sure you want to delete this project?',
+		delete_confirm:
+			'Are you sure you want to move this project to trash? Its sprints will also be moved to trash.',
+		move_to_trash: 'Move to Trash',
 		cancel: 'Cancel',
 		save: 'Save',
 		create: 'Create',
@@ -483,17 +582,21 @@ const enDict = {
 		no_project_selected: 'No project selected',
 		project_required: 'Select a project to create a sprint',
 		status: 'Status',
+		max_active_sprints: 'Maximum active sprints allowed: {count}',
 		status_items: {
 			planning: 'Planning',
 			active: 'Active',
 			completed: 'Completed',
 			cancelled: 'Cancelled',
 		},
-		delete_confirm: 'Are you sure you want to delete this sprint?',
+		delete_confirm: 'Are you sure you want to move this sprint to trash?',
+		move_to_trash: 'Move to Trash',
 		cancel: 'Cancel',
 		save: 'Save',
 		create: 'Create',
 		tasks_count: 'tasks',
+		add_task_placeholder: 'Add a task...',
+		add_task: 'Add',
 	},
 	trash: {
 		title: 'Trash',
@@ -504,14 +607,24 @@ const enDict = {
 		empty_trash_confirm:
 			'Are you sure you want to empty the trash? This action is irreversible.',
 		delete_confirm: 'Are you sure you want to permanently delete this task?',
+		delete_project_confirm:
+			'Are you sure you want to permanently delete this project?',
+		delete_sprint_confirm:
+			'Are you sure you want to permanently delete this sprint?',
 		deleted_at: 'Deleted on',
 		cancel: 'Cancel',
+		deleted_tasks: 'Tasks in trash',
+		deleted_projects: 'Projects in trash',
+		deleted_sprints: 'Sprints in trash',
+		no_deleted_projects: 'No projects in trash',
+		no_deleted_sprints: 'No sprints in trash',
 	},
 	calendar: {
 		today: 'Today',
 		legend_active: 'Active',
 		legend_completed: 'Completed',
 		legend_overdue: 'Overdue',
+		legend_sprint: 'Sprint due',
 	},
 	settings: {
 		title: 'Settings',
@@ -520,6 +633,14 @@ const enDict = {
 		theme_dark: 'Dark mode',
 		import_export: 'Import / Export',
 		danger_zone: 'Danger Zone',
+		project_limits: 'Task limits by priority',
+		project_limits_desc:
+			'Maximum active tasks per priority (per project, excludes done/blocked/archived)',
+		max_active_sprints: 'Maximum active sprints',
+		max_active_sprints_desc:
+			'Maximum number of sprints you can work on simultaneously',
+		page_size: 'Items per page',
+		page_size_desc: 'Number of tasks to show per page in the task list',
 	},
 }
 

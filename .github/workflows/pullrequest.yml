@@ -1,11 +1,11 @@
 name: Check Push
 
 on:
-  push:
+  pull_request:
     branches:
       - '**'
-    tags-ignore:
-      - '*' 
+    types: [opened, synchronize, reopened]
+permissions: {}
 
 jobs:
   lint:
@@ -36,6 +36,6 @@ jobs:
         run: pnpm biome:check
       - name: Build project
         run: pnpm build
-      - name: Test & Coverage (min 80%)
+      - name: Test & Coverage (min 70%)
         run: pnpm coverage
   

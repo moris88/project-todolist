@@ -31,7 +31,13 @@ import {
 	Textarea,
 } from '@/components/UI'
 import type { Priority, Status, SubTask, Todo } from '@/types'
-import { generateUniqueId, priorityItems, tagColor } from '@/utils'
+import {
+	ALL_STATUSES,
+	DATE_FORMAT,
+	generateUniqueId,
+	priorityItems,
+	tagColor,
+} from '@/utils'
 
 export interface TaskFormValues {
 	title: string
@@ -57,6 +63,7 @@ interface TaskFormBodyProps {
 	cancelLabel: string
 	allTasks?: Todo[]
 	currentTaskId?: string
+	lockedFields?: ('projectId' | 'sprintId')[]
 	onClose: () => void
 	onSubmit: (values: TaskFormValues, transfers: SubtaskTransfer[]) => void
 }
@@ -68,6 +75,7 @@ function TaskFormBody({
 	cancelLabel,
 	allTasks,
 	currentTaskId,
+	lockedFields,
 	onClose,
 	onSubmit,
 }: TaskFormBodyProps) {
@@ -297,18 +305,6 @@ function TaskFormBody({
 		)
 	}
 
-	const subtaskStatuses: Status[] = [
-		'backlog',
-		'todo',
-		'progress',
-		'review',
-		'testing',
-		'paused',
-		'done',
-		'blocked',
-		'archived',
-	]
-
 	return (
 		<>
 			<ModalHeader>{headerLabel}</ModalHeader>
@@ -366,33 +362,23 @@ function TaskFormBody({
 						label={dict.todolist.listitem.status.label}
 						onChange={(e) => setStatus(e.target.value as Status)}
 					>
-						<SelectItem value="backlog">
-							{dict.todolist.listitem.status.items.backlog}
-						</SelectItem>
-						<SelectItem value="todo">
-							{dict.todolist.listitem.status.items.todo}
-						</SelectItem>
-						<SelectItem value="progress">
-							{dict.todolist.listitem.status.items.progress}
-						</SelectItem>
-						<SelectItem value="done">
-							{dict.todolist.listitem.status.items.done}
-						</SelectItem>
-						<SelectItem value="paused">
-							{dict.todolist.listitem.status.items.paused}
-						</SelectItem>
-						<SelectItem value="review">
-							{dict.todolist.listitem.status.items.review}
-						</SelectItem>
-						<SelectItem value="testing">
-							{dict.todolist.listitem.status.items.testing}
-						</SelectItem>
-						<SelectItem value="blocked">
-							{dict.todolist.listitem.status.items.blocked}
-						</SelectItem>
-						<SelectItem value="archived">
-							{dict.todolist.listitem.status.items.archived}
-						</SelectItem>
+						{(
+							[
+								'backlog',
+								'todo',
+								'progress',
+								'done',
+								'paused',
+								'review',
+								'testing',
+								'blocked',
+								'archived',
+							] as const
+						).map((s) => (
+							<SelectItem key={s} value={s}>
+								{dict.todolist.listitem.status.items[s]}
+							</SelectItem>
+						))}
 					</Select>
 
 					{/* Project selector */}
@@ -400,6 +386,7 @@ function TaskFormBody({
 						<Select
 							className="w-full"
 							defaultSelectedKeys={projectId ?? ''}
+							isDisabled={lockedFields?.includes('projectId')}
 							label={dict.todolist.addTask.project}
 							onChange={(e) => setProjectId(e.target.value || null)}
 						>
@@ -419,6 +406,7 @@ function TaskFormBody({
 						<Select
 							className="w-full"
 							defaultSelectedKeys={sprintId ?? ''}
+							isDisabled={lockedFields?.includes('sprintId')}
 							label={dict.todolist.addTask.sprint}
 							onChange={(e) => setSprintId(e.target.value || null)}
 						>
@@ -479,10 +467,9 @@ function TaskFormBody({
 							</div>
 						)}
 						<div className="flex flex-col gap-2 sm:flex-row">
-							<input
-								className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+							<Input
+								className="flex-1"
 								placeholder={dict.todolist.tags.placeholder}
-								type="text"
 								value={newTagInput}
 								onChange={(e) => setNewTagInput(e.target.value)}
 								onKeyDown={(e) => {
@@ -610,9 +597,8 @@ function TaskFormBody({
 											{editingSubtaskId === s.id ? (
 												<div className="flex flex-1 flex-col gap-1">
 													<div className="flex flex-col items-center gap-1 md:flex-row">
-														<input
-															className="flex-1 rounded border border-blue-400 bg-white px-2 py-0.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-white"
-															type="text"
+														<Input
+															className="flex-1"
 															value={editingSubtaskTitle}
 															onChange={(e) =>
 																setEditingSubtaskTitle(e.target.value)
@@ -705,7 +691,7 @@ function TaskFormBody({
 																)
 															}
 														>
-															{subtaskStatuses.map((st) => (
+															{ALL_STATUSES.map((st) => (
 																<option key={st} value={st}>
 																	{dict.todolist.listitem.status.items[st]}
 																</option>
@@ -723,9 +709,7 @@ function TaskFormBody({
 														</span>
 														{s.completed && s.completedAt && (
 															<span className="block text-gray-400 text-xs dark:text-gray-500">
-																{moment(s.completedAt).format(
-																	'DD/MM/YYYY HH:mm',
-																)}
+																{moment(s.completedAt).format(DATE_FORMAT)}
 															</span>
 														)}
 													</span>
@@ -753,10 +737,9 @@ function TaskFormBody({
 							</ul>
 						)}
 						<div className="flex flex-col gap-2 md:flex-row">
-							<input
-								className="flex-1 rounded-lg border border-gray-300 bg-white px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-600 dark:bg-gray-800 dark:text-white"
+							<Input
+								className="flex-1"
 								placeholder={dict.todolist.subtasks.placeholder}
-								type="text"
 								value={newSubtaskTitle}
 								onChange={(e) => setNewSubtaskTitle(e.target.value)}
 								onKeyDown={(e) => {
@@ -777,7 +760,6 @@ function TaskFormBody({
 			<ModalFooter>
 				<Button
 					className="sm:px-5! sm:py-2.5! sm:text-lg!"
-					size="sm"
 					variant="ghost"
 					onPress={onClose}
 				>
@@ -785,7 +767,6 @@ function TaskFormBody({
 				</Button>
 				<Button
 					className="sm:px-5! sm:py-2.5! sm:text-lg!"
-					size="sm"
 					variant="primary"
 					onPress={() =>
 						onSubmit(
@@ -822,6 +803,7 @@ interface TaskFormModalProps {
 	isDismissable?: boolean
 	allTasks?: Todo[]
 	currentTaskId?: string
+	lockedFields?: ('projectId' | 'sprintId')[]
 }
 
 function TaskFormModal({
@@ -835,6 +817,7 @@ function TaskFormModal({
 	isDismissable = true,
 	allTasks,
 	currentTaskId,
+	lockedFields,
 }: TaskFormModalProps) {
 	if (!isOpen) return null
 
@@ -847,6 +830,7 @@ function TaskFormModal({
 					currentTaskId={currentTaskId}
 					headerLabel={headerLabel}
 					initialValues={initialValues}
+					lockedFields={lockedFields}
 					submitLabel={submitLabel}
 					onClose={onClose}
 					onSubmit={onSubmit}

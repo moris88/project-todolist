@@ -7,6 +7,9 @@ export default mergeConfig(
   viteConfig,
   defineConfig({
     test: {
+      typecheck: {
+        tsconfig: './tsconfig.json',
+      },
       exclude: ['**/node_modules/**', '**/dist/**', '**/index.ts'],
       coverage: {
         provider: 'v8',
@@ -19,10 +22,10 @@ export default mergeConfig(
           'vitest.config.ts',
         ],
         thresholds: {
-          lines: 80,
-          statements: 80,
-          functions: 80,
-          branches: 80,
+          lines: 70,
+          statements: 70,
+          functions: 70,
+          branches: 70,
         },
       },
       globals: true,

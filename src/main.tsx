@@ -7,7 +7,7 @@ import ReactDOM from 'react-dom/client'
 
 moment.locale('it')
 
-import { TodoInput, TodoList, Wrapper } from '@/components'
+import { TodoList, Wrapper } from '@/components'
 
 const root = document.getElementById('root')
 if (!root) {
@@ -16,7 +16,6 @@ if (!root) {
 ReactDOM.createRoot(root).render(
 	<StrictMode>
 		<Wrapper>
-			<TodoInput />
 			<TodoList />
 		</Wrapper>
 	</StrictMode>,

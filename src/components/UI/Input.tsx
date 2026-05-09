@@ -5,6 +5,7 @@ interface InputProps {
 	placeholder?: string
 	value: string
 	onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+	onKeyDown?: (e: React.KeyboardEvent<HTMLInputElement>) => void
 	isRequired?: boolean
 	className?: string
 	type?: string
@@ -16,6 +17,7 @@ function Input({
 	placeholder,
 	value,
 	onChange,
+	onKeyDown,
 	isRequired,
 	className = '',
 }: InputProps) {
@@ -39,6 +41,7 @@ function Input({
 				required={isRequired}
 				value={value}
 				onChange={onChange}
+				onKeyDown={onKeyDown}
 			/>
 		</div>
 	)

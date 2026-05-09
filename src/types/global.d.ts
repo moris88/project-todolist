@@ -40,6 +40,7 @@ export interface Project {
 export interface Sprint {
 	id: string
 	name: string
+	color: string
 	description: string
 	startDate: string | null
 	dueDate: string | null
@@ -70,3 +71,30 @@ export type Status =
 
 export type ProjectStatus = 'active' | 'completed' | 'archived' | 'paused'
 export type SprintStatus = 'planning' | 'active' | 'completed' | 'cancelled'
+
+export interface DeletedProject extends Project {
+	deletedAt: string
+}
+
+export interface DeletedSprint extends Sprint {
+	deletedAt: string
+}
+
+export interface FilterState {
+	status: Status | ''
+	completion: 'all' | 'completed' | 'uncompleted'
+	overdue: 'all' | 'overdue' | 'not_overdue'
+	tags: string[]
+	search: string
+	dueDateFrom: string
+	dueDateTo: string
+	projectId?: string
+	sprintId?: string
+}
+
+export type SortField = 'priority' | 'status' | 'dueDate' | ''
+export type SortDir = 'asc' | 'desc'
+export interface SortState {
+	field: SortField
+	dir: SortDir
+}

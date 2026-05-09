@@ -9,13 +9,21 @@ import {
 	HiRectangleStack,
 } from 'react-icons/hi2'
 import type { ActiveView } from '@/atoms'
-import { activeViewAtom, darkModeAtom, dictAtom, trashAtom } from '@/atoms'
+import {
+	activeViewAtom,
+	darkModeAtom,
+	deletedProjectsAtom,
+	deletedSprintsAtom,
+	dictAtom,
+	trashAtom,
+} from '@/atoms'
 import CalendarView from '@/components/CalendarView'
 import Header from '@/components/Header'
 import ProjectsManager from '@/components/ProjectsManager'
 import SettingsView from '@/components/SettingsView'
 import SprintsManager from '@/components/SprintsManager'
 import TrashView from '@/components/TrashView'
+import Toast from '@/components/UI/Toast'
 
 interface WrapperProps {
 	children: React.ReactNode
@@ -26,6 +34,13 @@ function Wrapper({ children }: WrapperProps) {
 	const [activeView, setActiveView] = useAtom(activeViewAtom)
 	const dict = useAtomValue(dictAtom)
 	const trash = useAtomValue(trashAtom)
+	const deletedProjects = useAtomValue(deletedProjectsAtom)
+	const deletedSprints = useAtomValue(deletedSprintsAtom)
+
+	const countDeletedItems =
+		trash.length + deletedProjects.length + deletedSprints.length
+	const hasDeletedItems = countDeletedItems > 0
+	const hasDeletedPlusNine = countDeletedItems > 9
 
 	React.useEffect(() => {
 		if (darkMode) {
@@ -63,9 +78,9 @@ function Wrapper({ children }: WrapperProps) {
 				icon: (
 					<span className="relative">
 						<HiMiniTrash className="h-4 w-4" />
-						{trash.length > 0 && (
+						{hasDeletedItems && (
 							<span className="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 font-bold text-[9px] text-white">
-								{trash.length > 9 ? '9+' : trash.length}
+								{hasDeletedPlusNine ? '9+' : countDeletedItems}
 							</span>
 						)}
 					</span>
@@ -80,6 +95,7 @@ function Wrapper({ children }: WrapperProps) {
 
 	return (
 		<div className="min-h-screen bg-white dark:bg-[#1b1a19] dark:text-white">
+			<Toast />
 			<Header />
 			<div className="container">
 				{/* Tab navigation */}
@@ -87,7 +103,7 @@ function Wrapper({ children }: WrapperProps) {
 					{navItems.map((item) => (
 						<button
 							key={item.key}
-							className={`flex shrink-0 items-center gap-1.5 rounded-t-lg px-4 py-2 font-medium text-sm transition-colors ${
+							className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-t-lg px-4 py-2 font-medium text-sm transition-colors ${
 								activeView === item.key
 									? 'border border-gray-200 border-b-white bg-white text-blue-600 dark:border-gray-700 dark:border-b-[#1b1a19] dark:bg-[#1b1a19] dark:text-blue-400'
 									: 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'

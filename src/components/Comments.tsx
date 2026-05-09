@@ -8,6 +8,7 @@ import { Button } from '@/components/UI'
 import type { Comment } from '@/types'
 import {
 	addCommentStorage,
+	DATE_FORMAT,
 	getCommentsStorage,
 	removeCommentStorage,
 } from '@/utils'
@@ -75,7 +76,7 @@ function Comments({ todoId }: CommentsProps) {
 							<div className="max-w-[75%] rounded-2xl rounded-br-sm bg-blue-500 px-4 py-2 text-white shadow-sm dark:bg-blue-600">
 								<p className="whitespace-pre-wrap text-sm">{comment.text}</p>
 								<span className="mt-1 block text-right text-[10px] text-blue-100">
-									{moment(comment.createdAt).format('DD/MM/YYYY HH:mm')}
+									{moment(comment.createdAt).format(DATE_FORMAT)}
 								</span>
 							</div>
 						</div>
