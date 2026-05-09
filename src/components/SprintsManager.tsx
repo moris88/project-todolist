@@ -30,6 +30,7 @@ import {
 	ModalHeader,
 	Select,
 	SelectItem,
+	Tooltip,
 } from '@/components/UI'
 import type { Sprint, SprintStatus, Todo } from '@/types'
 import {
@@ -119,6 +120,14 @@ function SprintsManager() {
 				),
 			)
 		} else {
+			// todo controlla se il progetto ha già il numero massimo di sprint attivi
+			const activeCount = projectActiveSprintsCount(form.projectId)
+			if (activeCount >= maxSprints) {
+				window.alert(
+					dict.sprints.max_active_sprints.replace('{count}', maxSprints.toString()),
+				)
+				return
+			}
 			const newSprint: Sprint = {
 				id: generateUniqueId(),
 				name: form.name.trim(),
@@ -285,7 +294,7 @@ function SprintsManager() {
 							>
 								<div className="flex items-center gap-3 p-4">
 									<button
-										className="mt-0.5 shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+										className="mt-0.5 shrink-0 cursor-pointer text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
 										type="button"
 										onClick={() => toggleExpanded(sprint.id)}
 									>
@@ -367,22 +376,26 @@ function SprintsManager() {
 										</div>
 									</div>
 									<div className="flex shrink-0 gap-1">
+										<Tooltip content={dict.sprints.edit} placement="left">
 										<button
-											className="rounded p-1 text-gray-400 transition-colors hover:text-blue-500"
+											className="cursor-pointer rounded p-1 text-gray-400 transition-colors hover:text-blue-500"
 											title={dict.sprints.edit}
 											type="button"
 											onClick={() => openEdit(sprint)}
 										>
 											<HiMiniPencilSquare className="h-4 w-4" />
 										</button>
+										</Tooltip>
+										<Tooltip content={dict.sprints.delete} placement="left">
 										<button
-											className="rounded p-1 text-gray-400 transition-colors hover:text-red-500"
+											className="cursor-pointer rounded p-1 text-gray-400 transition-colors hover:text-red-500"
 											title={dict.sprints.delete}
 											type="button"
 											onClick={() => setDeleteId(sprint.id)}
 										>
 											<HiMiniTrash className="h-4 w-4" />
 										</button>
+										</Tooltip>
 									</div>
 								</div>
 								{isExpanded && (

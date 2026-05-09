@@ -4,7 +4,6 @@ import React from 'react'
 import {
 	HiChevronDown,
 	HiChevronRight,
-	HiEye,
 	HiFlag,
 	HiMiniPencilSquare,
 	HiMiniPlus,
@@ -30,15 +29,15 @@ import {
 	ModalHeader,
 	Select,
 	SelectItem,
+	Tooltip,
 } from '@/components/UI'
 import type { Priority, Project, ProjectStatus, SprintStatus } from '@/types'
 import {
 	generateUniqueId,
-	isTaskOverdue,
 	PROJECT_COLORS,
 	priorityItems,
-	updateTodoStorage,
 } from '@/utils'
+import { twMerge } from 'tailwind-merge'
 
 interface ProjectFormValues {
 	name: string
@@ -58,7 +57,7 @@ const defaultForm: ProjectFormValues = {
 
 function ProjectsManager() {
 	const [projects, setProjects] = useAtom(projectsAtom)
-	const [todos, setTodos] = useAtom(todoListAtom)
+	const todos = useAtomValue(todoListAtom)
 	const sprints = useAtomValue(sprintsAtom)
 	const limits = useAtomValue(projectLimitsAtom)
 	const maxSprints = useAtomValue(maxActiveSprintsAtom)
@@ -133,9 +132,6 @@ function ProjectsManager() {
 	const taskCount = (projectId: string) =>
 		todos.filter((t) => t.projectId === projectId && !t.deletedAt).length
 
-	const projectTodos = (projectId: string) =>
-		todos.filter((t) => t.projectId === projectId && !t.deletedAt)
-
 	const projectTasksByPriority = (projectId: string, priority: Priority) =>
 		todos.filter(
 			(t) =>
@@ -152,19 +148,6 @@ function ProjectsManager() {
 			else next.add(id)
 			return next
 		})
-	}
-
-	const toggleComplete = (todoId: string) => {
-		const updated = todos.map((t) =>
-			t.id === todoId
-				? {
-						...t,
-						completed: !t.completed,
-						completedAt: !t.completed ? new Date().toISOString() : null,
-					}
-				: t,
-		)
-		setTodos(updateTodoStorage(updated))
 	}
 
 	const projectSprints = (projectId: string) =>
@@ -218,17 +201,30 @@ function ProjectsManager() {
 				</p>
 			) : (
 				<div className="flex flex-col gap-3">
-					{projects.map((project) => {
+					{projects.sort((a,b) => {
+						const priorityOrder: Record<Priority, number> = {
+							urgent: 0,
+							high: 1,
+							medium: 2,
+							low: 3,
+						}
+						if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+							return priorityOrder[a.priority] - priorityOrder[b.priority]
+						}
+						return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+					}).map((project) => {
 						const isExpanded = expandedIds.has(project.id)
-						const pTodos = projectTodos(project.id)
+						const isUrgent = project.priority === 'urgent'
+						const isHigh = project.priority === 'high'
+						const isLow = project.priority === 'low'
 						return (
 							<div
 								key={project.id}
-								className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800"
+								className={twMerge("overflow-hidden rounded-xl border", isUrgent ? "border-red-500 bg-red-50 dark:bg-red-900/40" : isHigh ? "border-yellow-500 bg-yellow-50 dark:bg-yellow-900/40" : isLow ? "border-green-500 bg-green-50 dark:bg-green-900/40" : "border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800", "transition-colors")}
 							>
 								<div className="flex gap-3 p-4">
 									<button
-										className="mt-0.5 shrink-0 text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
+										className="mt-0.5 shrink-0 cursor-pointer text-gray-400 transition-colors hover:text-gray-600 dark:hover:text-gray-300"
 										type="button"
 										onClick={() => toggleExpanded(project.id)}
 									>
@@ -252,9 +248,9 @@ function ProjectsManager() {
 											>
 												{dict.projects.status_items[project.status]}
 											</span>
-											<HiFlag
+											{project.priority !== "medium" && (<HiFlag
 												className={`h-3.5 w-3.5 ${priorityColor[project.priority]}`}
-											/>
+											/>)}
 										</div>
 										{project.description && (
 											<p className="mt-0.5 line-clamp-2 text-gray-500 text-xs dark:text-gray-400">
@@ -315,28 +311,32 @@ function ProjectsManager() {
 										</div>
 									</div>
 									<div className="flex shrink-0 gap-1">
-										<button
-											className="rounded p-1 text-gray-400 transition-colors hover:text-blue-500"
-											title={dict.projects.edit}
-											type="button"
-											onClick={() => openEdit(project)}
-										>
-											<HiMiniPencilSquare className="h-4 w-4" />
-										</button>
-										<button
-											className="rounded p-1 text-gray-400 transition-colors hover:text-red-500"
-											title={dict.projects.delete}
-											type="button"
-											onClick={() => setDeleteId(project.id)}
-										>
-											<HiMiniTrash className="h-4 w-4" />
-										</button>
+										<Tooltip content={dict.projects.edit} placement="left">
+											<button
+												className="cursor-pointer rounded p-1 text-gray-400 transition-colors hover:text-blue-500"
+												title={dict.projects.edit}
+												type="button"
+												onClick={() => openEdit(project)}
+											>
+												<HiMiniPencilSquare className="h-4 w-4" />
+											</button>
+										</Tooltip>
+										<Tooltip content={dict.projects.delete} placement="left">
+											<button
+												className="cursor-pointer rounded p-1 text-gray-400 transition-colors hover:text-red-500"
+												title={dict.projects.delete}
+												type="button"
+												onClick={() => setDeleteId(project.id)}
+											>
+												<HiMiniTrash className="h-4 w-4" />
+											</button>
+										</Tooltip>
 									</div>
 								</div>
 								{isExpanded && (
 									<div className="border-gray-200 border-t dark:border-gray-700">
 										{/* Sprints section */}
-										{projectSprints(project.id).length > 0 && (
+										{projectSprints(project.id).length > 0 ? (
 											<div className="border-gray-100 border-b px-4 py-3 dark:border-gray-700">
 												<p className="mb-2 font-semibold text-gray-500 text-xs uppercase tracking-wide dark:text-gray-400">
 													{dict.sprints.title}
@@ -374,59 +374,12 @@ function ProjectsManager() {
 													))}
 												</ul>
 											</div>
-										)}
-										{/* Tasks section */}
-										{pTodos.length === 0 ? (
-											<p className="px-4 py-3 text-gray-400 text-sm italic">
-												{dict.todolist.listitem.no_task}
-											</p>
 										) : (
-											<ul className="divide-y divide-gray-100 dark:divide-gray-700">
-												{pTodos.map((t) => (
-													<li
-														key={t.id}
-														className="flex items-center gap-2 px-4 py-2"
-													>
-														<input
-															checked={t.completed}
-															className="h-3.5 w-3.5 shrink-0 cursor-pointer accent-blue-500"
-															title={
-																t.completed
-																	? dict.todolist.listitem.edit
-																	: dict.todolist.listitem.edit
-															}
-															type="checkbox"
-															onChange={() => toggleComplete(t.id)}
-														/>
-														<span
-															className={`min-w-0 flex-1 truncate text-sm ${
-																t.completed
-																	? 'text-gray-400 line-through'
-																	: isTaskOverdue(t.dueDate)
-																		? 'text-red-600 dark:text-red-400'
-																		: 'text-gray-700 dark:text-gray-200'
-															}`}
-														>
-															{t.title}
-														</span>
-														{t.dueDate && (
-															<span
-																className={`shrink-0 text-xs ${isTaskOverdue(t.dueDate) ? 'text-red-500' : 'text-gray-400'}`}
-															>
-																{moment(t.dueDate).format('DD/MM')}
-															</span>
-														)}
-														<button
-															className="shrink-0 rounded p-0.5 text-gray-300 transition-colors hover:text-blue-500 dark:text-gray-600 dark:hover:text-blue-400"
-															title={dict.todolist.listitem.detail}
-															type="button"
-															onClick={() => setDetailTodoId(t.id)}
-														>
-															<HiEye className="h-3.5 w-3.5" />
-														</button>
-													</li>
-												))}
-											</ul>
+											<div className="border-gray-100 border-b px-4 py-3 dark:border-gray-700">
+												<p className="text-gray-500 text-xs italic dark:text-gray-400">
+													{dict.sprints.no_sprints}
+												</p>
+											</div>
 										)}
 									</div>
 								)}
