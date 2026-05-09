@@ -197,7 +197,7 @@ function TodoList() {
 				<div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm dark:border-gray-700 dark:bg-gray-800">
 					{/* Filter header / toggle */}
 					<button
-						className="flex w-full items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
+						className="flex w-full cursor-pointer items-center justify-between px-4 py-3 text-left transition-colors hover:bg-gray-50 dark:hover:bg-gray-700/50"
 						type="button"
 						onClick={() => setShowFilters((v) => !v)}
 					>

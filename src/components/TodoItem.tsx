@@ -307,13 +307,18 @@ function TodoItem({
 					<div className="flex w-full items-center gap-2 font-bold">
 						<div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
 							<div className="flex shrink-0 items-center">
-								<Checkbox
-									isDisabled={
-										todo.status === 'archived' || todo.status === 'blocked'
-									}
-									isSelected={todo.completed}
-									onChange={() => toggleTodo()}
-								/>
+								<Tooltip
+									content={dict.todolist.listitem.checked}
+									placement="top"
+								>
+									<Checkbox
+										isDisabled={
+											todo.status === 'archived' || todo.status === 'blocked'
+										}
+										isSelected={todo.completed}
+										onChange={() => toggleTodo()}
+									/>
+								</Tooltip>
 							</div>
 							{isTaskOverdue(todo.dueDate) && (
 								<GoAlertFill className="h-4 w-4 text-red-600" />
@@ -378,7 +383,7 @@ function TodoItem({
 						{onDetailPress && (
 							<Tooltip content={dict.todolist.listitem.detail} placement="left">
 								<button
-									className="shrink-0 rounded p-1 text-gray-400 transition-colors hover:text-blue-500 dark:hover:text-blue-400"
+									className="shrink-0 cursor-pointer rounded p-1 text-gray-400 transition-colors hover:text-blue-500 dark:hover:text-blue-400"
 									type="button"
 									onClick={(e) => {
 										e.stopPropagation()
@@ -559,50 +564,36 @@ function TodoItem({
 						)}
 				</div>
 
-				<div
-					className={
-						showOnlyTitle
-							? 'flex justify-start'
-							: 'flex flex-col gap-y-4 md:flex-row md:justify-between'
-					}
-				>
-					{!showOnlyTitle && (
+				{!showOnlyTitle && (
+					<div
+						className={
+							showOnlyTitle
+								? 'flex justify-start'
+								: 'flex flex-col gap-y-4 md:flex-row md:justify-between'
+						}
+					>
 						<small className="flex flex-wrap items-center gap-1">
-							{todo.createdAt && (
-								<Chip color="default" size="sm">
-									{dict.todolist.listitem.createdAt}:{' '}
-									{moment(todo.createdAt).format(DATE_FORMAT)}
-								</Chip>
-							)}
-
-							{todo.updatedAt && (
-								<Chip color="default" size="sm">
-									{dict.todolist.listitem.updatedAt}:{' '}
-									{moment(todo.updatedAt).format(DATE_FORMAT)}
-								</Chip>
-							)}
-
 							{todo.completed ? (
 								<Chip color="success" size="sm">
 									{dict.todolist.listitem.completedAt}:{' '}
 									{moment(todo.completedAt).format(DATE_FORMAT)}
 								</Chip>
+							) : todo.dueDate ? (
+								<Chip
+									color={isTaskOverdue(todo.dueDate) ? 'danger' : 'warning'}
+									size="sm"
+								>
+									{isTaskOverdue(todo.dueDate)
+										? dict.todolist.listitem.expired
+										: dict.todolist.listitem.dueDateAt}
+									: {moment(todo.dueDate).format(DATE_FORMAT)}
+								</Chip>
 							) : (
-								todo.dueDate && (
-									<Chip
-										color={isTaskOverdue(todo.dueDate) ? 'danger' : 'warning'}
-										size="sm"
-									>
-										{isTaskOverdue(todo.dueDate)
-											? dict.todolist.listitem.expired
-											: dict.todolist.listitem.dueDateAt}
-										: {moment(todo.dueDate).format(DATE_FORMAT)}
-									</Chip>
-								)
+								<Chip color="default" size="sm">
+									{dict.todolist.listitem.no_due_date}
+								</Chip>
 							)}
 						</small>
-					)}
-					{!showOnlyTitle && (
 						<ButtonGroup>
 							<Tooltip
 								content={dict.todolist.listitem.description}
@@ -667,16 +658,21 @@ function TodoItem({
 								</Button>
 							</Tooltip>
 						</ButtonGroup>
-					)}
-				</div>
+					</div>
+				)}
 				{!showOnlyTitle && (
 					<div className="flex w-full items-center justify-between gap-2">
-						<StatusDropdown
-							status={todo.status}
-							statusLabel={dict.todolist.listitem.status.status}
-							statusItems={dict.todolist.listitem.status.items}
-							onChange={updateStatusInline}
-						/>
+						<Tooltip
+							content={dict.todolist.listitem.change_status}
+							placement="right"
+						>
+							<StatusDropdown
+								status={todo.status}
+								statusLabel={dict.todolist.listitem.status.status}
+								statusItems={dict.todolist.listitem.status.items}
+								onChange={updateStatusInline}
+							/>
+						</Tooltip>
 						<div className="flex items-center gap-2">
 							{hasSubtasks && (
 								<Chip color="default">

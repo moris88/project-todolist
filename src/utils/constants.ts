@@ -33,6 +33,9 @@ const itDict = {
 			show_only_title: 'Mostra solo titolo',
 			show_more: 'Mostra tutto',
 			show_less: 'Mostra meno',
+			checked: 'Completa il compito',
+			change_status: 'Cambia stato del compito',
+			no_due_date: 'Nessuna data di scadenza',
 			priority: {
 				label: 'Seleziona una priorità',
 				items: {
@@ -324,6 +327,9 @@ const enDict = {
 			show_only_title: 'Show title only',
 			show_more: 'Show more',
 			show_less: 'Show less',
+			checked: 'Complete the task',
+			change_status: 'Change task status',
+			no_due_date: 'No due date',
 			priority: {
 				label: 'Select a priority',
 				items: {
