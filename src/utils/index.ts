@@ -1,6 +1,7 @@
 export * from './comments'
 export * from './constants'
 export * from './csv'
+export * from './stats'
 export * from './todo'
 export * from './ui'
 export * from './utils'
